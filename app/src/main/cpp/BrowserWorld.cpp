@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BrowserWorld.h"
+#include "ComboWindowEngine.h"
 #include "Controller.h"
 #include "ControllerContainer.h"
 #include "FadeAnimation.h"
@@ -1473,7 +1474,16 @@ BrowserWorld::UpdateWidget(int32_t aHandle, const WidgetPlacementPtr& aPlacement
 
   widget->SetPlacement(aPlacement);
   m.UpdateWidgetCylinder(widget, m.cylinderDensity);
+  if (aHandle == 5) {
+    VRB_LOG("FingerDance: UpdateWidget handle=5 visible=%d composited=%d clearAlpha=%.2f toggleState=%d hasLayer=%d hasSurface=%d",
+            (int)aPlacement->visible, (int)aPlacement->composited,
+            aPlacement->GetClearColor().Alpha(), (int)widget->IsVisible(),
+            (int)(widget->GetLayer() != nullptr), (int)(widget->GetSurfaceTexture() != nullptr));
+  }
   widget->ToggleWidget(aPlacement->visible);
+  if (aHandle == 5) {
+    VRB_LOG("FingerDance: After toggle handle=5 toggleState=%d", (int)widget->IsVisible());
+  }
   widget->SetSurfaceTextureSize(aPlacement->GetTextureWidth(), aPlacement->GetTextureHeight());
 
   float worldWidth = 0.0f, worldHeight = 0.0f;
@@ -1694,6 +1704,11 @@ BrowserWorld::LayoutWidget(int32_t aHandle) {
     translation = transform.GetTranslation();
   }
   widget->SetTransform(parent ? parent->GetTransform().PostMultiply(transform) : transform);
+  if (aHandle == 5) {
+    auto t = transform.GetTranslation();
+    VRB_LOG("FingerDance: LayoutWidget handle=5 tx=%.3f ty=%.3f tz=%.3f worldW=%.3f worldH=%.3f parent=%d",
+            t.x(), t.y(), t.z(), worldWidth, worldHeight, parent ? 1 : 0);
+  }
 
   if (!widget->GetCylinder()) {
     widget->LayoutQuadWithCylinderParent(parent);
@@ -2206,6 +2221,11 @@ JNI_METHOD(void, setTemporaryFilePath)
 JNI_METHOD(void, togglePassthroughNative)
 (JNIEnv*, jobject) {
   crow::BrowserWorld::Instance().TogglePassthrough();
+}
+
+JNI_METHOD(void, setComboFourDirModeNative)
+(JNIEnv*, jobject, jboolean enabled) {
+  fingerdance::ComboWindowEngine::SetFourDirMode(enabled);
 }
 
 JNI_METHOD(void, setLockEnabledNative)

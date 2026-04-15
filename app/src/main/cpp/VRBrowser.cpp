@@ -80,6 +80,16 @@ const char* const kChangeWindowDistance = "changeWindowDistance";
 const char* const kChangeWindowDistanceSignature = "(F)V";
 const char* const kOnMaxCompositionLayersAvailableName = "onMaxCompositionLayersAvailable";
 const char* const kOnMaxCompositionLayersAvailableSignature = "(I)V";
+const char* const kHandleComboEventName = "handleComboEvent";
+const char* const kHandleComboEventSignature = "([II)V";
+const char* const kHandleComboProgressName = "handleComboProgress";
+const char* const kHandleComboProgressSignature = "([II)V";
+const char* const kHandleGripStateChangedName = "handleGripStateChanged";
+const char* const kHandleGripStateChangedSignature = "(Z)V";
+const char* const kHandleComboPreviewName = "handleComboPreview";
+const char* const kHandleComboPreviewSignature = "(I)V";
+const char* const kHandleComboThumbstickPressName = "handleComboThumbstickPress";
+const char* const kHandleComboThumbstickPressSignature = "()V";
 
 JNIEnv* sEnv = nullptr;
 jclass sBrowserClass = nullptr;
@@ -119,6 +129,11 @@ jmethodID sSetHandTrackingSupported = nullptr;
 jmethodID sOnControllersAvailable = nullptr;
 jmethodID sChangeWindowDistance = nullptr;
 jmethodID sOnMaxCompositionLayersAvailable = nullptr;
+jmethodID sHandleComboEvent = nullptr;
+jmethodID sHandleComboProgress = nullptr;
+jmethodID sHandleGripStateChanged = nullptr;
+jmethodID sHandleComboPreview = nullptr;
+jmethodID sHandleComboThumbstickPress = nullptr;
 
 } // namespace
 
@@ -174,6 +189,11 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sOnControllersAvailable = FindJNIMethodID(sEnv, sBrowserClass, kOnControllersAvailable, kOnControllersAvailableSignature);
   sChangeWindowDistance = FindJNIMethodID(sEnv, sBrowserClass, kChangeWindowDistance, kChangeWindowDistanceSignature);
   sOnMaxCompositionLayersAvailable = FindJNIMethodID(sEnv, sBrowserClass, kOnMaxCompositionLayersAvailableName, kOnMaxCompositionLayersAvailableSignature);
+  sHandleComboEvent    = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboEventName,    kHandleComboEventSignature);
+  sHandleComboProgress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboProgressName, kHandleComboProgressSignature);
+  sHandleGripStateChanged = FindJNIMethodID(sEnv, sBrowserClass, kHandleGripStateChangedName, kHandleGripStateChangedSignature);
+  sHandleComboPreview  = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewName,  kHandleComboPreviewSignature);
+  sHandleComboThumbstickPress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboThumbstickPressName, kHandleComboThumbstickPressSignature);
 }
 
 JNIEnv * VRBrowser::Env()
@@ -224,6 +244,11 @@ VRBrowser::ShutdownJava() {
   sAppendAppNotesToCrashReport = nullptr;
   sChangeWindowDistance = nullptr;
   sOnMaxCompositionLayersAvailable = nullptr;
+  sHandleComboEvent       = nullptr;
+  sHandleComboProgress    = nullptr;
+  sHandleGripStateChanged = nullptr;
+  sHandleComboPreview     = nullptr;
+  sHandleComboThumbstickPress = nullptr;
 }
 
 void
@@ -512,6 +537,53 @@ void
 VRBrowser::OnMaxCompositionLayersAvailable(jint aNumLayers) {
     if (!ValidateMethodID(sEnv, sActivity, sOnMaxCompositionLayersAvailable, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sOnMaxCompositionLayersAvailable, aNumLayers);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboProgress(const int* path, int length) {
+    VRB_LOG("FingerDance: HandleComboProgress length=%d", length);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboProgress, __FUNCTION__)) { return; }
+    jintArray jpath = sEnv->NewIntArray(length);
+    if (!jpath) { return; }
+    sEnv->SetIntArrayRegion(jpath, 0, length, reinterpret_cast<const jint*>(path));
+    sEnv->CallVoidMethod(sActivity, sHandleComboProgress, jpath, (jint)length);
+    sEnv->DeleteLocalRef(jpath);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleGripStateChanged(bool held) {
+    VRB_LOG("FingerDance: HandleGripStateChanged held=%d", (int)held);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleGripStateChanged, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleGripStateChanged, (jboolean)held);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboPreview(int previewNode) {
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboPreview, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboPreview, (jint)previewNode);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboThumbstickPress() {
+    VRB_LOG("FingerDance: HandleComboThumbstickPress");
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboThumbstickPress, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboThumbstickPress);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboEvent(const int* path, int length) {
+    VRB_LOG("FingerDance: HandleComboEvent length=%d", length);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboEvent, __FUNCTION__)) { return; }
+    jintArray jpath = sEnv->NewIntArray(length);
+    if (!jpath) { return; }
+    sEnv->SetIntArrayRegion(jpath, 0, length, reinterpret_cast<const jint*>(path));
+    sEnv->CallVoidMethod(sActivity, sHandleComboEvent, jpath, (jint)length);
+    sEnv->DeleteLocalRef(jpath);
     CheckJNIException(sEnv, __FUNCTION__);
 }
 

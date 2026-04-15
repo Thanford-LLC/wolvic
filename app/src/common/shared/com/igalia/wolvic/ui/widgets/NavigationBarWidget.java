@@ -1005,6 +1005,16 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         mViewModel.setIsMicrophoneEnabled(true);
     }
 
+    /** FingerDance: focus the URL bar edit field so the user can type. */
+    public void focusUrlBar() {
+        mBinding.navigationBarNavigation.urlBar.focusUrlBar();
+    }
+
+    /** FingerDance: toggle bookmark state for the current page. */
+    public void bookmarkCurrentPage() {
+        mBinding.navigationBarNavigation.urlBar.bookmarkCurrentPage();
+    }
+
     private void closeFloatingMenus() {
         if (mProjectionMenu != null) {
             mProjectionMenu.hide(KEEP_WIDGET);

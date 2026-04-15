@@ -55,6 +55,16 @@ void SetHandTrackingSupported(bool aIsSupported);
 void OnControllersAvailable();
 void ChangeWindowDistance(jfloat aDelta);
 void OnMaxCompositionLayersAvailable(jint aNumLayers);
+// FingerDance: deliver a completed joystick-combo path to the Java dispatcher.
+void HandleComboEvent(const int* path, int length);
+// FingerDance: update HUD with in-progress path (fires after each node is activated).
+void HandleComboProgress(const int* path, int length);
+// FingerDance: notify Java when grip is pressed/released so the HUD can show/hide.
+void HandleGripStateChanged(bool held);
+// FingerDance: preview wedge highlight (fires every frame while grip held). 0=no zone.
+void HandleComboPreview(int previewNode);
+// FingerDance: thumbstick button pressed while in combo mode — toggle HUD.
+void HandleComboThumbstickPress();
 } // namespace VRBrowser;
 
 } // namespace crow

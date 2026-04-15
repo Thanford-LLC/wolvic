@@ -316,6 +316,16 @@ public class NavigationURLBar extends FrameLayout {
         mDelegate = delegate;
     }
 
+    /** FingerDance: focus the URL edit field so the user can type a URL or search query. */
+    public void focusUrlBar() {
+        mBinding.urlEditText.requestFocusFromTouch();
+    }
+
+    /** FingerDance: toggle bookmark state for the current page, same as tapping the star button. */
+    public void bookmarkCurrentPage() {
+        handleBookmarkClick();
+    }
+
     private void handleBookmarkClick() {
         if (mAudio != null) {
             mAudio.playSound(AudioEngine.Sound.CLICK);

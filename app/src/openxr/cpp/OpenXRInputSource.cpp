@@ -5,6 +5,7 @@
 #include "DeviceUtils.h"
 #include "SystemUtils.h"
 #include "DeviceDelegate.h"
+#include "VRBrowser.h"
 
 #define HAND_JOINT_FOR_AIM XR_HAND_JOINT_MIDDLE_PROXIMAL_EXT
 
@@ -36,6 +37,20 @@ OpenXRInputSource::OpenXRInputSource(XrInstance instance, XrSession session, Ope
     , mSystemProperties(properties)
     , mHandeness(handeness)
     , mIndex(index)
+    , mComboRecognizer(
+        // Combo complete → dispatch browser action.
+        [](const fingerdance::ComboEvent& event) {
+            crow::VRBrowser::HandleComboEvent(event.path.data(), event.length);
+        },
+        // Node activated → update HUD with confirmed path.
+        [](const fingerdance::ComboEvent& progress) {
+            crow::VRBrowser::HandleComboProgress(progress.path.data(), progress.length);
+        },
+        // Preview wedge → highlight current zone on HUD.
+        [](int previewNode) {
+            crow::VRBrowser::HandleComboPreview(previewNode);
+        }
+    )
 {
   elbow = ElbowModel::Create();
   mClickThreshold = kControllerClickThreshold;
@@ -746,10 +761,15 @@ void OpenXRInputSource::EmulateControllerFromHand(device::RenderMode renderMode,
 
 void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpace, const vrb::Matrix &head, const vrb::Vector& offsets, device::RenderMode renderMode, DeviceDelegate::PointerMode pointerMode, bool usingEyeTracking, bool handTrackingEnabled, const vrb::Matrix& eyeTrackingTransform, ControllerDelegate& delegate)
 {
+    static int fdUpdateCount = 0;
+    if (fdUpdateCount++ % 500 == 0) {
+        VRB_LOG("FingerDance: Update() called #%d mapping=%p hand=%d handTrack=%d", fdUpdateCount, (void*)mActiveMapping, (int)mHandeness, (int)handTrackingEnabled);
+    }
     if (mActiveMapping &&
         ((mHandeness == OpenXRHandFlags::Left && !mActiveMapping->leftControllerModel) ||
          (mHandeness == OpenXRHandFlags::Right && !mActiveMapping->rightControllerModel))) {
       delegate.SetEnabled(mIndex, false);
+      VRB_LOG("FingerDance: Update early return - no controller model");
       return;
     }
 
@@ -834,7 +854,8 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
 
     // Don't enable aim for eye tracking as we don't want to paint the beam. Note that we'd still
     // have an aim, meaning that we can point, focus, click... UI elements.
-    delegate.SetAimEnabled(mIndex, hasAim && usingTrackedPointer);
+    // FingerDance: hide laser pointer when grip is held (combo mode active).
+    delegate.SetAimEnabled(mIndex, hasAim && usingTrackedPointer && !mFingerDanceGripHeld);
 
     // Disable the controller if there is no aim unless:
     // a) we're using hand interaction profile and we have hand tracking info. In that case the user
@@ -857,7 +878,11 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     // Hand interaction profiles do not really require the hand joints data, but if we
     // set ControllerMode::Hand then Wolvic code assumes that it does.
     delegate.SetMode(mIndex, mUsingHandInteractionProfile && gotHandTrackingInfo ? ControllerMode::Hand : ControllerMode::Device);
-    delegate.SetEnabled(mIndex, true);
+    // FingerDance: while grip is held the controller is in combo mode —
+    // disable pointer targeting, trigger clicks, and hover on the page so
+    // the joystick drives the HUD instead. Axis/button processing below
+    // still runs so the combo recognizer keeps receiving thumbstick input.
+    delegate.SetEnabled(mIndex, !mFingerDanceGripHeld);
 
     bool isHandActionEnabled = !hasAim && mUsingHandInteractionProfile && handFacesHead;
     delegate.SetHandActionEnabled(mIndex, isHandActionEnabled);
@@ -937,12 +962,15 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     int buttonCount { 0 };
     bool trackpadClicked { false };
     bool trackpadTouched { false };
+    bool squeezeClicked { false };
+    bool thumbstickBtnClicked { false };
 
     // https://www.w3.org/TR/webxr-gamepads-module-1/
     std::unordered_set<OpenXRButtonType> placeholders = {
         OpenXRButtonType::Squeeze, OpenXRButtonType::Trackpad, OpenXRButtonType::Thumbstick
     };
 
+    static int fdLogCounter = 0;
     for (auto& button: mActiveMapping->buttons) {
         if ((button.hand & mHandeness) == 0) {
             continue;
@@ -953,8 +981,18 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
             continue;
         }
 
+        // FingerDance: log squeeze value every 100 frames for debugging
+        if (button.type == OpenXRButtonType::Squeeze && (fdLogCounter++ % 100 == 0)) {
+            VRB_LOG("FingerDance: Squeeze val=%.3f clicked=%d mGripHeld=%d hand=%d", state->value, (int)state->clicked, (int)mFingerDanceGripHeld, mIndex);
+        }
+
         placeholders.erase(button.type);
         buttonCount++;
+
+        // Capture grip/thumbstick states for FingerDance combo recognizer.
+        if (button.type == OpenXRButtonType::Squeeze)    squeezeClicked      = state->clicked;
+        if (button.type == OpenXRButtonType::Thumbstick) thumbstickBtnClicked = state->clicked;
+
         auto browserButton = GetBrowserButton(button);
         auto immersiveButton = GetImmersiveButton(button);
 
@@ -985,7 +1023,14 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
           }
         }
 
-        // Squeeze action
+        // FingerDance: grip shows/hides HUD and suppresses laser in ALL render modes, both hands.
+        if (button.type == OpenXRButtonType::Squeeze && state->clicked != mFingerDanceGripHeld) {
+          mFingerDanceGripHeld = state->clicked;
+          VRB_LOG("FingerDance: Grip %s (hand=%d)", mFingerDanceGripHeld ? "PRESSED" : "RELEASED", mIndex);
+          crow::VRBrowser::HandleGripStateChanged(mFingerDanceGripHeld);
+        }
+
+        // Squeeze action (WebXR immersive only)
         if (renderMode == device::RenderMode::Immersive && button.type == OpenXRButtonType::Squeeze && state->clicked != squeezeActionStarted) {
           squeezeActionStarted = state->clicked;
           if (squeezeActionStarted) {
@@ -1032,7 +1077,25 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
       } else if (axis.type == OpenXRAxisType::Thumbstick) {
         axesContainer[device::kImmersiveAxisThumbstickX] = state->x;
         axesContainer[device::kImmersiveAxisThumbstickY] = -state->y;
-        delegate.SetScrolledDelta(mIndex, -state->x, state->y);
+        // FingerDance: both hands are combo hands. Grip activates combo mode.
+        const int64_t timestampMs = static_cast<int64_t>(
+            frameState.predictedDisplayTime / 1'000'000LL);
+        bool consumed = mComboRecognizer.Process(
+            state->x, -state->y, thumbstickBtnClicked, squeezeClicked, timestampMs);
+        // FingerDance: thumbstick press while grip held = toggle HUD
+        if (thumbstickBtnClicked && squeezeClicked && !mPrevThumbstickForHUD) {
+          crow::VRBrowser::HandleComboThumbstickPress();
+        }
+        mPrevThumbstickForHUD = thumbstickBtnClicked && squeezeClicked;
+        static int fdAxisLog = 0;
+        if (squeezeClicked && (fdAxisLog++ % 50 == 0)) {
+            VRB_LOG("FingerDance: Axis x=%.3f y=%.3f grip=%d consumed=%d hand=%d", state->x, state->y, (int)squeezeClicked, (int)consumed, mIndex);
+        }
+        // FingerDance: suppress page scroll delta whenever grip is held —
+        // the joystick belongs to the combo recognizer, not the page.
+        if (!consumed && !squeezeClicked) {
+          delegate.SetScrolledDelta(mIndex, -state->x, state->y);
+        }
       } else {
         axesContainer.push_back(state->x);
         axesContainer.push_back(-state->y);

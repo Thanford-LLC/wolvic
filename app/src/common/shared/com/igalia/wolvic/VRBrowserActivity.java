@@ -228,6 +228,9 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     Handler mHandler = new Handler(Looper.getMainLooper());
     Runnable mAudioUpdateRunnable;
     Windows mWindows;
+    com.igalia.wolvic.input.ComboDispatcher mComboDispatcher;
+    com.igalia.wolvic.ui.widgets.ComboHUDWidget mHUDWidget;
+    boolean mHUDEnabled = true;  // FingerDance: thumbstick press toggles HUD visibility
     RootWidget mRootWidget;
     KeyboardWidget mKeyboard;
     NavigationBarWidget mNavigationBar;
@@ -438,9 +441,11 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         // Create the WebXR interstitial
         mWebXRInterstitial = new WebXRInterstitialWidget(this);
+        mHUDWidget = new com.igalia.wolvic.ui.widgets.ComboHUDWidget(this);
 
         // Windows
         mWindows = new Windows(this);
+        mComboDispatcher = new com.igalia.wolvic.input.ComboDispatcher(mWindows, this);
         mWindows.setDelegate(new Windows.Delegate() {
             @Override
             public void onFocusedWindowChanged(@NonNull WindowWidget aFocusedWindow, @Nullable WindowWidget aPrevFocusedWindow) {
@@ -502,7 +507,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         attachToWindow(mWindows.getFocusedWindow(), null);
 
-        addWidgets(Arrays.asList(mRootWidget, mNavigationBar, mKeyboard, mTray, mTabsBar, mWebXRInterstitial));
+        addWidgets(Arrays.asList(mRootWidget, mNavigationBar, mKeyboard, mTray, mTabsBar, mWebXRInterstitial, mHUDWidget));
 
         // Create the platform plugin after widgets are created to be extra safe.
         mPlatformPlugin = createPlatformPlugin(this);
@@ -1256,6 +1261,65 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
                 mLastGesture = aType;
                 mLastRunnable = new SwipeRunnable();
                 mHandler.postDelayed(mLastRunnable, SwipeDelay);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboEvent(final int[] path, final int length) {
+        android.util.Log.e("FingerDance", "handleComboEvent length=" + length + " path=" + java.util.Arrays.toString(java.util.Arrays.copyOf(path, length)));
+        runOnUiThread(() -> {
+            if (mComboDispatcher != null) {
+                mComboDispatcher.dispatch(path, length);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboProgress(final int[] path, final int length) {
+        runOnUiThread(() -> {
+            if (mHUDWidget != null) {
+                mHUDWidget.updatePath(path, length);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboPreview(final int previewNode) {
+        runOnUiThread(() -> {
+            if (mHUDWidget != null) {
+                mHUDWidget.updatePreview(previewNode);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboThumbstickPress() {
+        runOnUiThread(() -> {
+            mHUDEnabled = !mHUDEnabled;
+            android.util.Log.e("FingerDance", "HUD toggled: " + mHUDEnabled);
+            if (mHUDWidget != null && !mHUDEnabled) {
+                mHUDWidget.hide(UIWidget.KEEP_WIDGET);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleGripStateChanged(final boolean held) {
+        android.util.Log.e("FingerDance", "handleGripStateChanged held=" + held + " mHUDEnabled=" + mHUDEnabled);
+        runOnUiThread(() -> {
+            if (mHUDWidget != null) {
+                if (held && mHUDEnabled) {
+                    mHUDWidget.resetPath();
+                    mHUDWidget.show(UIWidget.KEEP_WIDGET);
+                } else {
+                    mHUDWidget.hide(UIWidget.KEEP_WIDGET);
+                }
             }
         });
     }
@@ -2339,6 +2403,11 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     private native void showVRVideoNative(int aWindowHandler, int aVideoProjection);
     private native void hideVRVideoNative();
     private native void togglePassthroughNative();
+    private native void setComboFourDirModeNative(boolean enabled);
+
+    public void setComboFourDirMode(boolean enabled) {
+        setComboFourDirModeNative(enabled);
+    }
     private native void setLockEnabledNative(@LockMode int aLockMode);
     private native void recenterUIYawNative(@YawTarget int aTarget);
     private native void setControllersVisibleNative(boolean aVisible);

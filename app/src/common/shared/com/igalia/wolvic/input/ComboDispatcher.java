@@ -1,0 +1,429 @@
+package com.igalia.wolvic.input;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
+
+import com.igalia.wolvic.VRBrowserActivity;
+import com.igalia.wolvic.browser.SettingsStore;
+import com.igalia.wolvic.browser.engine.Session;
+import com.igalia.wolvic.browser.engine.SessionStore;
+import com.igalia.wolvic.ui.widgets.Windows;
+import com.igalia.wolvic.ui.widgets.WindowWidget;
+import com.igalia.wolvic.ui.widgets.WidgetManagerDelegate;
+import com.igalia.wolvic.utils.UrlUtils;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Dispatches joystick-combo paths from native to browser actions.
+ *
+ * Two mapping modes, toggled by SharedPreferences key COMBO_MODE_4DIR_KEY:
+ *   4-dir (default): cardinals only (2/4/6/8). More forgiving on Quest's
+ *                    small thumbstick.
+ *   8-dir          : full 1..9 grid with diagonals.
+ *
+ * See the combo table comments below for mappings.
+ */
+public class ComboDispatcher {
+
+    private static final String LOGTAG = "ComboDispatcher";
+    public  static final String COMBO_MODE_4DIR_KEY = "fingerdance_combo_4dir_mode";
+
+    private static final float SCROLL_DELTA = 150.0f;
+    private static final float MAX_SCROLL   = 1_000_000.0f;
+
+    // Action identifiers — used as values in both combo tables.
+    private static final int A_SCROLL_UP       = 1;
+    private static final int A_SCROLL_DOWN     = 2;
+    private static final int A_SCROLL_LEFT     = 3;
+    private static final int A_SCROLL_RIGHT    = 4;
+    private static final int A_SCROLL_TOP      = 5;
+    private static final int A_SCROLL_BOTTOM   = 6;
+    private static final int A_BACK            = 7;
+    private static final int A_FORWARD         = 8;
+    private static final int A_REFRESH         = 9;
+    private static final int A_FIND_IN_PAGE    = 10;
+    private static final int A_STOP            = 11;
+    private static final int A_NEW_WINDOW      = 12;
+    private static final int A_CLOSE_WINDOW    = 13;
+    private static final int A_DUPLICATE       = 14;
+    private static final int A_NEXT_WINDOW     = 15;
+    private static final int A_PREV_WINDOW     = 16;
+    private static final int A_URL_BAR         = 17;
+    private static final int A_OPEN_BOOKMARKS  = 18;
+    private static final int A_ADD_BOOKMARK    = 19;
+    private static final int A_HISTORY         = 23;
+    private static final int A_READER_MODE     = 25;
+    private static final int A_PRIVATE_WINDOW  = 26;
+
+    private final Windows mWindows;
+    private final WidgetManagerDelegate mWidgetManager;
+    private final Map<String, Integer> mTable8Dir = new HashMap<>();
+    private final Map<String, Integer> mTable4Dir = new HashMap<>();
+
+    public ComboDispatcher(@NonNull Windows windows, @NonNull WidgetManagerDelegate widgetManager) {
+        mWindows = windows;
+        mWidgetManager = widgetManager;
+        buildTables();
+        pushModeToNative();
+    }
+
+    private void pushModeToNative() {
+        if (mWidgetManager instanceof VRBrowserActivity) {
+            ((VRBrowserActivity) mWidgetManager).setComboFourDirMode(is4DirMode());
+        }
+    }
+
+    private void buildTables() {
+        // Shared cardinal combos — identical in both modes.
+        int[][] shared = {
+            {A_SCROLL_UP,     2},
+            {A_SCROLL_DOWN,   8},
+            {A_SCROLL_LEFT,   4},
+            {A_SCROLL_RIGHT,  6},
+        };
+        for (int[] s : shared) {
+            String k = key(s[1]);
+            mTable8Dir.put(k, s[0]);
+            mTable4Dir.put(k, s[0]);
+        }
+        putBoth(A_SCROLL_TOP,    2, 2);
+        putBoth(A_SCROLL_BOTTOM, 8, 8);
+        putBoth(A_BACK,          4, 4);
+        putBoth(A_FORWARD,       6, 6);
+        putBoth(A_REFRESH,       2, 8);
+        putBoth(A_FIND_IN_PAGE,  8, 2);
+        putBoth(A_STOP,          4, 6);
+        putBoth(A_HISTORY,       2, 2, 2);
+
+        // 8-dir specific
+        mTable8Dir.put(key(3),           A_NEW_WINDOW);
+        mTable8Dir.put(key(1),           A_CLOSE_WINDOW);
+        mTable8Dir.put(key(3, 3),        A_DUPLICATE);
+        mTable8Dir.put(key(2, 3, 6),     A_NEXT_WINDOW);
+        mTable8Dir.put(key(2, 1, 4),     A_PREV_WINDOW);
+        mTable8Dir.put(key(9),           A_URL_BAR);
+        mTable8Dir.put(key(7),           A_OPEN_BOOKMARKS);
+        mTable8Dir.put(key(8, 8, 8),     A_ADD_BOOKMARK);
+        mTable8Dir.put(key(2, 1, 4, 7, 8), A_READER_MODE);
+        mTable8Dir.put(key(2, 3, 6, 9, 8), A_PRIVATE_WINDOW);
+
+        // 4-dir-only entries. All cardinal-based, so they don't collide with
+        // 8-dir's diagonal bindings — mirror them into the 8-dir table too so
+        // a user who prefers cardinal paths still gets the same actions in
+        // 8-dir mode. (8-dir's diagonal bindings remain available.)
+        int[][][] fourDirCombos = {
+            { {6, 6, 6},       {A_NEW_WINDOW}     },
+            { {4, 4, 4},       {A_CLOSE_WINDOW}   },
+            { {6, 6, 6, 6},    {A_DUPLICATE}      },
+            { {2, 6},          {A_NEXT_WINDOW}    },
+            { {2, 4},          {A_PREV_WINDOW}    },
+            { {6, 8},          {A_URL_BAR}        },
+            { {4, 8},          {A_OPEN_BOOKMARKS} },
+            { {8, 8, 8},       {A_ADD_BOOKMARK}   },
+            { {2, 4, 8},       {A_READER_MODE}    },
+            { {2, 6, 8},       {A_PRIVATE_WINDOW} },
+        };
+        for (int[][] entry : fourDirCombos) {
+            String k = key(entry[0]);
+            int action = entry[1][0];
+            mTable4Dir.put(k, action);
+            mTable8Dir.putIfAbsent(k, action);
+        }
+    }
+
+    private void putBoth(int action, int... path) {
+        String k = key(path);
+        mTable8Dir.put(k, action);
+        mTable4Dir.put(k, action);
+    }
+
+    private static String key(int... path) {
+        return Arrays.toString(path);
+    }
+
+    // Node → candidate cardinal set for 4-dir disambiguation.
+    // Cardinals map to themselves; diagonals expand to their two adjacent cardinals.
+    private static final int[][] CARDINAL_CANDIDATES = {
+            /*0*/ {},
+            /*1 UL*/ {2, 4},
+            /*2  U*/ {2},
+            /*3 UR*/ {2, 6},
+            /*4  L*/ {4},
+            /*5  C*/ {},
+            /*6  R*/ {6},
+            /*7 DL*/ {4, 8},
+            /*8  D*/ {8},
+            /*9 DR*/ {6, 8},
+    };
+
+    public void dispatch(int[] path, int length) {
+        if (length <= 0 || length > 8) return;
+        // Re-push mode every dispatch — covers preference flips without
+        // needing a SharedPreferences listener wired up.
+        pushModeToNative();
+        int[] combo = Arrays.copyOf(path, length);
+        Log.d(LOGTAG, "dispatch path=" + Arrays.toString(combo)
+                + " mode=" + (is4DirMode() ? "4dir" : "8dir"));
+
+        Map<String, Integer> table = currentTable();
+        Integer action = table.get(key(combo));
+
+        // 4-dir fallback: if the native classifier emitted diagonals due to
+        // thumbstick drift, enumerate every cardinal interpretation and take
+        // the unique one that matches a registered combo. Ambiguity → skip.
+        if (action == null && is4DirMode()) {
+            action = resolveCardinalInterpretation(combo, table, /*collapseRuns=*/false);
+            // Second pass: collapse runs of the same cardinal after expansion.
+            // Handles spurious mid-arc activations — e.g. native emits [2,3,6]
+            // for an intended 2→6 arc; diagonal 3 expands to 2 or 6, making
+            // a duplicate with its neighbor. Collapsing gives [2,6]. Intended
+            // repeats (6-6-6, 8-8-8) are already matched by the direct/non-
+            // collapsing pass, so this can't hijack them.
+            if (action == null) {
+                action = resolveCardinalInterpretation(combo, table, /*collapseRuns=*/true);
+            }
+        }
+
+        if (action == null) {
+            Log.d(LOGTAG, "Unrecognised combo: " + Arrays.toString(combo));
+            return;
+        }
+        runAction(action);
+    }
+
+    private Integer resolveCardinalInterpretation(int[] combo, Map<String, Integer> table, boolean collapseRuns) {
+        int[] buf = new int[combo.length];
+        Integer[] found = new Integer[]{null};
+        boolean[] ambiguous = new boolean[]{false};
+        enumerate(combo, 0, buf, table, found, ambiguous, collapseRuns);
+        if (ambiguous[0]) {
+            Log.d(LOGTAG, "Ambiguous 4-dir interpretation for " + Arrays.toString(combo)
+                    + " collapseRuns=" + collapseRuns);
+            return null;
+        }
+        return found[0];
+    }
+
+    private void enumerate(int[] combo, int idx, int[] buf,
+                           Map<String, Integer> table,
+                           Integer[] found, boolean[] ambiguous,
+                           boolean collapseRuns) {
+        if (ambiguous[0]) return;
+        if (idx == combo.length) {
+            int[] lookup = collapseRuns ? collapseAdjacent(buf) : buf;
+            Integer a = table.get(key(lookup));
+            if (a == null) return;
+            if (found[0] == null) {
+                found[0] = a;
+            } else if (!found[0].equals(a)) {
+                ambiguous[0] = true;
+            }
+            return;
+        }
+        int node = combo[idx];
+        int[] candidates = (node >= 1 && node <= 9) ? CARDINAL_CANDIDATES[node] : new int[0];
+        for (int c : candidates) {
+            buf[idx] = c;
+            enumerate(combo, idx + 1, buf, table, found, ambiguous, collapseRuns);
+            if (ambiguous[0]) return;
+        }
+    }
+
+    private static int[] collapseAdjacent(int[] path) {
+        if (path.length == 0) return path;
+        int[] tmp = new int[path.length];
+        int n = 0;
+        for (int v : path) {
+            if (n == 0 || tmp[n - 1] != v) tmp[n++] = v;
+        }
+        return Arrays.copyOf(tmp, n);
+    }
+
+    private Map<String, Integer> currentTable() {
+        return is4DirMode() ? mTable4Dir : mTable8Dir;
+    }
+
+    private boolean is4DirMode() {
+        Context ctx = contextForPrefs();
+        if (ctx == null) return true;  // default to 4-dir (ergonomic default)
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        return prefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
+    }
+
+    private Context contextForPrefs() {
+        WindowWidget win = focusedWindow();
+        return win != null ? win.getContext() : null;
+    }
+
+    private void runAction(int action) {
+        switch (action) {
+            case A_SCROLL_UP:      scroll(0,  SCROLL_DELTA);  break;
+            case A_SCROLL_DOWN:    scroll(0, -SCROLL_DELTA);  break;
+            case A_SCROLL_LEFT:    scroll(-SCROLL_DELTA, 0);  break;
+            case A_SCROLL_RIGHT:   scroll( SCROLL_DELTA, 0);  break;
+            case A_SCROLL_TOP:     scroll(0,  MAX_SCROLL);    break;
+            case A_SCROLL_BOTTOM:  scroll(0, -MAX_SCROLL);    break;
+            case A_BACK:           back();                     break;
+            case A_FORWARD:        forward();                  break;
+            case A_REFRESH:        refresh();                  break;
+            case A_FIND_IN_PAGE:   findInPage();               break;
+            case A_STOP:           stop();                     break;
+            case A_NEW_WINDOW:     newWindow();                break;
+            case A_CLOSE_WINDOW:   closeCurrentWindow();       break;
+            case A_DUPLICATE:      duplicateWindow();          break;
+            case A_NEXT_WINDOW:    rotateWindows(+1);          break;
+            case A_PREV_WINDOW:    rotateWindows(-1);          break;
+            case A_URL_BAR:        focusUrlBar();              break;
+            case A_OPEN_BOOKMARKS: openBookmarks();            break;
+            case A_ADD_BOOKMARK:   addToBookmarks();           break;
+            case A_HISTORY:        openHistory();              break;
+            case A_READER_MODE:    toggleReaderMode();         break;
+            case A_PRIVATE_WINDOW: togglePrivateMode();        break;
+            default:               Log.d(LOGTAG, "No handler for action " + action); break;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Actions
+    // ---------------------------------------------------------------------------
+
+    private void scroll(float deltaX, float deltaY) {
+        WindowWidget win = focusedWindow();
+        if (win == null) return;
+        MotionEventGenerator.dispatchScroll(win, 0, true, deltaX, deltaY);
+    }
+
+    private void back() {
+        mWindows.handleBack();
+    }
+
+    private void forward() {
+        Session session = focusedSession();
+        if (session != null) session.goForward();
+    }
+
+    private void newWindow() {
+        WindowWidget win = mWindows.addWindow();
+        if (win != null) {
+            String homepage = SettingsStore.getInstance(win.getContext()).getHomepage();
+            if (homepage != null && !homepage.isEmpty()) {
+                win.getSession().loadUri(homepage);
+            }
+        }
+    }
+
+    private void closeCurrentWindow() {
+        WindowWidget win = focusedWindow();
+        if (win != null) mWindows.closeWindow(win);
+    }
+
+    private void duplicateWindow() {
+        WindowWidget src = focusedWindow();
+        if (src == null) return;
+        String uri = src.getSession().getCurrentUri();
+        WindowWidget newWin = mWindows.addWindow();
+        if (newWin != null && uri != null && !uri.isEmpty()) {
+            newWin.getSession().loadUri(uri);
+        }
+    }
+
+    // direction > 0 → counterclockwise bring-in (right neighbour slides to
+    // front, front slides right). direction < 0 → clockwise (left neighbour
+    // to front). No-op with fewer than 2 windows. Focus follows the new front
+    // so keyboard/URL-bar interactions target the visible window.
+    private void rotateWindows(int direction) {
+        WindowWidget front = mWindows.getFrontWindow();
+        int count = mWindows.getCurrentWindows().size();
+        Log.d(LOGTAG, "rotateWindows ENTER dir=" + direction + " front=" + front + " count=" + count);
+        if (front == null) {
+            Log.d(LOGTAG, "rotateWindows: no front window — abort");
+            return;
+        }
+        if (count < 2) {
+            Log.d(LOGTAG, "rotateWindows: only " + count + " window(s), need 2+ to rotate");
+            return;
+        }
+        if (direction > 0) {
+            mWindows.moveWindowRight(front);
+        } else {
+            mWindows.moveWindowLeft(front);
+        }
+        WindowWidget newFront = mWindows.getFrontWindow();
+        if (newFront != null) mWindows.focusWindow(newFront);
+        Log.d(LOGTAG, "rotateWindows EXIT dir=" + direction + " newFront=" + newFront);
+    }
+
+    private void focusUrlBar() {
+        mWidgetManager.getNavigationBar().focusUrlBar();
+    }
+
+    private void openBookmarks() {
+        WindowWidget win = focusedWindow();
+        if (win != null) win.getSession().loadUri(UrlUtils.ABOUT_BOOKMARKS);
+    }
+
+    private void openHistory() {
+        WindowWidget win = focusedWindow();
+        if (win != null) win.getSession().loadUri(UrlUtils.ABOUT_HISTORY);
+    }
+
+    private void addToBookmarks() {
+        WindowWidget win = focusedWindow();
+        if (win == null) return;
+        Session session = win.getSession();
+        String url   = session.getCurrentUri();
+        String title = session.getCurrentTitle();
+        if (url == null || url.isEmpty()) return;
+        SessionStore.get().getBookmarkStore().addBookmark(url, title);
+    }
+
+    private void findInPage() {
+        WindowWidget win = focusedWindow();
+        if (win != null) win.showFindInPage();
+    }
+
+    private void refresh() {
+        Session session = focusedSession();
+        if (session != null) session.reload();
+    }
+
+    private void stop() {
+        Session session = focusedSession();
+        if (session != null) session.stop();
+    }
+
+    private void togglePrivateMode() {
+        if (mWindows.isInPrivateMode()) {
+            mWindows.exitPrivateMode();
+        } else {
+            mWindows.enterPrivateMode();
+        }
+    }
+
+    private void toggleReaderMode() {
+        // Reader mode wiring TBD — Wolvic's reader view lives in the UI layer
+        // and isn't exposed cleanly for programmatic toggle. Log for now so
+        // combo recognition can be verified; revisit when wiring up.
+        Log.d(LOGTAG, "Reader mode combo recognized — UI hook not yet implemented");
+    }
+
+    // ---------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------
+
+    private WindowWidget focusedWindow() {
+        return mWindows.getFocusedWindow();
+    }
+
+    private Session focusedSession() {
+        WindowWidget win = focusedWindow();
+        return win != null ? win.getSession() : null;
+    }
+}

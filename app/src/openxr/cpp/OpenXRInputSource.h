@@ -8,6 +8,7 @@
 #include "HandMeshRenderer.h"
 #include "OpenXRGestureManager.h"
 #include "DeviceDelegate.h"
+#include "fingerdance/cpp/InputComboRecognizer.h"
 #include <optional>
 #include <unordered_map>
 
@@ -74,6 +75,8 @@ private:
     OpenXRInputMapping* mActiveMapping { XR_NULL_HANDLE };
     bool selectActionStarted { false };
     bool squeezeActionStarted { false };
+    bool mFingerDanceGripHeld { false };  // FingerDance: tracks grip for combo mode + laser suppression
+    bool mPrevThumbstickForHUD { false }; // FingerDance: edge detect thumbstick press for HUD toggle
     std::vector<float> axesContainer;
     crow::ElbowModelPtr elbow;
     XrHandTrackerEXT mHandTracker { XR_NULL_HANDLE };
@@ -89,6 +92,7 @@ private:
     vrb::Matrix mEyeGazeTransformOnPinchStart;
     XrTime mEyeTrackingPinchStartTime { 0 };
     float mClickThreshold { 1.0f };
+    fingerdance::InputComboRecognizer mComboRecognizer;
 
     struct HandMeshMSFT {
         XrSpace space = XR_NULL_HANDLE;

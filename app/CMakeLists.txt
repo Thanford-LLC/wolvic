@@ -101,6 +101,10 @@ if(OPENXR)
     find_package(OpenXR REQUIRED CONFIG)
     target_link_libraries(native-lib PRIVATE OpenXR::headers)
     include_directories(${CMAKE_SOURCE_DIR}/../app/src/openxr/cpp)
+    # FingerDance: fingerdance/cpp/ reachable as "fingerdance/cpp/<header>.h" and
+    # also as "<header>.h" (for intra-fingerdance includes).
+    include_directories(${CMAKE_SOURCE_DIR}/src)
+    include_directories(${CMAKE_SOURCE_DIR}/src/fingerdance/cpp)
     if (HVR)
         add_custom_command(TARGET native-lib POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
@@ -128,16 +132,22 @@ if(OPENXR)
             ${CMAKE_SOURCE_DIR}/src/openxr/cpp/OpenXRActionSet.cpp
             ${CMAKE_SOURCE_DIR}/src/openxr/cpp/OpenXRExtensions.cpp
             ${CMAKE_SOURCE_DIR}/src/openxr/cpp/OpenXRPassthroughStrategy.cpp
+            # FingerDance combo engine
+            ${CMAKE_SOURCE_DIR}/src/fingerdance/cpp/ComboWindowEngine.cpp
+            ${CMAKE_SOURCE_DIR}/src/fingerdance/cpp/InputComboRecognizer.cpp
     )
 endif()
 
 if(OCULUSVR)
-include_directories(${CMAKE_SOURCE_DIR}/../third_party/OVRPlatformSDK/Include)
-add_custom_command(TARGET native-lib POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_SOURCE_DIR}/../third_party/OVRPlatformSDK/Android/libs/${ANDROID_ABI}/libovrplatformloader.so
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libovrplatformloader.so
-        )
+    if(STORE_BUILD)
+        # OVR Platform SDK is only needed for Meta store entitlement checks.
+        include_directories(${CMAKE_SOURCE_DIR}/../third_party/OVRPlatformSDK/Include)
+        add_custom_command(TARGET native-lib POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_SOURCE_DIR}/../third_party/OVRPlatformSDK/Android/libs/${ANDROID_ABI}/libovrplatformloader.so
+                ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libovrplatformloader.so
+                )
+    endif()
 endif()
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -154,9 +164,11 @@ find_library( # Sets the name of the path variable.
               android-lib
               android )
 
-add_library(ovrplatform-lib SHARED IMPORTED)
-set_target_properties(ovrplatform-lib PROPERTIES IMPORTED_LOCATION
-                      ${CMAKE_SOURCE_DIR}/../third_party/OVRPlatformSDK/Android/libs/${ANDROID_ABI}/libovrplatformloader.so )
+if(OCULUSVR AND STORE_BUILD)
+    add_library(ovrplatform-lib SHARED IMPORTED)
+    set_target_properties(ovrplatform-lib PROPERTIES IMPORTED_LOCATION
+                          ${CMAKE_SOURCE_DIR}/../third_party/OVRPlatformSDK/Android/libs/${ANDROID_ABI}/libovrplatformloader.so )
+endif()
 
 add_library(hvr-lib SHARED IMPORTED)
 set_target_properties(hvr-lib PROPERTIES IMPORTED_LOCATION
@@ -195,7 +207,6 @@ target_link_libraries( # Specifies the target library.
 
                        # Link VR_SDK_LIB exported from gradle flavors
                        ${VR_SDK_LIB}
-                       ${VR_SDK_EXTRA_LIB}
 
                        # Links the target library to the log library
                        # included in the NDK.
@@ -204,3 +215,8 @@ target_link_libraries( # Specifies the target library.
                        EGL
                        GLESv3
                       )
+
+# OVR Platform SDK: only available and needed for Meta store builds.
+if(OCULUSVR AND STORE_BUILD)
+    target_link_libraries(native-lib PRIVATE ovrplatform-lib)
+endif()

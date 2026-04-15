@@ -892,7 +892,24 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     }
 
     public void loadHomePage() {
-        loadUri(getHomeUri());
+        // FingerDance: load local asset homepage via loadData() since GeckoView
+        // doesn't support file:///android_asset/ or resource:// for page navigation.
+        String homeUri = getHomeUri();
+        if (homeUri != null && homeUri.contains("fingerdance/homepage")) {
+            try {
+                java.io.InputStream is = mContext.getAssets().open("fingerdance/homepage.html");
+                byte[] data = new byte[is.available()];
+                is.read(data);
+                is.close();
+                if (mState.mSession != null) {
+                    mState.mSession.loadData(data, "text/html");
+                    return;
+                }
+            } catch (java.io.IOException e) {
+                // Fall through to loadUri
+            }
+        }
+        loadUri(homeUri);
     }
 
     public void loadPrivateBrowsingPage() {
