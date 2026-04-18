@@ -99,6 +99,7 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     private transient WRuntime mRuntime;
     private transient byte[] mPrivatePage;
     private transient boolean mOnHomePage;
+    private transient String mHomePageDataUri;
     private transient boolean mFirstContentfulPaint;
     private transient long mKeepAlive;
     private transient Media mMedia;
@@ -498,6 +499,11 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     private boolean shouldLoadDefaultPage(@NonNull SessionState aState) {
         // data:text URLs can not be restored.
         if (mState.mSessionState != null && ((mState.mUri == null) || mState.mUri.startsWith("data:text"))) {
+            return true;
+        }
+        // about://home is a symbolic sentinel handled by loadHomePage(); passing it to the
+        // engine would let Chromium canonicalize it to chrome://home/ and error.
+        if (UrlUtils.isHomeUrl(aState.mUri)) {
             return true;
         }
 
@@ -912,8 +918,9 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
                 is.read(data);
                 is.close();
                 String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+                mHomePageDataUri = "data:text/html;base64," + encoded;
                 if (mState.mSession != null) {
-                    mState.mSession.loadUri("data:text/html;base64," + encoded, WSession.LOAD_FLAGS_NONE);
+                    mState.mSession.loadUri(mHomePageDataUri, WSession.LOAD_FLAGS_NONE);
                 }
                 return;
             } catch (java.io.IOException e) {
@@ -1129,7 +1136,10 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         mState.mPreviousUri = mState.mUri;
         // When on home page, store the symbolic URL instead of the raw data: URL.
         // Chromium may also surface chrome://home as the reported URL; normalize both.
-        if (mOnHomePage && (UrlUtils.isDataUri(aUri) || UrlUtils.isHomeUrl(aUri))) {
+        // Also normalize any later re-fire that matches the cached home data: URL, since
+        // mOnHomePage may have already flipped false by then.
+        boolean isHomeDataMatch = mHomePageDataUri != null && mHomePageDataUri.equals(aUri);
+        if ((mOnHomePage && (UrlUtils.isDataUri(aUri) || UrlUtils.isHomeUrl(aUri))) || isHomeDataMatch) {
             mState.mUri = UrlUtils.ABOUT_HOME;
             aUri = UrlUtils.ABOUT_HOME;
         } else {

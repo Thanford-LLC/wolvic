@@ -321,6 +321,7 @@ public class WindowViewModel extends AndroidViewModel {
             String url = aUrl.toString();
             if (UrlUtils.isPrivateAboutPage(getApplication(), url) ||
                     (UrlUtils.isDataUri(url) && isPrivateSession.getValue().get()) ||
+                    UrlUtils.isHomeUrl(aUrl.toString()) ||
                     UrlUtils.isHomeUri(getApplication(), aUrl.toString()) ||
                     UrlUtils.getContentType(url) != Windows.ContentType.WEB_CONTENT ||
                     UrlUtils.isBlankUri(getApplication(), aUrl.toString())) {
