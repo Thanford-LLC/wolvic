@@ -40,6 +40,7 @@ bool isOverrideEnvPathEnabled();
 void CheckTogglePassthrough();
 void ResetWindowsPosition();
 std::string GetActiveEnvironment();
+float GetSkyboxSeasonalYaw();
 int32_t GetPointerColor();
 bool AreLayersEnabled();
 void SetDeviceType(const jint aType);

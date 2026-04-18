@@ -52,6 +52,8 @@ const char* const kResetWindowsPosition = "resetWindowsPosition";
 const char* const kResetWindowsPositionSignature = "()V";
 const char* const kGetActiveEnvironment = "getActiveEnvironment";
 const char* const kGetActiveEnvironmentSignature = "()Ljava/lang/String;";
+const char* const kGetSkyboxSeasonalYaw = "getSkyboxSeasonalYaw";
+const char* const kGetSkyboxSeasonalYawSignature = "()F";
 const char* const kGetPointerColor = "getPointerColor";
 const char* const kGetPointerColorSignature = "()I";
 const char* const kSetDeviceType = "setDeviceType";
@@ -115,6 +117,7 @@ jmethodID sIsOverrideEnvPathEnabled = nullptr;
 jmethodID sCheckTogglePassthrough = nullptr;
 jmethodID sResetWindowsPosition = nullptr;
 jmethodID sGetActiveEnvironment = nullptr;
+jmethodID sGetSkyboxSeasonalYaw = nullptr;
 jmethodID sGetPointerColor = nullptr;
 jmethodID sSetDeviceType = nullptr;
 jmethodID sHaltActivity = nullptr;
@@ -175,6 +178,7 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sCheckTogglePassthrough = FindJNIMethodID(sEnv, sBrowserClass, kCheckTogglePassthrough, kCheckTogglePassthroughSignature);
   sResetWindowsPosition = FindJNIMethodID(sEnv, sBrowserClass, kResetWindowsPosition, kResetWindowsPositionSignature);
   sGetActiveEnvironment = FindJNIMethodID(sEnv, sBrowserClass, kGetActiveEnvironment, kGetActiveEnvironmentSignature);
+  sGetSkyboxSeasonalYaw = FindJNIMethodID(sEnv, sBrowserClass, kGetSkyboxSeasonalYaw, kGetSkyboxSeasonalYawSignature);
   sGetPointerColor = FindJNIMethodID(sEnv, sBrowserClass, kGetPointerColor, kGetPointerColorSignature);
   sSetDeviceType = FindJNIMethodID(sEnv, sBrowserClass, kSetDeviceType, kSetDeviceTypeSignature);
   sHaltActivity = FindJNIMethodID(sEnv, sBrowserClass, kHaltActivity, kHaltActivitySignature);
@@ -235,6 +239,7 @@ VRBrowser::ShutdownJava() {
   sCheckTogglePassthrough = nullptr;
   sResetWindowsPosition = nullptr;
   sGetActiveEnvironment = nullptr;
+  sGetSkyboxSeasonalYaw = nullptr;
   sGetPointerColor = nullptr;
   sSetDeviceType = nullptr;
   sHaltActivity = nullptr;
@@ -432,6 +437,14 @@ VRBrowser::GetActiveEnvironment() {
   sEnv->ReleaseStringUTFChars(jStr, cstr);
 
   return str;
+}
+
+float
+VRBrowser::GetSkyboxSeasonalYaw() {
+  if (!ValidateMethodID(sEnv, sActivity, sGetSkyboxSeasonalYaw, __FUNCTION__)) { return 0.0f; }
+  jfloat yaw = sEnv->CallFloatMethod(sActivity, sGetSkyboxSeasonalYaw);
+  CheckJNIException(sEnv, __FUNCTION__);
+  return (float) yaw;
 }
 
 int32_t

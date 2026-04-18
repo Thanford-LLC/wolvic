@@ -99,6 +99,7 @@ import com.igalia.wolvic.utils.BitmapCache;
 import com.igalia.wolvic.utils.ConnectivityReceiver;
 import com.igalia.wolvic.utils.DeviceType;
 import com.igalia.wolvic.utils.LocaleUtils;
+import com.igalia.wolvic.utils.SeasonUtils;
 import com.igalia.wolvic.utils.StringUtils;
 import com.igalia.wolvic.utils.SystemUtils;
 
@@ -107,9 +108,11 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -1543,6 +1546,12 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     @SuppressWarnings("unused")
     public String getActiveEnvironment() {
         return getServicesProvider().getEnvironmentsManager().getOrDownloadEnvironment();
+    }
+
+    @Keep
+    @SuppressWarnings("unused")
+    private float getSkyboxSeasonalYaw() {
+        return SeasonUtils.seasonalSkyboxYawRadians(Calendar.getInstance(), Locale.getDefault());
     }
 
     @Keep

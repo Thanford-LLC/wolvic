@@ -1858,7 +1858,10 @@ BrowserWorld::TickWorld() {
   }
   const vrb::Vector headPosition = m.device->GetHeadTransform().GetTranslation();
   if (m.skybox) {
-    m.skybox->SetTransform(vrb::Matrix::Translation(headPosition));
+    // FingerDance: yaw the skybox so the current real-world season faces -X (user default).
+    const float seasonalYaw = VRBrowser::GetSkyboxSeasonalYaw();
+    m.skybox->SetTransform(vrb::Matrix::Translation(headPosition)
+        .PostMultiply(vrb::Matrix::Rotation(vrb::Vector(0.0f, 1.0f, 0.0f), seasonalYaw)));
   }
 
   m.SortWidgets();
