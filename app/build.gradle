@@ -344,7 +344,7 @@ android {
         noapi {
             dimension "platform"
             applicationIdSuffix ".noapi"
-            resValue "string", "app_name", "Wolvic NoAPI"
+            resValue "string", "app_name", "FingerDance NoAPI"
             externalNativeBuild {
                 cmake {
                     cppFlags " -DNOAPI"

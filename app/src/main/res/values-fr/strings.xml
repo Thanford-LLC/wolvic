@@ -591,7 +591,7 @@
     <string name="security_options_permission_location">Localisation</string>
     <!-- This string describes the situation when the coarse location permission has been granted,
              but the fine location permission has not. -->
-    <string name="security_options_permission_fine_location_warning">Wolvic ne peut accéder qu\'à votre position approximative. Vous pouvez modifier cela dans les paramètres du système.</string>
+    <string name="security_options_permission_fine_location_warning">FingerDance ne peut accéder qu\'à votre position approximative. Vous pouvez modifier cela dans les paramètres du système.</string>
     <!-- This string labels the button that displays or enables the application to post system-wide
          notifications. -->
     <string name="security_options_permission_notifications">Notifications</string>
@@ -1609,7 +1609,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="terms_service_title">Conditions d\'utilisation</string>
     <string name="privacy_dialog_agree">Accepter</string>
     <string name="privacy_policy_subtitle_3">Droit applicable et langue d’origine</string>
-    <string name="privacy_dialog_disagree">Fermer Wolvic</string>
+    <string name="privacy_dialog_disagree">Fermer FingerDance</string>
     <string name="settings_privacy_choose_search_engine_reset">Réinitialiser les préférences de moteur de recherche</string>
     <string name="voice_search_server_error">La commande vocale n\'est actuellement pas disponible.</string>
     <string name="external_open_uri_error_title">Erreur lors de l\'ouverture de l\'application externe</string>
@@ -1673,7 +1673,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="settings_privacy_choose_search_engine_description">Choisissez votre moteur de recherche préféré.</string>
     <string name="external_open_uri_error_bad_uri_body">URI invalide %1$s</string>
     <string name="external_open_uri_error_no_activity_body">Aucune application trouvée pour gérer %1$s</string>
-    <string name="privacy_dialog_message">Votre vie privée est importante pour nous. Afin de lancer le navigateur, veuillez accepter nos conditions d\'utilisation et notre politique de vie privée. Merci d\'utiliser Wolvic !</string>
+    <string name="privacy_dialog_message">Votre vie privée est importante pour nous. Afin de lancer le navigateur, veuillez accepter nos conditions d\'utilisation et notre politique de vie privée. Merci d\'utiliser FingerDance !</string>
     <string name="privacy_policy_subtitle_2">Protection des données</string>
     <string name="external_open_uri_error_security_exception_body">Exception de sécurité lors de l\'ouverture de %1$s</string>
     <string name="terms_service_section_1">Wolvic est un logiciel libre et gratuit, construit par une communauté de milliers de personnes dans le monde entier. Il y a certaines choses que vous devez savoir :
@@ -1760,9 +1760,9 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \nVeuillez installer la nouvelle version de Wolvic à partir de la Meta Quest Store.
 \n
 \nIMPORTANT : hormis si vous utilisez Firefox Sync, la nouvelle application Wolvic n’aura ni vos marque-pages ni vos onglets.</string>
-    <string name="rCN_first_launch_body">Bienvenue dans « Wolvic » !
+    <string name="rCN_first_launch_body">Bienvenue dans « FingerDance » !
 \n
-\nAfin de vous enregistrer et d’utiliser « Wolvic », vous devez accepter les conditions d’utilisation et la politique de confidentialité, ou nous ne pourrons pas vous fournir de services. Veuillez lire attentivement les documents et cliquer sur « Accepter » pour continuer. Si vous cliquez « Refuser », vous ne pourrez pas continuer à utiliser « Wolvic ».
+\nAfin de vous enregistrer et d’utiliser « FingerDance », vous devez accepter les conditions d’utilisation et la politique de confidentialité, ou nous ne pourrons pas vous fournir de services. Veuillez lire attentivement les documents et cliquer sur « Accepter » pour continuer. Si vous cliquez « Refuser », vous ne pourrez pas continuer à utiliser « FingerDance ».
 \n
 \nVous pouvez lire l\'intégralité des conditions d’utilisation et de la politique de confidentialité.</string>
     <string name="user_feedback_tooltip">Partager idées et retours d\'expérience</string>
@@ -1813,8 +1813,8 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="permission_read_external_storage_rationale">Ouvrir des fichiers sur votre appareil nécessite la permission de lire votre périphérique de stockage.</string>
     <string name="tray_status_phone">Téléphone: %1$s</string>
     <string name="vision_glass_touchpad_instructions">Appuyer sur l’écran pour cliquer. Balayer l’écran pour faire défiler</string>
-    <string name="phone_ui_set3dmode_alert_dialog_description">Échec du passage en mode 3D. Essayez de déconnecter et reconnecter vos lunettes puis redémarrer Wolvic.</string>
-    <string name="phone_ui_usb_alert_dialog_description">Impossible d’obtenir les permissions USB. Essayez de déconnecter et reconnecter vos lunettes puis redémarrer Wolvic.</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">Échec du passage en mode 3D. Essayez de déconnecter et reconnecter vos lunettes puis redémarrer FingerDance.</string>
+    <string name="phone_ui_usb_alert_dialog_description">Impossible d’obtenir les permissions USB. Essayez de déconnecter et reconnecter vos lunettes puis redémarrer FingerDance.</string>
     <string name="vision_glass_disconnected_message">Veuillez connecter vos lunettes Vision Glass</string>
     <string name="vision_glass_error_message">Une erreur est survenue.
 \nVeuillez ressayer.</string>

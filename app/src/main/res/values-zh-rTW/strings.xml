@@ -2235,7 +2235,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="web_apps_dialog_cancel">取消</string>
     <string name="web_apps_saved_notification">新增了網頁應用程式！</string>
     <string name="download_addon_install">安裝插件</string>
-    <string name="privacy_dialog_disagree">關閉Wolvic</string>
+    <string name="privacy_dialog_disagree">關閉FingerDance</string>
     <string name="voice_service_metkai">MeetKai</string>
     <string name="web_apps_dialog_title_parameter">安裝 %1$s</string>
     <string name="deprecated_version_dialog_info_button">了解更多…</string>
@@ -2252,7 +2252,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="download_addon_install_cancel">取消</string>
     <string name="notifications_title">通知</string>
     <string name="notifications_loading">載入通知</string>
-    <string name="security_options_permission_fine_location_warning">Wolvic 只能取得您的大概位置。這可以在系統設定中更改。</string>
+    <string name="security_options_permission_fine_location_warning">FingerDance 只能取得您的大概位置。這可以在系統設定中更改。</string>
     <string name="web_apps_description">當您位於頁面上時，請按一下「儲存 Web 應用程式...」按鈕，將其新增至您的 Web 應用程式。</string>
     <string name="web_apps_empty">您的網頁應用程式清單為空</string>
     <string name="web_apps_dialog_install">安裝</string>
@@ -2299,12 +2299,12 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \n
 \n重要提示：除非您使用同步，否則新的 Wolvic 應用程式將不會有您的書籤和選項卡。</string>
     <string name="external_open_uri_error_no_activity_body">找不到可以處理%1$s的應用程式</string>
-    <string name="rCN_first_launch_body">歡迎來到“Wolvic”!
+    <string name="rCN_first_launch_body">歡迎來到“FingerDance”!
 \n
-\n註冊和使用「Wolvic」需要您同意《使用者協議》和《隱私權政策》，否則我們無法為您提供服務。請仔細閱讀文件並點擊「同意」繼續。如果您點擊“不同意”，您將無法繼續使用“Wolvic”。
+\n註冊和使用「FingerDance」需要您同意《使用者協議》和《隱私權政策》，否則我們無法為您提供服務。請仔細閱讀文件並點擊「同意」繼續。如果您點擊“不同意”，您將無法繼續使用“FingerDance”。
 \n
 \n您可以閱讀完整的使用者協議和隱私權政策。</string>
-    <string name="privacy_dialog_message">你的隱私對我們很重要。為了運行瀏覽器，請接受我們的服務條款和隱私權政策。感謝您使用Wolvic！</string>
+    <string name="privacy_dialog_message">你的隱私對我們很重要。為了運行瀏覽器，請接受我們的服務條款和隱私權政策。感謝您使用FingerDance！</string>
     <string name="privacy_policy_title">隱私權政策</string>
     <string name="terms_service_section_1">Wolvic 是免費的開源軟體，由來自世界各地的數千名社群建構。您應該了解以下幾點：
 \n
@@ -2413,8 +2413,8 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="permission_location_rationale">提供附近的新聞和內容需要獲得存取您的位置的權限。</string>
     <string name="hamburger_menu_zoom">放大</string>
     <string name="vision_glass_touchpad_instructions">輕擊即可點擊。 滑動即可滾動</string>
-    <string name="phone_ui_set3dmode_alert_dialog_description">無法切換到 3D 模式。 嘗試拔下眼鏡插頭並重新插上，然後重新啟動 Wolvic。</string>
-    <string name="phone_ui_usb_alert_dialog_description">無法取得USB權限。 嘗試拔下眼鏡插頭並重新插上，然後重新啟動 Wolvic。</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">無法切換到 3D 模式。 嘗試拔下眼鏡插頭並重新插上，然後重新啟動 FingerDance。</string>
+    <string name="phone_ui_usb_alert_dialog_description">無法取得USB權限。 嘗試拔下眼鏡插頭並重新插上，然後重新啟動 FingerDance。</string>
     <string name="permission_read_external_storage_rationale">開啟裝置上的檔案需要讀取外部儲存的權限。</string>
     <string name="permission_persistent_storage_rationale">在設備上儲存和開啟檔案需要在持久性儲存中儲存資料的權限。</string>
     <string name="new_tab">開新分頁</string>
