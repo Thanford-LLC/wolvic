@@ -1,11 +1,11 @@
 {
   "manifest_version": 2,
-  "name": "Wolvic Launch Immersive",
+  "name": "FingerDance Launch Immersive",
   "version": "1.0",
   "description": "Launch Immersive Experiences Automatically",
   "browser_specific_settings": {
     "gecko": {
-      "id": "wolvic-launchimmersive@igalia.com"
+      "id": "fingerdance-launchimmersive@thanford.com"
     }
   },
   "content_scripts": [
