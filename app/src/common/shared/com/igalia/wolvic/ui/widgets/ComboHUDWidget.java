@@ -14,6 +14,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 
+import com.igalia.wolvic.R;
+
 /**
  * Head-locked HUD showing the in-progress combo path as a circular dial.
  *
@@ -37,25 +39,30 @@ public class ComboHUDWidget extends UIWidget {
 
     private static final int WIDGET_PX = 480;  // extra margin outside the dial for confirmation dots
 
-    // 8-dir layout: ordered wedge nodes starting from right (0 degrees), going CCW.
+    // Ordered wedge nodes starting from right (0 degrees), going CCW.
     private static final int[] WEDGE_NODES_8 = { 6, 3, 2, 1, 4, 7, 8, 9 };
-    private static final String[] WEDGE_LABELS_8 = { "R", "UR", "U", "UL", "L", "DL", "D", "DR" };
     // 4-dir layout: cardinals only, 90° wedges.
     private static final int[] WEDGE_NODES_4 = { 6, 2, 4, 8 };
-    private static final String[] WEDGE_LABELS_4 = { "R", "U", "L", "D" };
+    // Single heavy-up glyph, rotated per-wedge via canvas.rotate. Drawing one
+    // glyph at N different angles guarantees identical stroke weight across
+    // all directions — font fallbacks for U+2B95 / U+27A1 produce unmatched
+    // weights otherwise.
+    private static final String ARROW_GLYPH = "\u2B06";
 
-    // Colours
-    private static final int COLOR_BG            = 0xF0080814;  // near-opaque to stay readable on white pages
-    private static final int COLOR_BG_STROKE     = 0xFFc0ccf0;  // subtle light border for contrast
-    private static final int COLOR_WEDGE_IDLE    = 0xFF1a1a3a;
-    private static final int COLOR_WEDGE_PREVIEW = 0xFF2a2a6a;  // soft highlight when pointing
-    private static final int COLOR_WEDGE_HIT     = 0xFF3a3a8a;  // confirmed node
-    private static final int COLOR_ACCENT        = 0xFF7c9fef;
-    private static final int COLOR_CENTER        = 0xFF252545;
-    private static final int COLOR_TEXT_IDLE     = 0xFF505070;
-    private static final int COLOR_TEXT_PREVIEW  = 0xFF8090c0;
-    private static final int COLOR_TEXT_HIT      = 0xFFc0ccf0;
-    private static final int COLOR_TEXT_LAST     = 0xFFffffff;
+    // Colours — skin-aware, resolved per instance from resources.
+    // fd_hud_* lives in values/colors-fd-hud.xml (skin-neutral) except fd_hud_accent
+    // which lives per-skin in res-fd-<skin>/values/colors-fd.xml.
+    private final int mColorBg;
+    private final int mColorBgStroke;
+    private final int mColorWedgeIdle;
+    private final int mColorWedgePreview;
+    private final int mColorWedgeHit;
+    private final int mColorAccent;
+    private final int mColorCenter;
+    private final int mColorTextIdle;
+    private final int mColorTextPreview;
+    private final int mColorTextHit;
+    private final int mColorTextLast;
 
     // State
     private final int[] mHitCounts = new int[10]; // index 1-9
@@ -75,13 +82,24 @@ public class ComboHUDWidget extends UIWidget {
     public ComboHUDWidget(Context aContext) {
         super(aContext);
         android.util.Log.e("ComboHUD", "Constructor called, handle=" + getHandle());
-        mBgPaint.setColor(COLOR_BG);
+        mColorBg           = aContext.getColor(R.color.fd_hud_bg);
+        mColorBgStroke     = aContext.getColor(R.color.fd_hud_bg_stroke);
+        mColorWedgeIdle    = aContext.getColor(R.color.fd_hud_wedge_idle);
+        mColorWedgePreview = aContext.getColor(R.color.fd_hud_wedge_preview);
+        mColorWedgeHit     = aContext.getColor(R.color.fd_hud_wedge_hit);
+        mColorAccent       = aContext.getColor(R.color.fd_hud_accent);
+        mColorCenter       = aContext.getColor(R.color.fd_hud_center);
+        mColorTextIdle     = aContext.getColor(R.color.fd_hud_text_idle);
+        mColorTextPreview  = aContext.getColor(R.color.fd_hud_text_preview);
+        mColorTextHit      = aContext.getColor(R.color.fd_hud_text_hit);
+        mColorTextLast     = aContext.getColor(R.color.fd_hud_text_last);
+        mBgPaint.setColor(mColorBg);
         mTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
         mLinePaint.setColor(0x40606080);
         mLinePaint.setStrokeWidth(1.5f);
         mRingPaint.setStyle(Paint.Style.STROKE);
-        mRingPaint.setColor(COLOR_ACCENT);
+        mRingPaint.setColor(mColorAccent);
         initialize();
     }
 
@@ -262,15 +280,15 @@ public class ComboHUDWidget extends UIWidget {
         float innerR = outerR * 0.30f;           // center circle radius
         float labelR = (outerR + innerR) / 2f;   // radius for text placement
 
-        // Opaque background disc with a light stroke so the HUD stays
-        // readable on white web pages.
-        mBgPaint.setColor(COLOR_BG);
+        // Opaque background disc with a bright accent stroke so the HUD stays
+        // unambiguously separated from web content (dark or light pages).
+        mBgPaint.setColor(mColorBg);
         mBgPaint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx, cy, outerR + 4f, mBgPaint);
         mBgPaint.setStyle(Paint.Style.STROKE);
-        mBgPaint.setStrokeWidth(2.5f);
-        mBgPaint.setColor(COLOR_BG_STROKE);
-        mBgPaint.setAlpha(160);
+        mBgPaint.setStrokeWidth(4f);
+        mBgPaint.setColor(mColorBgStroke);
+        mBgPaint.setAlpha(255);
         canvas.drawCircle(cx, cy, outerR + 4f, mBgPaint);
         mBgPaint.setStyle(Paint.Style.FILL);
         mBgPaint.setAlpha(255);
@@ -278,7 +296,6 @@ public class ComboHUDWidget extends UIWidget {
         // Mode-dependent layout.
         final boolean fourDir = is4DirMode();
         final int[] nodes   = fourDir ? WEDGE_NODES_4  : WEDGE_NODES_8;
-        final String[] labels = fourDir ? WEDGE_LABELS_4 : WEDGE_LABELS_8;
         final int count    = nodes.length;
         final float stepDeg = 360f / count;
         final float halfWidth = stepDeg / 2f;
@@ -297,13 +314,9 @@ public class ComboHUDWidget extends UIWidget {
             float startAngle = -(i * stepDeg) - halfWidth;
             float sweep = halfWidth * 2f;
 
-            if (isPreview) {
-                mWedgePaint.setColor(COLOR_WEDGE_PREVIEW);
-                mWedgePaint.setAlpha(230);
-            } else {
-                mWedgePaint.setColor(COLOR_WEDGE_IDLE);
-                mWedgePaint.setAlpha(200);
-            }
+            // setColor already carries the resource's alpha channel; calling
+            // setAlpha here would clobber it and force every wedge to 100%.
+            mWedgePaint.setColor(isPreview ? mColorWedgePreview : mColorWedgeIdle);
 
             Path wedge = new Path();
             wedge.arcTo(outerRect, startAngle, sweep, true);
@@ -320,14 +333,39 @@ public class ComboHUDWidget extends UIWidget {
                     cy + outerR * (float) Math.sin(lineAngle),
                     mLinePaint);
 
-            // Label
-            float midAngle = (float) Math.toRadians(startAngle + halfWidth);
+            // Label — single up-arrow glyph rotated to point outward along
+            // this wedge's midline. midDeg (canvas CW) = -(i * stepDeg); the
+            // glyph points UP (-Y) natively, so rotate by midDeg + 90.
+            float midDeg = startAngle + halfWidth;
+            float midAngle = (float) Math.toRadians(midDeg);
             float lx = cx + labelR * (float) Math.cos(midAngle);
             float ly = cy + labelR * (float) Math.sin(midAngle);
-            mTextPaint.setTextSize(outerR * 0.13f);
-            mTextPaint.setColor(isPreview ? COLOR_TEXT_PREVIEW : COLOR_TEXT_IDLE);
+            mTextPaint.setTextSize(outerR * 0.22f);
+            mTextPaint.setColor(isPreview ? mColorTextPreview : mColorTextIdle);
+            // Drop shadow gives the arrow glyph depth — reads as a real
+            // embossed UI element rather than a flat overlay.
+            mTextPaint.setShadowLayer(6f, 0f, 3f, 0xB3000000);
             float textY = ly - (mTextPaint.descent() + mTextPaint.ascent()) / 2f;
-            canvas.drawText(labels[i], lx, textY, mTextPaint);
+            canvas.save();
+            canvas.rotate(midDeg + 90f, lx, ly);
+            canvas.drawText(ARROW_GLYPH, lx, textY, mTextPaint);
+            canvas.restore();
+        }
+        mTextPaint.clearShadowLayer();
+
+        // Cardinal max-position markers: small navy dots on the yellow outer
+        // ring at 0/90/180/270 degrees. Always visible (not activation-gated),
+        // so the user always knows where the "max reach" slots are.
+        float markerR = outerR + 4f;
+        float markerDotR = outerR * 0.08f;
+        int[] cardinalAngles = { 0, 90, 180, 270 };  // E, N, W, S in canvas space
+        mWedgePaint.setColor(mColorBg);
+        mWedgePaint.setAlpha(255);
+        for (int a : cardinalAngles) {
+            double rad = Math.toRadians(-a);  // canvas: CCW in world = negative in canvas
+            float mx = cx + markerR * (float) Math.cos(rad);
+            float my = cy + markerR * (float) Math.sin(rad);
+            canvas.drawCircle(mx, my, markerDotR, mWedgePaint);
         }
 
         // Pass 2: confirmation dots at the outer edge of each activated wedge.
@@ -350,7 +388,7 @@ public class ComboHUDWidget extends UIWidget {
             float r = baseR + baseR * 0.5f * (Math.min(hits, 5) - 1);  // 1→baseR, 5→3×baseR
 
             // Filled accent dot
-            mWedgePaint.setColor(COLOR_ACCENT);
+            mWedgePaint.setColor(mColorAccent);
             mWedgePaint.setAlpha(255);
             canvas.drawCircle(dx, dy, r, mWedgePaint);
 
@@ -365,25 +403,25 @@ public class ComboHUDWidget extends UIWidget {
 
             // Highlight the most-recent node with a white core pip.
             if (node == mLastNode) {
-                mWedgePaint.setColor(COLOR_TEXT_LAST);
+                mWedgePaint.setColor(mColorTextLast);
                 mWedgePaint.setAlpha(255);
                 canvas.drawCircle(dx, dy, r * 0.45f, mWedgePaint);
             }
         }
 
         // Center circle
-        mWedgePaint.setColor(COLOR_CENTER);
+        mWedgePaint.setColor(mColorCenter);
         mWedgePaint.setAlpha(255);
         canvas.drawCircle(cx, cy, innerR - 2f, mWedgePaint);
 
         // Center dot or path length indicator
         if (mPathLength > 0) {
             mTextPaint.setTextSize(innerR * 0.7f);
-            mTextPaint.setColor(COLOR_ACCENT);
+            mTextPaint.setColor(mColorAccent);
             float textY = cy - (mTextPaint.descent() + mTextPaint.ascent()) / 2f;
             canvas.drawText(String.valueOf(mPathLength), cx, textY, mTextPaint);
         } else {
-            mWedgePaint.setColor(COLOR_ACCENT);
+            mWedgePaint.setColor(mColorAccent);
             mWedgePaint.setAlpha(150);
             canvas.drawCircle(cx, cy, 6f, mWedgePaint);
         }
