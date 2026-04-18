@@ -178,6 +178,15 @@ public class UrlUtils {
         }
     }
 
+    public static final String ABOUT_HOME = "about://home";
+    public static final String CHROME_HOME = "chrome://home";
+
+    public static boolean isHomeUrl(@Nullable String url) {
+        if (url == null) return false;
+        String u = url.toLowerCase();
+        return u.startsWith(ABOUT_HOME) || u.startsWith(CHROME_HOME);
+    }
+
     public static final String ABOUT_HISTORY = "about://history";
 
     public static boolean isHistoryUrl(@Nullable String url) {
@@ -256,7 +265,7 @@ public class UrlUtils {
     }
 
     public static boolean isAboutPage(@Nullable String url) {
-        return isHistoryUrl(url) || isBookmarksUrl(url) || isDownloadsUrl(url) || isAddonsUrl(url) ||
+        return isHomeUrl(url) || isHistoryUrl(url) || isBookmarksUrl(url) || isDownloadsUrl(url) || isAddonsUrl(url) ||
                 isWebAppsUrl(url) || isNotificationsUrl(url) || isPrivateUrl(url) || isNewTabUrl(url);
     }
 

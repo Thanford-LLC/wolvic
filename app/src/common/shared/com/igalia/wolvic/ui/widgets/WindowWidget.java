@@ -429,7 +429,7 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
             mSession.loadPrivateBrowsingPage();
 
         } else {
-            mSession.loadUri(mSession.getHomeUri());
+            mSession.loadHomePage();
         }
     }
 

@@ -312,10 +312,7 @@ public class ComboDispatcher {
     private void newWindow() {
         WindowWidget win = mWindows.addWindow();
         if (win != null) {
-            String homepage = SettingsStore.getInstance(win.getContext()).getHomepage();
-            if (homepage != null && !homepage.isEmpty()) {
-                win.getSession().loadUri(homepage);
-            }
+            win.loadHome();
         }
     }
 
@@ -366,12 +363,12 @@ public class ComboDispatcher {
 
     private void openBookmarks() {
         WindowWidget win = focusedWindow();
-        if (win != null) win.getSession().loadUri(UrlUtils.ABOUT_BOOKMARKS);
+        if (win != null) win.showLibrary(Windows.ContentType.BOOKMARKS);
     }
 
     private void openHistory() {
         WindowWidget win = focusedWindow();
-        if (win != null) win.getSession().loadUri(UrlUtils.ABOUT_HISTORY);
+        if (win != null) win.showLibrary(Windows.ContentType.HISTORY);
     }
 
     private void addToBookmarks() {

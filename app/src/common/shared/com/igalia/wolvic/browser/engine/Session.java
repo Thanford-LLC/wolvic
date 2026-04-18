@@ -98,6 +98,7 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     private transient SharedPreferences mPrefs;
     private transient WRuntime mRuntime;
     private transient byte[] mPrivatePage;
+    private transient boolean mOnHomePage;
     private transient boolean mFirstContentfulPaint;
     private transient long mKeepAlive;
     private transient Media mMedia;
@@ -738,6 +739,10 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
 
     public String getHomeUri() {
         String homepage = SettingsStore.getInstance(mContext).getHomepage();
+        // Symbolic about://home is handled internally by loadHomePage(), not by the engine.
+        if (UrlUtils.isHomeUrl(homepage)) {
+            return homepage;
+        }
         WSession wSession = getWSession();
         if (wSession != null) {
             homepage = UrlUtils.urlForText(mContext, homepage, wSession.getUrlUtilsVisitor());
@@ -883,6 +888,11 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         if (aUri == null) {
             aUri = getHomeUri();
         }
+        if (UrlUtils.isHomeUrl(aUri)) {
+            loadHomePage();
+            return;
+        }
+        mOnHomePage = false;
         if (mState.mSession != null) {
             Log.d(LOGTAG, "Loading URI: " + aUri);
             if (mExternalRequestDelegate == null || !mExternalRequestDelegate.onHandleExternalRequest(aUri)) {
@@ -892,24 +902,33 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     }
 
     public void loadHomePage() {
-        // FingerDance: load local asset homepage via loadData() since GeckoView
-        // doesn't support file:///android_asset/ or resource:// for page navigation.
-        String homeUri = getHomeUri();
-        if (homeUri != null && homeUri.contains("fingerdance/homepage")) {
+        mOnHomePage = true;
+        if (BuildConfig.FLAVOR_backend.equalsIgnoreCase("chromium")) {
+            // Chromium content-shell doesn't resolve `file:///android_asset/...`;
+            // encode the asset as a data: URL (loadUri queues via mInitialUri pre-open).
             try {
                 java.io.InputStream is = mContext.getAssets().open("fingerdance/homepage.html");
                 byte[] data = new byte[is.available()];
                 is.read(data);
                 is.close();
+                String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
                 if (mState.mSession != null) {
-                    mState.mSession.loadData(data, "text/html");
-                    return;
+                    mState.mSession.loadUri("data:text/html;base64," + encoded, WSession.LOAD_FLAGS_NONE);
                 }
+                return;
             } catch (java.io.IOException e) {
-                // Fall through to loadUri
+                // Fall through
             }
         }
-        loadUri(homeUri);
+        // Gecko path: resource://android/assets/... is resolvable.
+        String geckoHome = "resource://android/assets/fingerdance/homepage.html";
+        if (mState.mSession != null) {
+            mState.mSession.loadUri(geckoHome, WSession.LOAD_FLAGS_NONE);
+        }
+    }
+
+    public boolean isOnHomePage() {
+        return mOnHomePage;
     }
 
     public void loadPrivateBrowsingPage() {
@@ -1108,7 +1127,17 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         mState.mIsWebExtensionSession = aUri.startsWith(UrlUtils.WEB_EXTENSION_URL);
 
         mState.mPreviousUri = mState.mUri;
-        mState.mUri = aUri;
+        // When on home page, store the symbolic URL instead of the raw data: URL.
+        // Chromium may also surface chrome://home as the reported URL; normalize both.
+        if (mOnHomePage && (UrlUtils.isDataUri(aUri) || UrlUtils.isHomeUrl(aUri))) {
+            mState.mUri = UrlUtils.ABOUT_HOME;
+            aUri = UrlUtils.ABOUT_HOME;
+        } else {
+            mState.mUri = aUri;
+            if (mOnHomePage) {
+                mOnHomePage = false;
+            }
+        }
 
         boolean forceMobileViewport = FORCE_MOBILE_VIEWPORT.stream().anyMatch(aUri::contains);
         if (forceMobileViewport) {

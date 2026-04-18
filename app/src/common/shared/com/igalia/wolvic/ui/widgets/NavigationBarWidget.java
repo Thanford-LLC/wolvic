@@ -292,7 +292,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
 
         mBinding.navigationBarNavigation.homeButton.setOnClickListener(v -> {
             v.requestFocusFromTouch();
-            getSession().loadUri(getSession().getHomeUri());
+            getSession().loadHomePage();
             if (mAudio != null) {
                 mAudio.playSound(AudioEngine.Sound.CLICK);
             }

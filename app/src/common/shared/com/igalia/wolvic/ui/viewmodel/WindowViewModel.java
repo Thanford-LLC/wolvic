@@ -276,8 +276,8 @@ public class WindowViewModel extends AndroidViewModel {
                         (UrlUtils.isDataUri(url) && isPrivateSession.getValue().get())) {
                     url = getApplication().getString(R.string.private_browsing_title);
 
-                } else if (UrlUtils.isHomeUri(getApplication(), aUrl.toString())) {
-                    url = getApplication().getString(R.string.url_home_title, getApplication().getString(R.string.app_name));
+                } else if (UrlUtils.isHomeUrl(aUrl.toString()) || UrlUtils.isHomeUri(getApplication(), aUrl.toString())) {
+                    url = "Home";
 
                 } else if (UrlUtils.isWebExtensionUrl(aUrl.toString())) {
                     url = getApplication().getString(R.string.web_extensions_title);
@@ -299,6 +299,7 @@ public class WindowViewModel extends AndroidViewModel {
                 if (UrlUtils.isPrivateAboutPage(getApplication(), aUrl) ||
                         (UrlUtils.isDataUri(aUrl) && isPrivateSession.getValue().get()) ||
                         UrlUtils.isFileUri(aUrl) ||
+                        UrlUtils.isHomeUrl(aUrl) ||
                         UrlUtils.isHomeUri(getApplication(), aUrl) ||
                         isNativeContentVisible.getValue().get() ||
                         UrlUtils.isBlankUri(getApplication(), aUrl)) {
@@ -426,7 +427,8 @@ public class WindowViewModel extends AndroidViewModel {
         if (aURL.startsWith("jar:")) {
             return;
 
-        } else if (aURL.startsWith("resource:") || UrlUtils.isHomeUri(getApplication().getBaseContext(), aURL)) {
+        } else if (aURL.startsWith("resource:") ||
+                (UrlUtils.isHomeUri(getApplication().getBaseContext(), aURL) && !UrlUtils.isHomeUrl(aURL))) {
             aURL = "";
 
         } else if (aURL.startsWith("data:") && isPrivateSession.getValue().get()) {
