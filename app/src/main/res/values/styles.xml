@@ -478,7 +478,7 @@
         <item name="android:breakStrategy">high_quality</item>
     </style>
 
-    <style name="FxR.Dark" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="FingerDance.Dark" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>

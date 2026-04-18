@@ -278,7 +278,7 @@ public class PlatformActivity extends FragmentActivity implements SensorEventLis
 
     private void initVisionGlassPhoneUI() {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        setTheme(R.style.FxR_Dark);
+        setTheme(R.style.FingerDance_Dark);
 
         ContextThemeWrapper themedContext = new ContextThemeWrapper(this, R.style.Theme_WolvicPhone);
         LayoutInflater themedInflater = getLayoutInflater().cloneInContext(themedContext);
