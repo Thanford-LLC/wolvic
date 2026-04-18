@@ -107,6 +107,25 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/chinaLicenseNumber" />
 
+        <TextView
+            android:id="@+id/fingerdanceAttribution"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:autoLink="web"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:linksClickable="true"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:paddingTop="8dp"
+            android:text="@string/fingerdance_attribution"
+            android:textColor="@color/white"
+            android:textColorLink="@color/azure"
+            android:textSize="@dimen/text_smaller_size"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/buildText" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/whatsNewButton"
             style="@style/SettingsLinkButtonStyle"
@@ -132,7 +151,7 @@
             android:scrollbars="none"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/buildText">
+            app:layout_constraintTop_toBottomOf="@id/fingerdanceAttribution">
 
             <HorizontalScrollView
                 android:layout_width="wrap_content"

@@ -637,6 +637,9 @@
     <!-- This string is used to label the homepage radio button that allows users to set the homepage they want. -->
     <string name="developer_options_homepage_other">Other</string>
 
+    <!-- Settings footer: FingerDance / Wolvic / MPL 2.0 attribution block. Canonical text per WOLVIC-COMPLIANCE.md §5.2 — do not paraphrase. -->
+    <string name="fingerdance_attribution">FingerDance is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/TODO/wolvic-fork\nOpen Source Licenses: coming before release.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
+
     <!-- This string is used to label a set of radio buttons that allow the user to change the
          User-Agent (UA) string of the browser. -->
     <string name="developer_options_ua_mode">User-Agent Mode</string>
