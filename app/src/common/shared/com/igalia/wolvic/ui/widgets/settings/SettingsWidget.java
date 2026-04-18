@@ -511,6 +511,9 @@ public class SettingsWidget extends UIDialog implements SettingsView.Delegate {
             case PRIVACY_POLICY:
                 showView(new LegalDocumentView(getContext(), mWidgetManager, LegalDocumentView.LegalDocument.PRIVACY_POLICY));
                 break;
+            case THIRD_PARTY_CREDITS:
+                showView(new ThirdPartyCreditsView(getContext(), mWidgetManager));
+                break;
         }
     }
 

@@ -17,7 +17,6 @@ import androidx.databinding.DataBindingUtil;
 import com.igalia.wolvic.R;
 import com.igalia.wolvic.VRBrowserApplication;
 import com.igalia.wolvic.browser.SettingsStore;
-import com.igalia.wolvic.browser.engine.SessionStore;
 import com.igalia.wolvic.databinding.OptionsEnvironmentBinding;
 import com.igalia.wolvic.ui.views.settings.ImageRadioGroupSetting;
 import com.igalia.wolvic.ui.views.settings.SwitchSetting;
@@ -71,10 +70,6 @@ class EnvironmentOptionsView extends SettingsView implements EnvironmentsManager
 
         mBinding.envOverrideSwitch.setOnCheckedChangeListener(mEnvOverrideListener);
         setEnvOverride(SettingsStore.getInstance(getContext()).isEnvironmentOverrideEnabled());
-        mBinding.envOverrideSwitch.setHelpDelegate(() -> {
-            SessionStore.get().getActiveSession().loadUri(getContext().getString(R.string.environment_override_help_url));
-            exitWholeSettings();
-        });
     }
 
     @Override
@@ -146,6 +141,10 @@ class EnvironmentOptionsView extends SettingsView implements EnvironmentsManager
         String env = SettingsStore.getInstance(getContext()).getEnvironment();
 
         Environment[] properties = EnvironmentUtils.getExternalEnvironments(getContext());
+        boolean hasRemoteEnvs = properties != null && properties.length > 0;
+        mBinding.thirdPartyCreditsLink.setVisibility(hasRemoteEnvs ? VISIBLE : GONE);
+        mBinding.thirdPartyCreditsLink.setOnClickListener(v ->
+                mDelegate.showView(SettingViewType.THIRD_PARTY_CREDITS));
         if (properties != null) {
             Arrays.stream(properties).forEach(environment -> {
                 mEnvironmentsRadio.addOption(

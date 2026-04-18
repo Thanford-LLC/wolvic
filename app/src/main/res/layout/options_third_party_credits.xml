@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/optionsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/dialog_background"
+        android:paddingStart="30dp"
+        android:paddingEnd="30dp">
+
+        <com.igalia.wolvic.ui.widgets.settings.SettingsHeader
+            android:id="@+id/header_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:helpVisibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:title="@string/third_party_credits_title" />
+
+        <com.igalia.wolvic.ui.views.CustomScrollView
+            android:id="@+id/scrollbar"
+            style="@style/customScrollViewStyle"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="30dp"
+            android:paddingEnd="30dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/header_layout">
+
+            <LinearLayout
+                android:id="@+id/creditsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="24dp">
+
+                <TextView
+                    android:id="@+id/creditsHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="@string/third_party_credits_header"
+                    android:textAppearance="@style/settingsText" />
+
+                <LinearLayout
+                    android:id="@+id/entriesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/creditsEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/third_party_credits_empty_state"
+                    android:textAppearance="@style/settingsText"
+                    android:visibility="gone" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@color/rhino" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/third_party_credits_modification_notice"
+                    android:textAppearance="@style/settingsText" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:autoLink="web"
+                    android:text="@string/third_party_credits_license_link"
+                    android:textAppearance="@style/settingsText"
+                    android:textColorLink="@color/azure" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/third_party_credits_disclaimer"
+                    android:textAppearance="@style/settingsText" />
+
+            </LinearLayout>
+        </com.igalia.wolvic.ui.views.CustomScrollView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

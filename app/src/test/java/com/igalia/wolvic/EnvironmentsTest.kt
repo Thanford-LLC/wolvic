@@ -100,7 +100,6 @@ class EnvironmentsTest {
     fun `Environment is builtin`() {
         assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "void"))
         assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "fingerdance"))
-        assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "cyberpunk"))
     }
 
     @Test

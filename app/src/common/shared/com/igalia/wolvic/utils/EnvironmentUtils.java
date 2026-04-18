@@ -169,7 +169,7 @@ public class EnvironmentUtils {
             if (properties.containsKey(versionName)) {
                 RemoteProperties versionProperties = properties.get(versionName);
                 if (versionProperties != null && versionProperties.getEnvironments() != null) {
-                    return versionProperties.getEnvironments();
+                    return filterCommercialUse(versionProperties.getEnvironments());
                 }
             }
 
@@ -180,12 +180,21 @@ public class EnvironmentUtils {
             for (String key : keysList) {
                 RemoteProperties props = properties.get(key);
                 if (props != null && props.getEnvironments() != null) {
-                    return props.getEnvironments();
+                    return filterCommercialUse(props.getEnvironments());
                 }
             }
         }
 
         return null;
+    }
+
+    // Shared wolvic/props.json mixes CC0, CC-BY, CC BY-NC-SA, and CC BY-NC-ND
+    // entries. NC (NonCommercial) and ND (NoDerivatives) terms forbid use in a
+    // paid app — must filter before exposing to the Settings picker.
+    private static Environment[] filterCommercialUse(Environment[] envs) {
+        return Arrays.stream(envs)
+                .filter(Environment::isPermittedForCommercialUse)
+                .toArray(Environment[]::new);
     }
 
     /**

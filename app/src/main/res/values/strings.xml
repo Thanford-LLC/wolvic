@@ -2374,6 +2374,27 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- This string is shown in the title of the error dialog displayed if there is any error during an environment setup. -->
     <string name="environment_error_title">Environment error</string>
 
+    <!-- Title of the Third-Party Credits settings screen, which lists creators and licenses for bundled/downloaded VR environments. -->
+    <string name="third_party_credits_title">Third-Party Credits</string>
+
+    <!-- Header shown above the list of credited third-party environments on the Third-Party Credits screen. -->
+    <string name="third_party_credits_header">FingerDance uses the following third-party environments, licensed under Creative Commons licenses:</string>
+
+    <!-- Prefix shown before a source URL hyperlink on the Third-Party Credits screen, e.g. "Source: https://polyhaven.com/...". -->
+    <string name="third_party_credits_source_prefix">Source: </string>
+
+    <!-- Link text to the full CC-BY 4.0 license on the Third-Party Credits screen. -->
+    <string name="third_party_credits_license_link">Read the full CC-BY 4.0 license text: https://creativecommons.org/licenses/by/4.0/legalcode</string>
+
+    <!-- Notice displayed on the Third-Party Credits screen indicating that the works have been modified. CC-BY 4.0 §3.a.1.b requires a modification indication. -->
+    <string name="third_party_credits_modification_notice">These works have been cropped, compressed, and reformatted as KTX cubemaps for VR display.</string>
+
+    <!-- Disclaimer of warranties shown on the Third-Party Credits screen. CC-BY 4.0 §3.a.1.iv requires the licensor's disclaimer to be retained. -->
+    <string name="third_party_credits_disclaimer">Unless otherwise separately undertaken by the Licensor, to the extent possible, the Licensor offers the Licensed Material as-is and as-available, and makes no representations or warranties of any kind concerning the Licensed Material, whether express, implied, statutory, or other. This includes, without limitation, warranties of title, merchantability, fitness for a particular purpose, non-infringement, absence of latent or other defects, accuracy, or the presence or absence of errors, whether or not known or discoverable.</string>
+
+    <!-- Message shown on the Third-Party Credits screen when no third-party environments are available (remote list empty or unreachable). -->
+    <string name="third_party_credits_empty_state">No third-party content loaded.</string>
+
     <!-- This string is shown in the title of the auto-fill save dialog. This dialog is displayed when the user send a login form and the system
     prompts the user to save that login to auto-fill the future. -->
     <string name="autofill_dialog_save_title">Save this login?</string>
