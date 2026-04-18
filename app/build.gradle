@@ -131,7 +131,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resValue 'string', 'app_name', 'FingerDance Browser'
-        resValue 'string', 'HOMEPAGE_URL', "resource://android/assets/fingerdance/homepage.html"
+        resValue 'string', 'HOMEPAGE_URL', "about://home"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++14 -fexceptions -frtti -Werror" +
@@ -491,6 +491,18 @@ android {
                     'src/common/shared',
                     'src/main/cpp/vrb/android/java'
             ]
+
+            // FingerDance skin selection.
+            // Override with -PfdSkin=signature|ice-rink|arcade at build time.
+            // Each skin dir contains values/colors-fd.xml (12 brand tokens + fd_hud_accent)
+            // and fingerdance/homepage.html. Only one is included per build.
+            def fdSkin = project.findProperty('fdSkin') ?: 'signature'
+            def fdSkinAllowed = ['signature', 'ice-rink', 'arcade']
+            if (!fdSkinAllowed.contains(fdSkin)) {
+                throw new GradleException("Invalid fdSkin=${fdSkin}. Allowed: ${fdSkinAllowed}")
+            }
+            res.srcDirs += ["src/main/res-fd-${fdSkin}"]
+            assets.srcDirs += ["src/main/assets-fd-${fdSkin}"]
         }
 
         release {

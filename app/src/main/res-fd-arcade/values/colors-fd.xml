@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Arcade skin — saturated, high-energy, competitive (fighting-game voice) -->
+
+    <color name="fd_bg">#FF0B0A12</color>
+    <color name="fd_surface">#FF1A1424</color>
+    <color name="fd_surface_raised">#FF2A1E3C</color>
+    <color name="fd_surface_hover">#FF3E2C57</color>
+    <color name="fd_border">#FF4D3A6B</color>
+    <color name="fd_border_strong">#FF6D5A8B</color>
+
+    <color name="fd_accent">#FFFF2E88</color>
+    <color name="fd_accent_hover">#FFFF5CA3</color>
+    <color name="fd_accent_pressed">#FFD41F6F</color>
+    <color name="fd_accent_muted">#24FF2E88</color>
+    <color name="fd_accent_glow">#61FF2E88</color>
+
+    <color name="fd_text">#FFF5EEFA</color>
+    <color name="fd_text_muted">#FFB8A9C8</color>
+    <color name="fd_text_dim">#FF8978A0</color>
+    <color name="fd_text_disabled">#FF4D3C60</color>
+
+    <color name="fd_error">#FFFF6B6B</color>
+    <color name="fd_error_bg">#1FFF6B6B</color>
+
+    <color name="fd_on_accent">#FF0B0A12</color>
+
+    <color name="fd_hud_accent">#F2FF2E88</color>
+</resources>

@@ -8,14 +8,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:          #08080f;
-      --surface:     #12122a;
-      --surface-hi:  #1a1a3d;
-      --border:      #2a2a50;
-      --accent:      #7c9fef;
-      --accent-glow: rgba(124, 159, 239, 0.25);
-      --text:        #e8e8f0;
-      --text-muted:  #606080;
+      --bg:          #050816;
+      --surface:     #0E1B3A;
+      --surface-hi:  #173059;
+      --border:      #2D4E8E;
+      --accent:      #8FE7FF;
+      --accent-glow: rgba(143, 231, 255, 0.38);
+      --text:        #EEF6FF;
+      --text-muted:  #9EB4CC;
       --radius:      16px;
     }
 
@@ -49,6 +49,7 @@
     }
 
     .search-wrap {
+      position: relative;
       display: flex;
       align-items: center;
       background: var(--surface);
@@ -58,6 +59,19 @@
       width: 500px;
       gap: 12px;
       transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    /* Ice Rink signature: 1px hairline on the top edge — a blade scratch on ice */
+    .search-wrap::before,
+    .cell::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: rgba(143, 231, 255, 0.10);
+      pointer-events: none;
     }
 
     .search-wrap:focus-within {
@@ -87,6 +101,7 @@
     }
 
     .cell {
+      position: relative;
       background: var(--surface);
       border: 2px solid var(--border);
       border-radius: var(--radius);
@@ -152,8 +167,8 @@
     <div class="logo">FingerDance</div>
     <div class="search-wrap">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="8.5" cy="8.5" r="5.5" stroke="#7c9fef" stroke-width="2"/>
-        <path d="M13 13l4 4" stroke="#7c9fef" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="8.5" cy="8.5" r="5.5" stroke="#8FE7FF" stroke-width="2"/>
+        <path d="M13 13l4 4" stroke="#8FE7FF" stroke-width="2" stroke-linecap="round"/>
       </svg>
       <input id="search" type="text" placeholder="Search or enter address" autocomplete="off" spellcheck="false">
     </div>
@@ -211,9 +226,7 @@
     const grid = document.getElementById('grid');
     const cells = Array.from(grid.querySelectorAll('.cell'));
     let focused = cells.findIndex(c => c.classList.contains('focused'));
-    if (focused < 0) focused = 1; // default: center top (Search)
-
-    // ── Focus management ─────────────────────────────────
+    if (focused < 0) focused = 1;
 
     function setFocus(idx) {
       const next = Math.max(0, Math.min(cells.length - 1, idx));
@@ -223,11 +236,7 @@
       cells[focused].classList.add('focused');
     }
 
-    // ── Wheel → directional navigation ──────────────────
-    // The joystick (no grip) emits scroll/wheel events.
-    // Accumulate until threshold, then snap to adjacent cell.
-
-    const SCROLL_THRESHOLD = 36; // px before moving one cell
+    const SCROLL_THRESHOLD = 36;
     let accumX = 0, accumY = 0;
 
     window.addEventListener('wheel', e => {
@@ -255,8 +264,6 @@
         setFocus(row * COLS + Math.max(0, col - 1));
       }
     }, { passive: false });
-
-    // ── Keyboard (fallback + controller trigger) ─────────
 
     window.addEventListener('keydown', e => {
       if (document.activeElement === document.getElementById('search')) return;
@@ -289,8 +296,6 @@
       }
     });
 
-    // ── Click activation ─────────────────────────────────
-
     cells.forEach((cell, i) => {
       cell.addEventListener('pointerdown', () => setFocus(i));
       cell.addEventListener('click', () => activate(cell));
@@ -313,8 +318,6 @@
       }
     }
 
-    // ── Search bar ───────────────────────────────────────
-
     const searchInput = document.getElementById('search');
 
     searchInput.addEventListener('keydown', e => {
@@ -327,7 +330,6 @@
       const raw = searchInput.value.trim();
       if (!raw) return;
 
-      // Looks like a URL if it contains a dot and no spaces, or starts with a scheme.
       const looksLikeUrl = /^[a-z][a-z0-9+\-.]*:\/\//i.test(raw) ||
                            (/\.\S+/.test(raw) && !/\s/.test(raw));
 
