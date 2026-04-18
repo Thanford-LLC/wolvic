@@ -77,7 +77,7 @@
         android:padding="10dp"
         android:scaleType="fitCenter"
         android:text="@string/ok_button"
-        android:textColor="@drawable/prompt_button_text_color"
+        android:textColor="@drawable/dialog_highlighted_button_text_color"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

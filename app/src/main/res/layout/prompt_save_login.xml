@@ -177,7 +177,7 @@
                 android:fontFamily="sans-serif"
                 android:scaleType="fitCenter"
                 android:text="@string/autofill_dialog_save_button_text"
-                android:textColor="@drawable/dialog_button_text_color"
+                android:textColor="@drawable/dialog_highlighted_button_text_color"
                 android:textStyle="bold" />
         </RelativeLayout>
     </RelativeLayout>
