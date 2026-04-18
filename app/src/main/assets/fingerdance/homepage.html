@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FingerDance</title>
+<style>
+:root {
+  --fd-yellow: #FDDE0A;
+  --fd-blue: #111259;
+  --fd-bg: #070825;
+  --fd-surface: #111259;
+  --fd-surface-raised: #1C1F7E;
+  --fd-surface-hover: #2A2DA3;
+  --fd-border: #32369E;
+  --fd-border-strong: #4B4FC7;
+  --fd-text: #F4F5FC;
+  --fd-text-muted: #A0A3D0;
+  --fd-text-dim: #6C6FA8;
+  --fd-accent: #FDDE0A;
+  --fd-accent-hover: #FFE84D;
+  --fd-accent-glow: rgba(253, 222, 10, 0.38);
+  --fd-on-accent: #111259;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--fd-bg);
+  color: var(--fd-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+main {
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+}
+.wordmark {
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  color: var(--fd-text);
+}
+.wordmark .accent { color: var(--fd-accent); }
+.tagline {
+  font-size: 20px;
+  color: var(--fd-text-muted);
+  margin: 0 0 40px;
+}
+.search {
+  display: flex;
+  gap: 8px;
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-border);
+  border-radius: 12px;
+  padding: 6px;
+  margin: 0 auto 32px;
+  max-width: 560px;
+}
+.search input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  color: var(--fd-text);
+  font-size: 18px;
+  padding: 12px 14px;
+  outline: none;
+}
+.search input::placeholder { color: var(--fd-text-dim); }
+.search button {
+  background: var(--fd-accent);
+  color: var(--fd-on-accent);
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.search button:hover { background: var(--fd-accent-hover); }
+.search button:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--fd-accent-glow);
+}
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tiles a {
+  display: block;
+  background: var(--fd-surface-raised);
+  border: 1px solid var(--fd-border);
+  border-radius: 10px;
+  padding: 18px;
+  color: var(--fd-text);
+  text-decoration: none;
+  font-weight: 500;
+}
+.tiles a:hover {
+  background: var(--fd-surface-hover);
+  border-color: var(--fd-border-strong);
+}
+.tiles a:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+footer {
+  margin-top: 48px;
+  color: var(--fd-text-dim);
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+<main>
+  <h1 class="wordmark">Finger<span class="accent">Dance</span></h1>
+  <p class="tagline">Joystick combo gestures for the immersive web.</p>
+  <form class="search" onsubmit="go(event)">
+    <input id="q" type="text" placeholder="Search or enter address" autocomplete="off">
+    <button type="submit">Go</button>
+  </form>
+  <ul class="tiles">
+    <li><a href="https://duckduckgo.com">DuckDuckGo</a></li>
+    <li><a href="https://www.wikipedia.org">Wikipedia</a></li>
+    <li><a href="https://immersive-web.github.io/webxr-samples/">WebXR Samples</a></li>
+    <li><a href="https://www.youtube.com">YouTube</a></li>
+  </ul>
+  <footer>Built on Wolvic — MPL 2.0.</footer>
+</main>
+<script>
+function go(e) {
+  e.preventDefault();
+  var q = document.getElementById('q').value.trim();
+  if (!q) return;
+  if (/^https?:\/\//i.test(q) || /^[^\s]+\.[^\s]+$/.test(q)) {
+    location.href = /^https?:\/\//i.test(q) ? q : 'https://' + q;
+  } else {
+    location.href = 'https://duckduckgo.com/?q=' + encodeURIComponent(q);
+  }
+}
+</script>
+</body>
+</html>
