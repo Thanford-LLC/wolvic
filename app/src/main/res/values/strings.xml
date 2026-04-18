@@ -793,7 +793,7 @@
 
     <!-- This string is used in the FxA account manager panel as a header for the sync options for syncing
          history, bookmarks, passwords, etc. -->
-    <string name="fxa_account_options_sync_description">Choose what to synchronize on your devices using Firefox</string>
+    <string name="fxa_account_options_sync_description">Choose what to synchronize across your devices</string>
 
     <!-- This string is used to in the FxA account manage panel as a description for the Bookmarks sync switch. -->
     <string name="fxa_account_options_bookmarks_sync">Bookmarks</string>
@@ -1042,7 +1042,7 @@
 
     <!-- This string explains why Mozilla would like the user to allow the crash data to be uploaded.
          '%1$s' will be replaced at runtime with the app's domain name. -->
-    <string name="crash_dialog_message"><![CDATA[Please help Mozilla improve %1$s by sending your crash data. <a href="more">Learn More</a>]]></string>
+    <string name="crash_dialog_message"><![CDATA[Please help us improve %1$s by sending your crash data. <a href="more">Learn More</a>]]></string>
 
     <!-- This string labels a checkbox in the crash dialog box. When checked, the user will no longer
          be prompted for permission to upload crash data after an application crash. -->
@@ -2160,11 +2160,12 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="whats_new_button_start_browsing">Start Browsing</string>
 
     <string name="deprecated_version_dialog_title">Support ending soon</string>
-    <string name="deprecated_version_dialog_body">This \"App Lab\" version of Wolvic will be removed by the end of October 2023.
-        \n\nPlease install the latest version of Wolvic from the Meta Quest Store.
-        \n\nIMPORTANT: unless you use Sync, the new Wolvic app will not have your bookmarks and tabs.</string>
+    <string name="deprecated_version_dialog_body">This version of FingerDance is no longer supported.
+        \n\nPlease install the latest version from the Meta Horizon Store.
+        \n\nIMPORTANT: unless you use Sync, the new app will not have your bookmarks and tabs.</string>
     <string name="deprecated_version_dialog_info_button">Learn more…</string>
-    <string name="deprecated_version_dialog_info_url" translatable="false">https://wolvic.com/support/firefox-sync/</string>
+    <!-- TODO: set before store submission -->
+    <string name="deprecated_version_dialog_info_url" translatable="false">https://fingerdance.app/TODO-support</string>
     <string name="deprecated_version_dialog_store_button">Install…</string>
 
     <!-- This string is displayed in the title of the slow script dialog. -->
@@ -2190,7 +2191,7 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="popup_dialog_button_on">On</string>
 
     <!-- This string is displayed in the off button of the quick Popup blocking dialog when it's in disabled state. It's accessed from the Popup icon in the URL bar. -->
-    <string name="popup_dialog_button_off">Off</string>https://wolvic.com/support/firefox-sync/
+    <string name="popup_dialog_button_off">Off</string>
 
     <!-- This string is displayed in the title of the quick WebXR blocking dialog, accessed from the VR icon in the URL bar.
      '%1$s' will be replaced at runtime with the status of the setting.
