@@ -124,7 +124,7 @@ public class SettingsImpl implements WSessionSettings {
     }
 
     public String getDefaultUserAgent(int mode) {
-        return mSessionSettings.getDefaultUserAgent(toUserAgentMode(mode)) + " Wolvic/" + BuildConfig.VERSION_NAME;
+        return mSessionSettings.getDefaultUserAgent(toUserAgentMode(mode)) + " FingerDance/" + BuildConfig.VERSION_NAME;
     }
 
     private SessionSettings.UserAgentMode toUserAgentMode(int mode) {

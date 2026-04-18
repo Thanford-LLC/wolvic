@@ -330,7 +330,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         BitmapCache.getInstance(this).onCreate();
 
         WRuntime runtime = EngineProvider.INSTANCE.getOrCreateRuntime(this);
-        runtime.appendAppNotesToCrashReport("Wolvic " + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "-" + BuildConfig.FLAVOR + "-" + BuildConfig.BUILD_TYPE + " (" + BuildConfig.GIT_HASH + ")");
+        runtime.appendAppNotesToCrashReport("FingerDance " + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "-" + BuildConfig.FLAVOR + "-" + BuildConfig.BUILD_TYPE + " (" + BuildConfig.GIT_HASH + ")");
 
         // Create broadcast receiver for getting crash messages from crash process
         IntentFilter intentFilter = new IntentFilter();
