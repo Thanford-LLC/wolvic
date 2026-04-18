@@ -33,7 +33,7 @@
                     android:shape="oval"
                     android:useLevel="false"
                     android:visible="true">
-                    <solid android:color="@color/fog" />
+                    <solid android:color="@color/dusk" />
                     <size
                         android:width="16dp"
                         android:height="16dp" />
@@ -54,7 +54,7 @@
                     android:shape="oval"
                     android:useLevel="false"
                     android:visible="true">
-                    <solid android:color="@color/fog" />
+                    <solid android:color="@color/dusk" />
                      <size
                         android:width="16dp"
                         android:height="16dp" />
@@ -75,7 +75,7 @@
                     android:shape="oval"
                     android:useLevel="false"
                     android:visible="true">
-                    <solid android:color="@color/fog" />
+                    <solid android:color="@color/dusk" />
                     <size
                         android:width="16dp"
                         android:height="16dp" />
