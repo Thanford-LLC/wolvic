@@ -594,16 +594,14 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      * fails (e.g. test context), defaults to RIGHT (2).
      */
     private int resolveActiveHandOrdinal() {
-        try {
-            Context ctx = getContext();
-            if (ctx instanceof VRBrowserActivity) {
-                VRBrowserActivity.ComboHand hand =
-                        ((VRBrowserActivity) ctx).getActiveComboControllerHand();
-                if (hand == VRBrowserActivity.ComboHand.LEFT)  return 1;
-                if (hand == VRBrowserActivity.ComboHand.RIGHT) return 2;
-                return 0; // NONE
-            }
-        } catch (Exception ignored) { /* non-VR context — fall through */ }
+        Context ctx = getContext();
+        if (ctx instanceof VRBrowserActivity) {
+            VRBrowserActivity.ComboHand hand =
+                    ((VRBrowserActivity) ctx).getActiveComboControllerHand();
+            if (hand == VRBrowserActivity.ComboHand.LEFT)  return 1;
+            if (hand == VRBrowserActivity.ComboHand.RIGHT) return 2;
+            return 0; // NONE
+        }
         return 2; // default to RIGHT
     }
 

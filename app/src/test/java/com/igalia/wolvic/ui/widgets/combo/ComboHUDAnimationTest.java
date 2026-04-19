@@ -145,16 +145,14 @@ public class ComboHUDAnimationTest {
         mAnim.updateCancellationState(mSmoother, 1016L);
         assertEquals(6, mAnim.cancelWinner);
 
-        // Progress drops to 0.28 (between REARM=0.25 and THRESHOLD=0.30) for 10 frames.
-        // 0.28 < 0.30, so disarming phase triggers. But we need 2 consecutive frames
-        // of the same candidate zone to clear.
+        // Progress smooths toward 0.28 (above REARM threshold 0.25) for 10 frames.
+        // Since progress > REARM, disarm debounce never accumulates and winner holds.
         mSmoother.accept(6, 0.28f);
         for (int f = 0; f < 10; f++) {
             mAnim.updateCancellationState(mSmoother, 1032L + f * 16L);
         }
-        // 0.28 < COMMIT_PREVIEW_REARM (0.25)? No, 0.28 > 0.25. So condition
-        // progress < COMMIT_PREVIEW_REARM is false → still same zone + progress >= rearm.
-        // cancelWinner should remain 6 (no disarm triggered).
+        // Still same zone (6) and progress > REARM (0.25), so the condition
+        // progress < REARM is false → cancelWinner remains 6 (no disarm triggered).
         assertEquals(6, mAnim.cancelWinner);
     }
 
