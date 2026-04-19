@@ -78,8 +78,12 @@ public class ComboDispatcher {
     private final Map<String, Integer> mTable4Dir = new HashMap<>();
     private final java.util.concurrent.CopyOnWriteArrayList<BindingsListener> mBindingsListeners =
             new java.util.concurrent.CopyOnWriteArrayList<>();
-    private String mLastChangedPathId = null;
-    private long mLastChangedAtMillis = 0L;
+    // volatile: getLastChangedPathId() / getLastChangedAtMillis() are public
+    // getters that may be polled from the render thread while stampBindingChange
+    // writes from the input/Settings thread. The memory barrier is required so
+    // a reader can't observe a stale pathId paired with a fresh timestamp.
+    private volatile String mLastChangedPathId = null;
+    private volatile long mLastChangedAtMillis = 0L;
 
     // Precomputed next-node index: prefix-as-Arrays.toString → legal next nodes.
     // Rebuilt in rebuildNextNodeIndex(), called from stampBindingChange() (tables

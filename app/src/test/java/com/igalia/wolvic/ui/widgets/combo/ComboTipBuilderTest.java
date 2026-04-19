@@ -109,7 +109,7 @@ public class ComboTipBuilderTest {
     public void buildAllFourDirMatchesDispatcher() {
         ComboDispatcher dispatcher = new ComboDispatcher(/*is4DirMode=*/true);
         List<ComboTipBuilder.TipCandidate> tips =
-                ComboTipBuilder.buildAll(dispatcher, mContext.getResources(), true);
+                ComboTipBuilder.buildAll(dispatcher, mContext.getResources());
 
         int metaCount = 0, bindingCount = 0;
         Set<String> ids = new HashSet<>();
@@ -127,7 +127,7 @@ public class ComboTipBuilderTest {
     public void buildAllEightDirMatchesDispatcher() {
         ComboDispatcher dispatcher = new ComboDispatcher(/*is4DirMode=*/false);
         List<ComboTipBuilder.TipCandidate> tips =
-                ComboTipBuilder.buildAll(dispatcher, mContext.getResources(), false);
+                ComboTipBuilder.buildAll(dispatcher, mContext.getResources());
 
         int metaCount = 0, bindingCount = 0;
         for (ComboTipBuilder.TipCandidate t : tips) {
@@ -146,7 +146,7 @@ public class ComboTipBuilderTest {
     public void buildAllMarksAllMetaTipsMustKnow() {
         ComboDispatcher dispatcher = new ComboDispatcher(/*is4DirMode=*/true);
         List<ComboTipBuilder.TipCandidate> tips =
-                ComboTipBuilder.buildAll(dispatcher, mContext.getResources(), true);
+                ComboTipBuilder.buildAll(dispatcher, mContext.getResources());
         int metaSeen = 0;
         for (ComboTipBuilder.TipCandidate t : tips) {
             if (t.metaStringRes == 0) continue;
@@ -232,7 +232,7 @@ public class ComboTipBuilderTest {
 
         // --- Baseline: default binding is A_SCROLL_TOP.
         List<ComboTipBuilder.TipCandidate> baselineTips =
-                ComboTipBuilder.buildAll(dispatcher, mContext.getResources(), true);
+                ComboTipBuilder.buildAll(dispatcher, mContext.getResources());
         ComboTipBuilder.TipCandidate baselineCandidate = findCandidateForPath(baselineTips, path);
         assertNotNull("baseline pool must contain {2,2} tip", baselineCandidate);
         assertEquals("default binding for {2,2} is A_SCROLL_TOP",
@@ -252,7 +252,7 @@ public class ComboTipBuilderTest {
         // any caching regression that kept the old actionInt alive would
         // fail here.
         List<ComboTipBuilder.TipCandidate> rebuiltTips =
-                ComboTipBuilder.buildAll(dispatcher, mContext.getResources(), true);
+                ComboTipBuilder.buildAll(dispatcher, mContext.getResources());
         ComboTipBuilder.TipCandidate rebuiltCandidate = findCandidateForPath(rebuiltTips, path);
         assertNotNull("rebuilt pool must still contain {2,2} tip", rebuiltCandidate);
         assertEquals("rebind must update actionInt in rebuilt pool",

@@ -27,7 +27,7 @@ import com.igalia.wolvic.input.ComboDispatcher;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -151,8 +151,24 @@ public final class ComboTipBuilder {
     // Render — binding tips (arrows + action icon)
     // ---------------------------------------------------------------------
 
-    /** Cache key: "<pathKey>#<actionInt>#<iconSizePx>#<color>". */
-    private static final HashMap<String, Spannable> BINDING_TIP_CACHE = new HashMap<>();
+    /**
+     * Cache key: "&lt;pathKey&gt;#&lt;actionInt&gt;#&lt;iconSizePx&gt;#&lt;color&gt;".
+     *
+     * <p>Bounded LRU (access-order). Realistic working set is ~34 bindings ×
+     * 1-2 icon sizes × 1-2 colors ≈ 100 entries, so 128 gives comfortable
+     * headroom while capping worst-case memory if a caller ever sweeps sizes
+     * or colors. Single-threaded by contract: {@link #renderBindingTip} is
+     * called from the render thread only. Wrap in
+     * {@link Collections#synchronizedMap(Map)} if that contract ever widens.
+     */
+    private static final int BINDING_TIP_CACHE_MAX = 128;
+    private static final Map<String, Spannable> BINDING_TIP_CACHE =
+            new LinkedHashMap<String, Spannable>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Spannable> eldest) {
+                    return size() > BINDING_TIP_CACHE_MAX;
+                }
+            };
 
     /** Invalidates the binding-tip Spannable cache. Call on bindings changed. */
     public static void clearCache() {
@@ -307,15 +323,12 @@ public final class ComboTipBuilder {
      * Enumerates the three meta tips followed by every active binding in
      * the dispatcher, each classified by {@link #classify(int[])}.
      *
-     * <p>The {@code is4DirMode} argument is accepted for parity with the
-     * Phase-3 HUD's mode-aware build call — the bindings come straight
-     * from {@code dispatcher.getAllBindings()} which already returns the
-     * correct table for the current mode. It's here so callers can pass
-     * intent without depending on the dispatcher's internal mode query.
+     * <p>Mode (4-dir vs 8-dir) is implicit: {@code dispatcher.getAllBindings()}
+     * already returns the table for the active mode. Callers that need to
+     * branch on mode explicitly can query {@code dispatcher.is4DirMode()}.
      */
     public static List<TipCandidate> buildAll(@NonNull ComboDispatcher dispatcher,
-                                              @NonNull Resources res,
-                                              boolean is4DirMode) {
+                                              @NonNull Resources res) {
         List<TipCandidate> out = new ArrayList<>();
 
         // Meta tips first.
@@ -346,13 +359,6 @@ public final class ComboTipBuilder {
                     action,
                     /* metaStringRes */ 0,
                     classify(path)));
-        }
-
-        // is4DirMode is passed for future use (e.g. explicit mode filtering);
-        // current implementation trusts dispatcher.getAllBindings() to be
-        // mode-consistent.
-        if (is4DirMode) {
-            // No-op — signature parity with Phase-3 HUD call site.
         }
 
         return Collections.unmodifiableList(out);
