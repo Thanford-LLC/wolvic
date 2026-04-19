@@ -2647,5 +2647,10 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="fd_meta_tip_release">Release grip to fire</string>
     <string name="fd_meta_tip_cancel">Click stick to cancel</string>
     <string name="fd_meta_tip_origin">Combos start from center</string>
+    <!-- Dead-end stub CTA shown in the bottom strip when the committed path
+         has no legal nexts and is not itself a binding. Phase 3c replaces
+         this with the handedness-reactive "Press A/X to create a new combo"
+         variant; the stub keeps the cancel affordance visible until then. -->
+    <string name="fd_meta_tip_dead_end_stub">Click stick to cancel</string>
 
 </resources>
