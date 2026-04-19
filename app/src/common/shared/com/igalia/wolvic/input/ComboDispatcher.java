@@ -107,6 +107,21 @@ public class ComboDispatcher {
         buildTables();
     }
 
+    /**
+     * Test-only: overwrite the action bound to {@code path} in both tables
+     * and stamp a bindings-changed event. Mirrors the effect of a user
+     * rebind without routing through the (not-yet-wired) Settings
+     * persistence layer. Production code must not call this.
+     */
+    @VisibleForTesting
+    public void setBindingForTest(@NonNull int[] path, int actionInt) {
+        String k = key(path);
+        mTable8Dir.put(k, actionInt);
+        mTable4Dir.put(k, actionInt);
+        mNextNodeIndexDirty = true;
+        stampBindingChange(k);
+    }
+
     private boolean mLastPushed4DirMode = false;
     private boolean mHasPushedMode = false;
     private void pushModeToNative() {

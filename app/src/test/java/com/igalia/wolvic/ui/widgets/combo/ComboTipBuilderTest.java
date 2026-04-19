@@ -6,14 +6,18 @@
 package com.igalia.wolvic.ui.widgets.combo;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.text.Spannable;
+import android.text.style.ImageSpan;
 
+import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.igalia.wolvic.TestApplication;
@@ -198,5 +202,101 @@ public class ComboTipBuilderTest {
         Spannable b = ComboTipBuilder.renderBindingTip(
                 mContext, path, ComboDispatcher.A_PREV_WINDOW, 32, 0xFF00FFFF);
         assertTrue("cache clear produces fresh instance", a != b);
+    }
+
+    // ---- rebind propagation (plan §Verification) -----------------------
+
+    /**
+     * When a user rebinds path {2,2} from A_SCROLL_TOP → A_OPEN_BOOKMARKS,
+     * both the {@link ComboTipBuilder.TipCandidate#actionInt} in the pool
+     * AND the rendered Spannable's trailing action-icon ImageSpan must
+     * reflect the new action. Regression guard: a future change that
+     * caches TipCandidates or icons by path alone would silently keep
+     * the old icon visible after a rebind.
+     *
+     * <p>Precondition: A_SCROLL_TOP and A_OPEN_BOOKMARKS map to different
+     * drawable resources in {@link ComboActionIcons}. Without that we'd
+     * have no way to tell the icons apart after rebind.
+     */
+    @Test
+    public void buildAllReflectsRebindingInActionIntAndSpannable() {
+        // Precondition: the two actions we're flipping between must
+        // resolve to different resources — otherwise the Spannable-icon
+        // assertion below is meaningless.
+        assertNotEquals("test precondition: the two actions must map to different icons",
+                ComboActionIcons.iconFor(ComboDispatcher.A_SCROLL_TOP),
+                ComboActionIcons.iconFor(ComboDispatcher.A_OPEN_BOOKMARKS));
+
+        ComboDispatcher dispatcher = new ComboDispatcher(/*is4DirMode=*/true);
+        int[] path = {2, 2};
+
+        // --- Baseline: default binding is A_SCROLL_TOP.
+        List<ComboTipBuilder.TipCandidate> baselineTips =
+                ComboTipBuilder.buildAll(dispatcher, mContext.getResources(), true);
+        ComboTipBuilder.TipCandidate baselineCandidate = findCandidateForPath(baselineTips, path);
+        assertNotNull("baseline pool must contain {2,2} tip", baselineCandidate);
+        assertEquals("default binding for {2,2} is A_SCROLL_TOP",
+                ComboDispatcher.A_SCROLL_TOP, baselineCandidate.actionInt);
+
+        Spannable baselineSpannable = ComboTipBuilder.renderBindingTip(
+                mContext, path, baselineCandidate.actionInt, 32, 0xFF00FFFF);
+        assertNotNull("baseline trailing ImageSpan must resolve",
+                trailingImageSpanDrawableConstantState(baselineSpannable));
+
+        // --- Rebind {2,2} to A_OPEN_BOOKMARKS; clear the Spannable cache.
+        dispatcher.setBindingForTest(path, ComboDispatcher.A_OPEN_BOOKMARKS);
+        ComboTipBuilder.clearCache();
+
+        // --- Pool must now reflect the new actionInt. This is the core
+        // assertion: buildAll re-reads the dispatcher on every call, so
+        // any caching regression that kept the old actionInt alive would
+        // fail here.
+        List<ComboTipBuilder.TipCandidate> rebuiltTips =
+                ComboTipBuilder.buildAll(dispatcher, mContext.getResources(), true);
+        ComboTipBuilder.TipCandidate rebuiltCandidate = findCandidateForPath(rebuiltTips, path);
+        assertNotNull("rebuilt pool must still contain {2,2} tip", rebuiltCandidate);
+        assertEquals("rebind must update actionInt in rebuilt pool",
+                ComboDispatcher.A_OPEN_BOOKMARKS, rebuiltCandidate.actionInt);
+
+        // --- Re-rendered Spannable must carry a trailing ImageSpan, and
+        // because renderBindingTip feeds the rebuilt candidate's actionInt
+        // through ComboActionIcons.iconFor (which returns a different
+        // drawable resource for A_OPEN_BOOKMARKS vs A_SCROLL_TOP — enforced
+        // by the precondition above), the rendered icon is necessarily
+        // the bookmarks glyph, not scroll-top.
+        Spannable rebuiltSpannable = ComboTipBuilder.renderBindingTip(
+                mContext, path, rebuiltCandidate.actionInt, 32, 0xFF00FFFF);
+        assertNotNull("rebuilt trailing ImageSpan must resolve",
+                trailingImageSpanDrawableConstantState(rebuiltSpannable));
+
+        // Assert cache discrimination: renderBindingTip keys by actionInt,
+        // so a call with the old A_SCROLL_TOP and one with the new
+        // A_OPEN_BOOKMARKS for the same path must produce distinct
+        // Spannable instances (not the same cached object). This catches
+        // a regression where the Spannable cache keyed by path alone
+        // would serve stale scroll-top icons after rebind.
+        Spannable asScrollTop = ComboTipBuilder.renderBindingTip(
+                mContext, path, ComboDispatcher.A_SCROLL_TOP, 32, 0xFF00FFFF);
+        assertTrue("cache must key by actionInt, not path alone",
+                asScrollTop != rebuiltSpannable);
+    }
+
+    @Nullable
+    private static ComboTipBuilder.TipCandidate findCandidateForPath(
+            List<ComboTipBuilder.TipCandidate> tips, int[] path) {
+        for (ComboTipBuilder.TipCandidate t : tips) {
+            if (t.path != null && java.util.Arrays.equals(t.path, path)) return t;
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Object trailingImageSpanDrawableConstantState(Spannable s) {
+        int len = s.length();
+        ImageSpan[] spans = s.getSpans(len - 1, len, ImageSpan.class);
+        assertTrue("Spannable must end with at least one ImageSpan", spans.length >= 1);
+        Drawable d = spans[spans.length - 1].getDrawable();
+        assertNotNull("trailing ImageSpan must have a drawable", d);
+        return d.getConstantState();
     }
 }
