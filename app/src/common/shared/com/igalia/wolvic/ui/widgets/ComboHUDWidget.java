@@ -3,7 +3,6 @@ package com.igalia.wolvic.ui.widgets;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -33,10 +32,8 @@ import com.igalia.wolvic.ui.widgets.combo.ComboActionIcons;
 import com.igalia.wolvic.ui.widgets.combo.ComboTipBuilder;
 import com.igalia.wolvic.ui.widgets.combo.ComboTipSelector;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -131,6 +128,31 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private final Path mGhostPathScratch = new Path();
     private final DashPathEffect mGhostDash = new DashPathEffect(new float[]{14f, 8f}, 0f);
     private final RectF mPillRect = new RectF();
+    // Scratch geometry reused per frame in drawHUD — §5.2 zero-heap on hot path.
+    private final Path mWedgePathScratch = new Path();
+    private final RectF mOuterRectScratch = new RectF();
+    private final RectF mInnerRectScratch = new RectF();
+
+    // Cached 4-dir/8-dir mode flag. Avoids a SharedPreferences read per frame
+    // in drawHUD. Updated at attach time and on BindingsChanged (mode flips
+    // go through stampBindingChange → onBindingsChanged).
+    private boolean mIs4DirMode = true;
+
+    // Ghost-layer rebuild-on-change cache. The ghost entries depend only on
+    // (committed path, dispatcher bindings); both are invalidated via version
+    // bumps. drawGhostLayer reads mGhostScratch[0..mGhostCount) per frame with
+    // zero allocation.
+    private static final int GHOST_CAP = 5;
+    private final GhostEntry[] mGhostScratch = new GhostEntry[GHOST_CAP];
+    private int mGhostCount = 0;
+    private int mGhostCommittedPathVersion = 0;
+    private int mLastGhostVersion = -1;
+    // Reusable scratch for building "committed path + nextNode" lookups during
+    // ghost rebuild. Committed path caps at 8 (mCommittedPath.length), so the
+    // extended path caps at 9. Arrays.copyOf still allocates fresh per entry
+    // because the dispatcher key() hashes the full array — but that happens
+    // only on rebuild, not per frame.
+    private final int[] mExtendedPathScratch = new int[9];
 
     // Cached tinted icon drawables. Keyed by drawable resource id; every entry
     // has been .mutate()'d before setColorFilter() to prevent cross-contamination
@@ -155,7 +177,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     public ComboHUDWidget(Context aContext) {
         super(aContext);
-        android.util.Log.e("ComboHUD", "Constructor called, handle=" + getHandle());
         mColorBg           = aContext.getColor(R.color.fd_hud_bg);
         mColorBgStroke     = aContext.getColor(R.color.fd_hud_bg_stroke);
         mColorWedgeIdle    = aContext.getColor(R.color.fd_hud_wedge_idle);
@@ -199,7 +220,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     @Override
     public void setSurfaceTexture(android.graphics.SurfaceTexture aTexture, final int aWidth, final int aHeight, Runnable aFirstDrawCallback) {
-        android.util.Log.e("ComboHUD", "setSurfaceTexture w=" + aWidth + " h=" + aHeight + " tex=" + aTexture);
         super.setSurfaceTexture(aTexture, aWidth, aHeight, aFirstDrawCallback);
     }
 
@@ -247,7 +267,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     @Override
     public void show(@ShowFlags int aShowFlags) {
-        android.util.Log.e("ComboHUD", "show() called, visible=" + mWidgetPlacement.visible + " composited=" + mWidgetPlacement.composited);
         super.show(aShowFlags);
     }
 
@@ -261,7 +280,23 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         if (mDispatcher != null) mDispatcher.removeBindingsListener(this);
         mDispatcher = dispatcher;
         mDispatcher.addBindingsListener(this);
+        refreshModeFlag();
         rebuildTipPool();
+    }
+
+    /**
+     * Refresh the cached 4-dir/8-dir flag from SharedPreferences. Called at
+     * attach time and on binding changes (mode flips route through
+     * stampBindingChange → onBindingsChanged).
+     */
+    private void refreshModeFlag() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        boolean nowFourDir = prefs.getBoolean("fingerdance_combo_4dir_mode", true);
+        if (mIs4DirMode != nowFourDir) {
+            mIs4DirMode = nowFourDir;
+            // Mode flip changes which node is a legal next step → ghost cache stale.
+            mGhostCommittedPathVersion++;
+        }
     }
 
     /** Update with confirmed path (nodes that have been activated). */
@@ -386,8 +421,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     }
 
     private boolean is4DirMode() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-        return prefs.getBoolean("fingerdance_combo_4dir_mode", true);
+        return mIs4DirMode;
     }
 
     public void resetPath() {
@@ -421,10 +455,15 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     public void onBindingsChanged() {
         // Dispatcher may fire from any thread; hop to main before touching view state.
         if (Looper.myLooper() == Looper.getMainLooper()) {
+            refreshModeFlag();
+            // Bindings mutated → legal-nexts + action-for-path answers differ → ghost cache stale.
+            mGhostCommittedPathVersion++;
             rebuildTipPool();
             if (mCanvasView != null) mCanvasView.invalidate();
         } else {
             mMainHandler.post(() -> {
+                refreshModeFlag();
+                mGhostCommittedPathVersion++;
                 rebuildTipPool();
                 if (mCanvasView != null) mCanvasView.invalidate();
             });
@@ -454,6 +493,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mCommitPreviewSpannable = null;
         mCommitPreviewPathKey = null;
         mCommitPreviewActionKey = ComboDispatcher.A_NONE;
+        // Ghost entries are keyed off the committed path too — bump the version
+        // so drawGhostLayer rebuilds on next draw (no allocation per frame).
+        mGhostCommittedPathVersion++;
     }
 
     @Nullable
@@ -547,11 +589,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     // ── Drawing ───────────────────────────────────────────
 
-    private static int sDrawCount = 0;
     private void drawHUD(Canvas canvas, int w, int h) {
-        if (sDrawCount++ % 60 == 0) {
-            android.util.Log.e("ComboHUD", "drawHUD #" + sDrawCount + " w=" + w + " h=" + h);
-        }
         // Scale the dial drawing to the top (w × (h - tipStrip)) band so the
         // extra 60px canvas growth does not shrink the dial itself.
         int tipStripPx = Math.round(TIP_STRIP_H * (h / (float) WIDGET_H));
@@ -585,8 +623,8 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         final float stepDeg = 360f / count;
         final float halfWidth = stepDeg / 2f;
 
-        RectF outerRect = new RectF(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
-        RectF innerRect = new RectF(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
+        mOuterRectScratch.set(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
+        mInnerRectScratch.set(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
 
         // Pass 1: wedges + labels + dividers. Wedge = joystick direction
         // preview only (no confirmed state — confirmation is the outer dot).
@@ -603,11 +641,11 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             // setAlpha here would clobber it and force every wedge to 100%.
             mWedgePaint.setColor(isPreview ? mColorWedgePreview : mColorWedgeIdle);
 
-            Path wedge = new Path();
-            wedge.arcTo(outerRect, startAngle, sweep, true);
-            wedge.arcTo(innerRect, startAngle + sweep, -sweep);
-            wedge.close();
-            canvas.drawPath(wedge, mWedgePaint);
+            mWedgePathScratch.reset();
+            mWedgePathScratch.arcTo(mOuterRectScratch, startAngle, sweep, true);
+            mWedgePathScratch.arcTo(mInnerRectScratch, startAngle + sweep, -sweep);
+            mWedgePathScratch.close();
+            canvas.drawPath(mWedgePathScratch, mWedgePaint);
 
             // Divider line between wedges
             float lineAngle = (float) Math.toRadians(startAngle);
@@ -724,47 +762,41 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      * Draws dashed ghost curves from {@code lastNode} to every legal next
      * node, each with an action-icon pill offset radially. Static only —
      * breathing / stick-reactive fill is Phase 3c.
+     *
+     * Per-frame allocation is zero: the ghost entries are rebuilt only when
+     * the committed-path / bindings version changes (rebuildGhostEntries()),
+     * and drawn here by iterating a preallocated fixed-capacity array.
      */
     private void drawGhostLayer(Canvas canvas, float cx, float cy,
                                  float dotR, float dotBaseR,
                                  int[] nodes, int count, float stepDeg, float halfWidth) {
-        int[] snapshot = Arrays.copyOf(mCommittedPath, mPathLength);
-        int lastNode = snapshot[snapshot.length - 1];
-        Set<Integer> legalNexts = mDispatcher.getLegalNextNodes(snapshot);
-
-        // Collect + sort by (length asc, actionInt asc). Cap at 5.
-        ArrayList<GhostEntry> ghosts = new ArrayList<>(legalNexts.size());
-        for (int nextNode : legalNexts) {
-            if (nextNode == 5) continue;
-            int[] extended = new int[snapshot.length + 1];
-            System.arraycopy(snapshot, 0, extended, 0, snapshot.length);
-            extended[snapshot.length] = nextNode;
-            int action = mDispatcher.getActionForExactPath(extended);
-            if (action == ComboDispatcher.A_NONE) continue;
-            ghosts.add(new GhostEntry(nextNode, extended.length, action));
+        if (mLastGhostVersion != mGhostCommittedPathVersion) {
+            rebuildGhostEntries();
+            mLastGhostVersion = mGhostCommittedPathVersion;
         }
-        Collections.sort(ghosts, GHOST_COMPARATOR);
-        if (ghosts.size() > 5) ghosts = new ArrayList<>(ghosts.subList(0, 5));
+        if (mGhostCount == 0) return;
 
-        // Map each node to its wedge index → dot angle.
-        for (GhostEntry g : ghosts) {
-            int idxFrom = indexOfNode(nodes, count, lastNode);
-            int idxTo   = indexOfNode(nodes, count, g.nextNode);
-            if (idxFrom < 0 || idxTo < 0) continue;
+        int lastNode = mCommittedPath[mPathLength - 1];
+        int idxFrom = indexOfNode(nodes, count, lastNode);
+        if (idxFrom < 0) return;
+        float fromMid = (float) Math.toRadians(-(idxFrom * stepDeg));
+        float fromX = cx + dotR * (float) Math.cos(fromMid);
+        float fromY = cy + dotR * (float) Math.sin(fromMid);
 
-            float fromMid = (float) Math.toRadians(-(idxFrom * stepDeg));
-            float toMid   = (float) Math.toRadians(-(idxTo * stepDeg));
-            float fromX = cx + dotR * (float) Math.cos(fromMid);
-            float fromY = cy + dotR * (float) Math.sin(fromMid);
+        // mGhostPaint is fully configured in the constructor (style/stroke/color/
+        // pathEffect). Nothing to reset per entry.
+        for (int i = 0; i < mGhostCount; i++) {
+            GhostEntry g = mGhostScratch[i];
+            int idxTo = indexOfNode(nodes, count, g.nextNode);
+            if (idxTo < 0) continue;
+
+            float toMid = (float) Math.toRadians(-(idxTo * stepDeg));
             float toX   = cx + dotR * (float) Math.cos(toMid);
             float toY   = cy + dotR * (float) Math.sin(toMid);
 
             // Re-strike: same-node extension (e.g. 2→2). Draw a dashed ring
             // around the last-node's confirmation dot instead of a curve.
             if (g.nextNode == lastNode) {
-                mGhostPaint.setColor(mColorGhostYellow);
-                mGhostPaint.setStrokeWidth(3f);
-                mGhostPaint.setPathEffect(mGhostDash);
                 canvas.drawCircle(fromX, fromY, dotBaseR * 1.8f, mGhostPaint);
             } else {
                 mGhostPathScratch.reset();
@@ -774,9 +806,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
                 // both control points produces a consistent arc for cardinal
                 // pairs and adjacent diagonals.
                 mGhostPathScratch.cubicTo(cx, cy, cx, cy, toX, toY);
-                mGhostPaint.setColor(mColorGhostYellow);
-                mGhostPaint.setStrokeWidth(3f);
-                mGhostPaint.setPathEffect(mGhostDash);
                 canvas.drawPath(mGhostPathScratch, mGhostPaint);
             }
 
@@ -787,32 +816,107 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             float pillY = cy + pillR * (float) Math.sin(toMid);
             drawIconPill(canvas, pillX, pillY, ComboActionIcons.iconFor(g.actionInt));
         }
+    }
 
-        // Re-strike: if [...path, lastNode] (i.e. striking last node again) is
-        // itself a binding, draw the 1.8× dashed ring. This is covered above
-        // when lastNode ∈ legalNexts, but if it's absent from legalNexts
-        // (edge case where the precomputed index missed it), handle it here.
-        int[] reStrike = new int[snapshot.length + 1];
-        System.arraycopy(snapshot, 0, reStrike, 0, snapshot.length);
-        reStrike[snapshot.length] = lastNode;
-        if (!legalNexts.contains(lastNode)
-                && mDispatcher.getActionForExactPath(reStrike) != ComboDispatcher.A_NONE) {
-            int idxFrom = indexOfNode(nodes, count, lastNode);
-            if (idxFrom >= 0) {
-                float fromMid = (float) Math.toRadians(-(idxFrom * stepDeg));
-                float fromX = cx + dotR * (float) Math.cos(fromMid);
-                float fromY = cy + dotR * (float) Math.sin(fromMid);
-                mGhostPaint.setColor(mColorGhostYellow);
-                mGhostPaint.setStrokeWidth(3f);
-                mGhostPaint.setPathEffect(mGhostDash);
-                canvas.drawCircle(fromX, fromY, dotBaseR * 1.8f, mGhostPaint);
-                float pillR = dotR + 48f;
-                float pillX = cx + pillR * (float) Math.cos(fromMid);
-                float pillY = cy + pillR * (float) Math.sin(fromMid);
-                drawIconPill(canvas, pillX, pillY,
-                        ComboActionIcons.iconFor(mDispatcher.getActionForExactPath(reStrike)));
+    /**
+     * Rebuild ghost entries from the current committed path + dispatcher
+     * bindings. Called only when mGhostCommittedPathVersion bumps (committed
+     * path mutated, bindings changed, or mode flipped). The per-entry
+     * allocations here are bounded: O(legalNexts) int[] lookups capped at 8
+     * legal nodes; final entry set capped at GHOST_CAP=5.
+     *
+     * Writes into mGhostScratch[0..mGhostCount). Entries are kept in sort
+     * order (length asc, actionInt asc) via insertion at each add — the array
+     * is at most 5 long so this is effectively free.
+     */
+    private void rebuildGhostEntries() {
+        mGhostCount = 0;
+        if (mDispatcher == null || mPathLength == 0) return;
+        int lastNode = mCommittedPath[mPathLength - 1];
+
+        // Copy committed path into the head of mExtendedPathScratch once; the
+        // trailing slot [mPathLength] gets mutated per candidate. The API call
+        // itself still allocates a fresh int[] via Arrays.copyOf (see the dispatcher's
+        // key() hash), but only during rebuild — not per frame.
+        System.arraycopy(mCommittedPath, 0, mExtendedPathScratch, 0, mPathLength);
+        int extLen = mPathLength + 1;
+
+        Set<Integer> legalNexts = mDispatcher.getLegalNextNodes(
+                Arrays.copyOf(mCommittedPath, mPathLength));
+        for (Integer boxedNext : legalNexts) {
+            int nextNode = boxedNext;
+            if (nextNode == 5) continue;
+            mExtendedPathScratch[mPathLength] = nextNode;
+            int[] extended = Arrays.copyOf(mExtendedPathScratch, extLen);
+            int action = mDispatcher.getActionForExactPath(extended);
+            if (action == ComboDispatcher.A_NONE) continue;
+            insertGhostSorted(nextNode, extLen, action);
+        }
+
+        // Re-strike fallback: if lastNode is absent from legalNexts but
+        // [...path, lastNode] is still a binding, surface it. (Edge case where
+        // the precomputed next-node index missed it.)
+        if (!legalNexts.contains(lastNode) && !containsGhostForNode(lastNode)) {
+            mExtendedPathScratch[mPathLength] = lastNode;
+            int[] extended = Arrays.copyOf(mExtendedPathScratch, extLen);
+            int action = mDispatcher.getActionForExactPath(extended);
+            if (action != ComboDispatcher.A_NONE) {
+                insertGhostSorted(lastNode, extLen, action);
             }
         }
+    }
+
+    private boolean containsGhostForNode(int node) {
+        for (int i = 0; i < mGhostCount; i++) {
+            if (mGhostScratch[i].nextNode == node) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Insert into mGhostScratch preserving (pathLength asc, actionInt asc)
+     * order. Capacity capped at GHOST_CAP — drops larger/higher-actionInt
+     * entries past the cap. Entries are mutated in place (no allocation in
+     * steady state — only the first few calls allocate a GhostEntry, and the
+     * array reuses those slots on subsequent rebuilds).
+     */
+    private void insertGhostSorted(int nextNode, int pathLength, int actionInt) {
+        // Find insertion index.
+        int idx = 0;
+        while (idx < mGhostCount) {
+            GhostEntry e = mGhostScratch[idx];
+            int c = Integer.compare(pathLength, e.pathLength);
+            if (c == 0) c = Integer.compare(actionInt, e.actionInt);
+            if (c < 0) break;
+            idx++;
+        }
+        if (idx >= GHOST_CAP) return;  // worse than every existing entry and full.
+        // Shift tail right (drop last if full).
+        int end = Math.min(mGhostCount, GHOST_CAP - 1);
+        // We'll shift [idx..end) → [idx+1..end+1), but swap-in-place using
+        // existing GhostEntry slots so we don't allocate. Since GhostEntry is
+        // a tiny object held directly in the array, we cascade its fields.
+        for (int j = end; j > idx; j--) {
+            GhostEntry dst = getOrCreateGhostSlot(j);
+            GhostEntry src = mGhostScratch[j - 1];
+            dst.nextNode = src.nextNode;
+            dst.pathLength = src.pathLength;
+            dst.actionInt = src.actionInt;
+        }
+        GhostEntry slot = getOrCreateGhostSlot(idx);
+        slot.nextNode = nextNode;
+        slot.pathLength = pathLength;
+        slot.actionInt = actionInt;
+        if (mGhostCount < GHOST_CAP) mGhostCount++;
+    }
+
+    private GhostEntry getOrCreateGhostSlot(int i) {
+        GhostEntry e = mGhostScratch[i];
+        if (e == null) {
+            e = new GhostEntry();
+            mGhostScratch[i] = e;
+        }
+        return e;
     }
 
     private static int indexOfNode(int[] nodes, int count, int node) {
@@ -822,21 +926,11 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         return -1;
     }
 
-    private static final Comparator<GhostEntry> GHOST_COMPARATOR = (a, b) -> {
-        int c = Integer.compare(a.pathLength, b.pathLength);
-        return c != 0 ? c : Integer.compare(a.actionInt, b.actionInt);
-    };
-
-    /** Small holder for ghost sort + render. */
+    /** Small mutable holder for ghost render entries, reused across rebuilds. */
     private static final class GhostEntry {
-        final int nextNode;
-        final int pathLength;
-        final int actionInt;
-        GhostEntry(int nextNode, int pathLength, int actionInt) {
-            this.nextNode = nextNode;
-            this.pathLength = pathLength;
-            this.actionInt = actionInt;
-        }
+        int nextNode;
+        int pathLength;
+        int actionInt;
     }
 
     /**
