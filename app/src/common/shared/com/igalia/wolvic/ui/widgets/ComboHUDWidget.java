@@ -217,6 +217,16 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // Stored as ordinal int (NONE=0, LEFT=1, RIGHT=2) to stay primitive.
     private int mCommitPreviewHandOrdinal = -1;
 
+    // Ellipsize cache for drawTipStrip — avoids per-frame TextUtils.ellipsize
+    // allocation (§5.2 zero-heap on hot path).
+    // Cache keys: the active TipCandidate object reference (changes on tip rotation)
+    // + the committed-path version (changes on every node commit or binding change)
+    // + the available strip width. All three must match for a cache hit.
+    @Nullable private CharSequence mEllipsizedTip;
+    @Nullable private ComboTipBuilder.TipCandidate mEllipsizedTipKey;
+    private int mEllipsizedTipVersion = -1;
+    private float mEllipsizedTipWidth = -1f;
+
     private View mCanvasView;
 
     public ComboHUDWidget(Context aContext) {
@@ -542,6 +552,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // Ghost entries are keyed off the committed path too — bump the version
         // so drawGhostLayer rebuilds on next draw (no allocation per frame).
         mGhostCommittedPathVersion++;
+        // New node committed → reset any stale cancel winner so competitor ghosts
+        // on the new path don't appear pre-faded for a frame (Phase 3 review Fix 3).
+        mGhostAnim.resetCancel();
     }
 
     @Nullable
@@ -1123,8 +1136,19 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         if (cs == null || cs.length() == 0) return;
         float stripCenterY = dialH + tipStripPx * 0.5f;
         float baseline = stripCenterY - (mTipPaint.descent() + mTipPaint.ascent()) / 2f;
-        CharSequence rendered = TextUtils.ellipsize(cs, mTipPaint,
-                w - 16f, TextUtils.TruncateAt.END);
+        float availWidth = w - 16f;
+        // Cache the ellipsize result to avoid per-frame allocation (§5.2 zero-heap).
+        // Key: current TipCandidate identity + committed-path version + available width.
+        // mCurrentTip is null while BUILDING (path > 0), so version key covers that leg.
+        if (mCurrentTip != mEllipsizedTipKey
+                || mGhostCommittedPathVersion != mEllipsizedTipVersion
+                || availWidth != mEllipsizedTipWidth) {
+            mEllipsizedTip = TextUtils.ellipsize(cs, mTipPaint, availWidth, TextUtils.TruncateAt.END);
+            mEllipsizedTipKey = mCurrentTip;
+            mEllipsizedTipVersion = mGhostCommittedPathVersion;
+            mEllipsizedTipWidth = availWidth;
+        }
+        CharSequence rendered = mEllipsizedTip;
         canvas.drawText(rendered, 0, rendered.length(), w / 2f, baseline, mTipPaint);
     }
 

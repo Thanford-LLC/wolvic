@@ -1364,6 +1364,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
                 } else if (!anyGripHeld) {
                     mHUDWidget.hide(UIWidget.KEEP_WIDGET);
                 }
+                mHUDWidget.updateGripState(anyGripHeld);
             }
         });
     }
