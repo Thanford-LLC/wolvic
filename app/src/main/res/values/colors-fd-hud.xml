@@ -23,4 +23,12 @@
     <color name="fd_hud_text_hit">#FFFDDE0A</color>
     <!-- Last-activated pip core: brand navy. -->
     <color name="fd_hud_text_last">#FF111259</color>
+
+    <!-- Combo-tips HUD layer (Phase 1 additions) -->
+    <!-- Ghost next-move trace line/circle — brand yellow @ 70% alpha. -->
+    <color name="fd_hud_ghost_yellow">#B3FDDE0A</color>
+    <!-- Idle tip-strip text — fd-text-dim at full alpha, muted on purpose. -->
+    <color name="fd_hud_tip_text">#FF6C6FA8</color>
+    <!-- Icon-pill background behind action icons — fd-blue @ 80% alpha. -->
+    <color name="fd_hud_label_pill">#CC111259</color>
 </resources>

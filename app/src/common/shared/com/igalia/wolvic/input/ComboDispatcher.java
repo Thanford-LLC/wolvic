@@ -63,10 +63,19 @@ public class ComboDispatcher {
     public static final int A_READER_MODE     = 25;
     public static final int A_PRIVATE_WINDOW  = 26;
 
+    /** Listener for changes to the active binding table. */
+    public interface BindingsListener {
+        void onBindingsChanged();
+    }
+
     private final Windows mWindows;
     private final WidgetManagerDelegate mWidgetManager;
     private final Map<String, Integer> mTable8Dir = new HashMap<>();
     private final Map<String, Integer> mTable4Dir = new HashMap<>();
+    private final java.util.concurrent.CopyOnWriteArrayList<BindingsListener> mBindingsListeners =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile String mLastChangedPathId = null;
+    private volatile long mLastChangedAtMillis = 0L;
 
     public ComboDispatcher(@NonNull Windows windows, @NonNull WidgetManagerDelegate widgetManager) {
         mWindows = windows;
@@ -75,9 +84,16 @@ public class ComboDispatcher {
         pushModeToNative();
     }
 
+    private Boolean mLastPushed4DirMode = null;
     private void pushModeToNative() {
+        boolean now4Dir = is4DirMode();
         if (mWidgetManager instanceof VRBrowserActivity) {
-            ((VRBrowserActivity) mWidgetManager).setComboFourDirMode(is4DirMode());
+            ((VRBrowserActivity) mWidgetManager).setComboFourDirMode(now4Dir);
+        }
+        if (mLastPushed4DirMode == null || mLastPushed4DirMode != now4Dir) {
+            boolean first = (mLastPushed4DirMode == null);
+            mLastPushed4DirMode = now4Dir;
+            if (!first) fireBindingsChanged();
         }
     }
 
@@ -139,6 +155,20 @@ public class ComboDispatcher {
         }
     }
 
+    /**
+     * Rebuilds the combo tables from persisted user overrides. v1 ships a stub
+     * body — the Settings screen plan wires up SharedPreferences persistence.
+     * Fires BindingsChanged on completion so subscribed listeners (HUD tip pool)
+     * can refresh.
+     */
+    public void reloadBindings() {
+        // Reset to defaults; Settings persistence plan will add SharedPreferences override reading.
+        mTable8Dir.clear();
+        mTable4Dir.clear();
+        buildTables();
+        fireBindingsChanged();
+    }
+
     private void putBoth(int action, int... path) {
         String k = key(path);
         mTable8Dir.put(k, action);
@@ -147,6 +177,19 @@ public class ComboDispatcher {
 
     private static String key(int... path) {
         return Arrays.toString(path);
+    }
+
+    /** Inverse of key(int...) — parses "[2, 4, 6]" back to int[]. */
+    private static int[] parseKey(String rawKey) {
+        // rawKey produced by Arrays.toString: "[]", "[2]", "[2, 4, 6]"
+        String trimmed = rawKey.substring(1, rawKey.length() - 1).trim();
+        if (trimmed.isEmpty()) return new int[0];
+        String[] parts = trimmed.split(",");
+        int[] out = new int[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            out[i] = Integer.parseInt(parts[i].trim());
+        }
+        return out;
     }
 
     // Node → candidate cardinal set for 4-dir disambiguation.
@@ -199,6 +242,10 @@ public class ComboDispatcher {
         runAction(action);
     }
 
+    public boolean isCombo4DirMode() {
+        return is4DirMode();
+    }
+
     private Integer resolveCardinalInterpretation(int[] combo, Map<String, Integer> table, boolean collapseRuns) {
         int[] buf = new int[combo.length];
         Integer[] found = new Integer[]{null};
@@ -245,6 +292,70 @@ public class ComboDispatcher {
             if (n == 0 || tmp[n - 1] != v) tmp[n++] = v;
         }
         return Arrays.copyOf(tmp, n);
+    }
+
+    /**
+     * Returns the active dispatch table (4-dir or 8-dir based on current mode) as
+     * an unmodifiable view. Key is the grid-path identifier produced by
+     * key(int...); value is an A_* action constant.
+     */
+    public java.util.Map<String, Integer> getAllBindings() {
+        return java.util.Collections.unmodifiableMap(currentTable());
+    }
+
+    /**
+     * Returns the A_* action bound to the exact path, or A_NONE if the path is
+     * unbound (or only a prefix of a longer combo). Does NOT apply the 4-dir
+     * diagonal-drift fallback logic — this is for tip-builder / ghost-preview
+     * lookups, which need to know "is this path the endpoint of a binding as-is".
+     */
+    public int getActionForExactPath(int[] path) {
+        if (path == null) return A_NONE;
+        Integer action = currentTable().get(key(path));
+        return action == null ? A_NONE : action;
+    }
+
+    /**
+     * Returns the set of grid nodes (1..9, excluding 5) that are legal next
+     * steps from the given path — i.e. there exists some binding whose path
+     * begins with {@code currentPath + [node]}. Used by the HUD ghost-trace
+     * preview to paint only reachable next moves.
+     *
+     * Never returns 5 (center is implicit origin, never mid-path).
+     */
+    public java.util.Set<Integer> getLegalNextNodes(int[] currentPath) {
+        java.util.Set<Integer> result = new java.util.HashSet<>();
+        int prefixLen = currentPath == null ? 0 : currentPath.length;
+        for (String rawKey : currentTable().keySet()) {
+            int[] bindingPath = parseKey(rawKey);
+            if (bindingPath.length <= prefixLen) continue;
+            boolean prefixMatch = true;
+            for (int i = 0; i < prefixLen; i++) {
+                if (bindingPath[i] != currentPath[i]) { prefixMatch = false; break; }
+            }
+            if (!prefixMatch) continue;
+            int next = bindingPath[prefixLen];
+            if (next == 5) continue;
+            result.add(next);
+        }
+        return result;
+    }
+
+    public void addBindingsListener(@NonNull BindingsListener listener) {
+        mBindingsListeners.addIfAbsent(listener);
+    }
+
+    public void removeBindingsListener(@NonNull BindingsListener listener) {
+        mBindingsListeners.remove(listener);
+    }
+
+    public String getLastChangedPathId() { return mLastChangedPathId; }
+    public long getLastChangedAtMillis() { return mLastChangedAtMillis; }
+
+    private void fireBindingsChanged() {
+        for (BindingsListener l : mBindingsListeners) {
+            l.onBindingsChanged();
+        }
     }
 
     private Map<String, Integer> currentTable() {
