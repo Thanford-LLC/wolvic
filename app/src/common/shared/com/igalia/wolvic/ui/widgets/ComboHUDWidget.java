@@ -89,6 +89,16 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // weights otherwise.
     private static final String ARROW_GLYPH = "\u2B06";
 
+    // Pre-allocated digit labels for the path-length center indicator, so the
+    // hot draw path never calls String.valueOf(int). mPathLength is clamped to
+    // [0, MAX_PATH=8] by the engine, so index 8 must exist.
+    private static final String[] PATH_LENGTH_LABEL =
+            { "0", "1", "2", "3", "4", "5", "6", "7", "8" };
+
+    // Cardinal max-position marker angles (E, N, W, S in canvas space).
+    // Hoisted to static final so the draw loop never allocates a fresh int[].
+    private static final int[] CARDINAL_ANGLES = { 0, 90, 180, 270 };
+
     // Colours — skin-aware, resolved per instance from resources.
     // fd_hud_* lives in values/colors-fd-hud.xml (skin-neutral) except fd_hud_accent
     // which lives per-skin in res-fd-<skin>/values/colors-fd.xml.
@@ -169,9 +179,11 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private final Runnable mRotateTipRunnable = this::advanceTip;
 
     // Commit-preview label cache (R1, minus handedness CTA which is Phase 3c).
+    // Version-gated off mGhostCommittedPathVersion so the fast path (cache hit)
+    // allocates zero — no Arrays.copyOf / Arrays.toString per frame.
     @Nullable private Spannable mCommitPreviewSpannable;
-    @Nullable private String mCommitPreviewPathKey;
     private int mCommitPreviewActionKey = ComboDispatcher.A_NONE;
+    private int mCommitPreviewPathVersion = -1;
 
     private View mCanvasView;
 
@@ -491,25 +503,26 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     private void invalidateCommitPreviewCache() {
         mCommitPreviewSpannable = null;
-        mCommitPreviewPathKey = null;
         mCommitPreviewActionKey = ComboDispatcher.A_NONE;
         // Ghost entries are keyed off the committed path too — bump the version
         // so drawGhostLayer rebuilds on next draw (no allocation per frame).
+        // mCommitPreviewPathVersion is also gated off this counter, so the
+        // next composeCommitPreview() call sees it as stale and rebuilds.
         mGhostCommittedPathVersion++;
     }
 
     @Nullable
     private Spannable composeCommitPreview(int[] path, int length) {
         if (mDispatcher == null || length == 0) return null;
-        int[] snapshot = Arrays.copyOf(path, length);
-        int action = mDispatcher.getActionForExactPath(snapshot);
-        String pathKey = Arrays.toString(snapshot);
-        // Cache hit — identical path + action combo already composed.
-        if (action == mCommitPreviewActionKey
-                && pathKey.equals(mCommitPreviewPathKey)
-                && mCommitPreviewSpannable != null) {
+        // Fast path: committed path + bindings unchanged since the last
+        // successful compose → zero allocation, just return the cached ref.
+        if (mCommitPreviewPathVersion == mGhostCommittedPathVersion) {
             return mCommitPreviewSpannable;
         }
+        // Slow path: rebuild. Only runs when the committed path or bindings
+        // mutated (both bump mGhostCommittedPathVersion).
+        int[] snapshot = Arrays.copyOf(path, length);
+        int action = mDispatcher.getActionForExactPath(snapshot);
         Spannable out;
         if (action != ComboDispatcher.A_NONE) {
             // Path is itself a binding → render arrows + action-icon tip.
@@ -528,8 +541,8 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             }
         }
         mCommitPreviewSpannable = out;
-        mCommitPreviewPathKey = pathKey;
         mCommitPreviewActionKey = action;
+        mCommitPreviewPathVersion = mGhostCommittedPathVersion;
         return out;
     }
 
@@ -628,6 +641,13 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
         // Pass 1: wedges + labels + dividers. Wedge = joystick direction
         // preview only (no confirmed state — confirmation is the outer dot).
+        // Paint invariants hoisted out of the loop (§5.2 hot-path hygiene):
+        // text size + shadow are the same for every wedge label; only the
+        // color varies per iteration (preview vs. idle).
+        mTextPaint.setTextSize(outerR * 0.22f);
+        // Drop shadow gives the arrow glyph depth — reads as a real
+        // embossed UI element rather than a flat overlay.
+        mTextPaint.setShadowLayer(6f, 0f, 3f, 0xB3000000);
         for (int i = 0; i < count; i++) {
             int node = nodes[i];
             boolean isPreview = (node == mPreviewNode);
@@ -663,11 +683,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             float midAngle = (float) Math.toRadians(midDeg);
             float lx = cx + labelR * (float) Math.cos(midAngle);
             float ly = cy + labelR * (float) Math.sin(midAngle);
-            mTextPaint.setTextSize(outerR * 0.22f);
             mTextPaint.setColor(isPreview ? mColorTextPreview : mColorTextIdle);
-            // Drop shadow gives the arrow glyph depth — reads as a real
-            // embossed UI element rather than a flat overlay.
-            mTextPaint.setShadowLayer(6f, 0f, 3f, 0xB3000000);
             float textY = ly - (mTextPaint.descent() + mTextPaint.ascent()) / 2f;
             canvas.save();
             canvas.rotate(midDeg + 90f, lx, ly);
@@ -681,10 +697,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // so the user always knows where the "max reach" slots are.
         float markerR = outerR + 4f;
         float markerDotR = outerR * 0.08f;
-        int[] cardinalAngles = { 0, 90, 180, 270 };  // E, N, W, S in canvas space
         mWedgePaint.setColor(mColorBg);
         mWedgePaint.setAlpha(255);
-        for (int a : cardinalAngles) {
+        for (int a : CARDINAL_ANGLES) {
             double rad = Math.toRadians(-a);  // canvas: CCW in world = negative in canvas
             float mx = cx + markerR * (float) Math.cos(rad);
             float my = cy + markerR * (float) Math.sin(rad);
@@ -699,6 +714,11 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // preview inside the dial.
         float dotR = outerR * 1.15f;
         float dotBaseR = outerR * 0.06f;
+        // Ring paint invariants (stroke width + alpha) hoisted out — identical
+        // for every ring-draw in the loop, so setting them once avoids the
+        // per-iteration native JNI hit.
+        mRingPaint.setStrokeWidth(2.0f);
+        mRingPaint.setAlpha(200);
         for (int i = 0; i < count; i++) {
             int node = nodes[i];
             int hits = mHitCounts[node];
@@ -717,8 +737,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
             // For re-strikes, add concentric rings — one per extra hit, up to 3.
             if (hits > 1) {
-                mRingPaint.setStrokeWidth(2.0f);
-                mRingPaint.setAlpha(200);
                 for (int k = 1; k < Math.min(hits, 4); k++) {
                     canvas.drawCircle(dx, dy, r + k * dotBaseR * 0.45f, mRingPaint);
                 }
@@ -742,7 +760,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             mTextPaint.setTextSize(innerR * 0.7f);
             mTextPaint.setColor(mColorAccent);
             float textY = cy - (mTextPaint.descent() + mTextPaint.ascent()) / 2f;
-            canvas.drawText(String.valueOf(mPathLength), cx, textY, mTextPaint);
+            // mPathLength is clamped to [0, MAX_PATH=8] by the engine, so
+            // PATH_LENGTH_LABEL[mPathLength] is always in range.
+            canvas.drawText(PATH_LENGTH_LABEL[mPathLength], cx, textY, mTextPaint);
         } else {
             mWedgePaint.setColor(mColorAccent);
             mWedgePaint.setAlpha(150);
