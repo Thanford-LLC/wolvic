@@ -74,8 +74,14 @@ public class ComboDispatcher {
     private final Map<String, Integer> mTable4Dir = new HashMap<>();
     private final java.util.concurrent.CopyOnWriteArrayList<BindingsListener> mBindingsListeners =
             new java.util.concurrent.CopyOnWriteArrayList<>();
-    private volatile String mLastChangedPathId = null;
-    private volatile long mLastChangedAtMillis = 0L;
+    private String mLastChangedPathId = null;
+    private long mLastChangedAtMillis = 0L;
+
+    // Precomputed next-node index: prefix-as-Arrays.toString → legal next nodes.
+    // Rebuilt in rebuildNextNodeIndex(), called from stampBindingChange() (tables
+    // mutated) and lazily on first getLegalNextNodes() call.
+    private final java.util.Map<String, java.util.Set<Integer>> mNextNodeIndex = new java.util.HashMap<>();
+    private boolean mNextNodeIndexDirty = true;
 
     public ComboDispatcher(@NonNull Windows windows, @NonNull WidgetManagerDelegate widgetManager) {
         mWindows = windows;
@@ -84,14 +90,16 @@ public class ComboDispatcher {
         pushModeToNative();
     }
 
-    private Boolean mLastPushed4DirMode = null;
+    private boolean mLastPushed4DirMode = false;
+    private boolean mHasPushedMode = false;
     private void pushModeToNative() {
         boolean now4Dir = is4DirMode();
         if (mWidgetManager instanceof VRBrowserActivity) {
             ((VRBrowserActivity) mWidgetManager).setComboFourDirMode(now4Dir);
         }
-        if (mLastPushed4DirMode == null || mLastPushed4DirMode != now4Dir) {
-            boolean first = (mLastPushed4DirMode == null);
+        if (!mHasPushedMode || mLastPushed4DirMode != now4Dir) {
+            boolean first = !mHasPushedMode;
+            mHasPushedMode = true;
             mLastPushed4DirMode = now4Dir;
             if (!first) stampBindingChange(null);
         }
@@ -181,6 +189,7 @@ public class ComboDispatcher {
 
     /** Inverse of key(int...) — parses "[2, 4, 6]" back to int[]. */
     private static int[] parseKey(String rawKey) {
+        if (rawKey == null || rawKey.length() < 2) return new int[0];
         // rawKey produced by Arrays.toString: "[]", "[2]", "[2, 4, 6]"
         String trimmed = rawKey.substring(1, rawKey.length() - 1).trim();
         if (trimmed.isEmpty()) return new int[0];
@@ -322,23 +331,37 @@ public class ComboDispatcher {
      * preview to paint only reachable next moves.
      *
      * Never returns 5 (center is implicit origin, never mid-path).
+     *
+     * Reads a precomputed index (rebuilt lazily via mNextNodeIndexDirty) so
+     * repeated calls from the HUD per path-state change do not allocate.
      */
     public java.util.Set<Integer> getLegalNextNodes(int[] currentPath) {
-        java.util.Set<Integer> result = new java.util.HashSet<>();
-        int prefixLen = currentPath == null ? 0 : currentPath.length;
+        if (mNextNodeIndexDirty) rebuildNextNodeIndex();
+        String prefixKey = java.util.Arrays.toString(currentPath == null ? new int[0] : currentPath);
+        java.util.Set<Integer> hit = mNextNodeIndex.get(prefixKey);
+        return hit == null ? java.util.Collections.emptySet() : java.util.Collections.unmodifiableSet(hit);
+    }
+
+    private void rebuildNextNodeIndex() {
+        mNextNodeIndex.clear();
         for (String rawKey : currentTable().keySet()) {
-            int[] bindingPath = parseKey(rawKey);
-            if (bindingPath.length <= prefixLen) continue;
-            boolean prefixMatch = true;
-            for (int i = 0; i < prefixLen; i++) {
-                if (bindingPath[i] != currentPath[i]) { prefixMatch = false; break; }
+            int[] path = parseKey(rawKey);
+            // For every proper prefix of the binding path (including empty), the
+            // node at prefix.length is a legal next node. Skip node 5.
+            for (int prefixLen = 0; prefixLen < path.length; prefixLen++) {
+                int next = path[prefixLen];
+                if (next == 5) continue;
+                int[] prefix = java.util.Arrays.copyOf(path, prefixLen);
+                String prefixKey = java.util.Arrays.toString(prefix);
+                java.util.Set<Integer> set = mNextNodeIndex.get(prefixKey);
+                if (set == null) {
+                    set = new java.util.HashSet<>();
+                    mNextNodeIndex.put(prefixKey, set);
+                }
+                set.add(next);
             }
-            if (!prefixMatch) continue;
-            int next = bindingPath[prefixLen];
-            if (next == 5) continue;
-            result.add(next);
         }
-        return result;
+        mNextNodeIndexDirty = false;
     }
 
     public void addBindingsListener(@NonNull BindingsListener listener) {
@@ -362,6 +385,7 @@ public class ComboDispatcher {
     private void stampBindingChange(String pathId) {
         mLastChangedPathId = pathId;
         mLastChangedAtMillis = System.currentTimeMillis();
+        mNextNodeIndexDirty = true;
         fireBindingsChanged();
     }
 
