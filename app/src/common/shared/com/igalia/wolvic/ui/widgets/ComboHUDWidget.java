@@ -199,7 +199,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // Version-gated off mGhostCommittedPathVersion so the fast path (cache hit)
     // allocates zero — no Arrays.copyOf / Arrays.toString per frame.
     @Nullable private Spannable mCommitPreviewSpannable;
-    private int mCommitPreviewActionKey = ComboDispatcher.A_NONE;
     private int mCommitPreviewPathVersion = -1;
 
     private View mCanvasView;
@@ -536,7 +535,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     private void invalidateCommitPreviewCache() {
         mCommitPreviewSpannable = null;
-        mCommitPreviewActionKey = ComboDispatcher.A_NONE;
         // Ghost entries are keyed off the committed path too — bump the version
         // so drawGhostLayer rebuilds on next draw (no allocation per frame).
         // mCommitPreviewPathVersion is also gated off this counter, so the
@@ -574,7 +572,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             }
         }
         mCommitPreviewSpannable = out;
-        mCommitPreviewActionKey = action;
         mCommitPreviewPathVersion = mGhostCommittedPathVersion;
         return out;
     }

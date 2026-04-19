@@ -1317,7 +1317,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     void handleComboThumbstickPress() {
         runOnUiThread(() -> {
             mHUDEnabled = !mHUDEnabled;
-            android.util.Log.e("FingerDance", "HUD toggled: " + mHUDEnabled);
+            android.util.Log.d("FingerDance", "HUD toggled: " + mHUDEnabled);
             if (mHUDWidget != null && !mHUDEnabled) {
                 mHUDWidget.hide(UIWidget.KEEP_WIDGET);
             }
@@ -1341,7 +1341,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleGripStateChanged(final boolean held, final int hand) {
-        android.util.Log.e("FingerDance", "handleGripStateChanged held=" + held + " hand=" + hand + " mHUDEnabled=" + mHUDEnabled);
+        android.util.Log.d("FingerDance", "handleGripStateChanged held=" + held + " hand=" + hand + " mHUDEnabled=" + mHUDEnabled);
         runOnUiThread(() -> {
             if (hand == COMBO_HAND_LEFT_IDX || hand == COMBO_HAND_RIGHT_IDX) {
                 mComboGripHeldByHand[hand] = held;

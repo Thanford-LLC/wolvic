@@ -3,18 +3,16 @@
  *
  * FingerDance proprietary — not part of the Wolvic MPL 2.0 codebase.
  */
-package com.igalia.wolvic.ui.widgets;
+package com.igalia.wolvic.ui.widgets.combo;
 
 import static org.junit.Assert.assertEquals;
-
-import com.igalia.wolvic.ui.widgets.combo.ComboPreviewProgressSmoother;
 
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Phase 3b coverage for the continuous preview-progress smoothing math
- * consumed by {@link ComboHUDWidget#updatePreviewProgress(int, float)}.
+ * consumed by {@link com.igalia.wolvic.ui.widgets.ComboHUDWidget#updatePreviewProgress(int, float)}.
  *
  * <p>The widget simply delegates to {@link ComboPreviewProgressSmoother}, so
  * exercising the smoother directly covers the math without dragging the
@@ -23,7 +21,7 @@ import org.junit.Test;
  * value; these tests lock the contract it depends on: EMA within same zone,
  * snap across zone boundaries, raw-progress tracking.
  */
-public class ComboHUDWidgetTest {
+public class ComboPreviewProgressSmootherTest {
 
     private static final float EPSILON = 1e-5f;
 
