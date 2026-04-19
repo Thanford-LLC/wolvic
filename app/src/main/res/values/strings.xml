@@ -2652,5 +2652,8 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
          this with the handedness-reactive "Press A/X to create a new combo"
          variant; the stub keeps the cancel affordance visible until then. -->
     <string name="fd_meta_tip_dead_end_stub">Click stick to cancel</string>
+    <!-- Phase 3c R4: handedness-reactive dead-end CTA. %1$s = "A" (right hand)
+         or "X" (left hand). English-only for v1.0. -->
+    <string name="fd_meta_tip_create_combo">Press %1$s to create a new Combo. Click stick to cancel</string>
 
 </resources>
