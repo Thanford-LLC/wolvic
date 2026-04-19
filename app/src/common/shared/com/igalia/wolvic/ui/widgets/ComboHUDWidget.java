@@ -29,6 +29,7 @@ import androidx.preference.PreferenceManager;
 import com.igalia.wolvic.R;
 import com.igalia.wolvic.input.ComboDispatcher;
 import com.igalia.wolvic.ui.widgets.combo.ComboActionIcons;
+import com.igalia.wolvic.ui.widgets.combo.ComboPreviewProgressSmoother;
 import com.igalia.wolvic.ui.widgets.combo.ComboTipBuilder;
 import com.igalia.wolvic.ui.widgets.combo.ComboTipSelector;
 
@@ -125,6 +126,22 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private int mPreviewNode = 0;  // currently highlighted zone (0=none)
     private final int[] mCommittedPath = new int[8];
     private boolean mGripHeld = false;
+
+    // Phase 3b: continuous live-preview smoother. Populated by
+    // updatePreviewProgress from the native engine's throttled signal. Phase
+    // 3c's breathing + stick-reactive fill animations read these fields during
+    // onDraw; Phase 3b only lands the receiver + unit tests, so nothing reads
+    // them yet.
+    //
+    // The math (EMA within same zone, snap across zone boundary) lives in
+    // ComboPreviewProgressSmoother so it can be unit-tested without a
+    // WidgetManagerDelegate context.
+    //
+    // Thread model: handleComboPreviewProgress posts via runOnUiThread, so all
+    // writes land on the same thread as onDraw / ghost-rebuild. No volatile
+    // or synchronisation required.
+    private final ComboPreviewProgressSmoother mPreviewSmoother =
+            new ComboPreviewProgressSmoother();
 
     // Paint objects — all pre-allocated to honor §5.2 zero-heap rule.
     private final Paint mBgPaint    = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -412,6 +429,22 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             mPreviewNode = previewNode;
             if (mCanvasView != null) mCanvasView.invalidate();
         }
+    }
+
+    /**
+     * Phase 3b: receive the continuous preview-progress signal from the native
+     * engine. {@code progressRaw} is clamped [0, 1] by the engine and represents
+     * how hard the user is leaning toward {@code zone} (0 = just entered preview
+     * band, 1 = at activation threshold). The engine throttles emits so this
+     * fires only on meaningful change; the smoother applies an EMA within the
+     * same zone and snaps across zone boundaries.
+     *
+     * <p>No invalidate() here: Phase 3c reads the smoother fields during its
+     * per-frame draw pass and handles invalidation. Phase 3b just lands the
+     * receiver + unit tests for the smoothing math.
+     */
+    public void updatePreviewProgress(int zone, float progressRaw) {
+        mPreviewSmoother.accept(zone, progressRaw);
     }
 
     /**

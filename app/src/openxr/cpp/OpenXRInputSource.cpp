@@ -54,6 +54,12 @@ OpenXRInputSource::OpenXRInputSource(XrInstance instance, XrSession session, Ope
 {
   elbow = ElbowModel::Create();
   mClickThreshold = kControllerClickThreshold;
+  // Phase 3b: continuous preview-progress signal feeds the HUD's stick-reactive
+  // fill animation. Registered via setter (not ctor) to keep the recognizer's
+  // original 3-argument constructor stable.
+  mComboRecognizer.SetPreviewProgressCallback([](int zoneId, float progress) {
+      crow::VRBrowser::HandleComboPreviewProgress(zoneId, progress);
+  });
 }
 
 OpenXRInputSource::~OpenXRInputSource()
@@ -1027,7 +1033,10 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         if (button.type == OpenXRButtonType::Squeeze && state->clicked != mFingerDanceGripHeld) {
           mFingerDanceGripHeld = state->clicked;
           VRB_LOG("FingerDance: Grip %s (hand=%d)", mFingerDanceGripHeld ? "PRESSED" : "RELEASED", mIndex);
-          crow::VRBrowser::HandleGripStateChanged(mFingerDanceGripHeld);
+          // Hand ordinal matches com.igalia.wolvic.VRBrowserActivity.ComboHand:
+          // 0 = LEFT, 1 = RIGHT.
+          const int hand = (mHandeness == OpenXRHandFlags::Left) ? 0 : 1;
+          crow::VRBrowser::HandleGripStateChanged(mFingerDanceGripHeld, hand);
         }
 
         // Squeeze action (WebXR immersive only)

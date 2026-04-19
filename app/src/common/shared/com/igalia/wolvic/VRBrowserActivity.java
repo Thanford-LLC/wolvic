@@ -1299,6 +1299,19 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         });
     }
 
+    // FingerDance (Phase 3b): continuous [0,1] preview-progress signal. Throttled
+    // by the native engine so this fires only on meaningful change. The HUD
+    // applies its own EMA smoothing before consumption in Phase 3c.
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboPreviewProgress(final int zone, final float progress) {
+        runOnUiThread(() -> {
+            if (mHUDWidget != null) {
+                mHUDWidget.updatePreviewProgress(zone, progress);
+            }
+        });
+    }
+
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleComboThumbstickPress() {
@@ -1311,20 +1324,65 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         });
     }
 
+    // FingerDance (Phase 3b): which controller hand owns the active combo grip.
+    // NONE = neither hand's grip is held. LEFT / RIGHT = that hand is driving
+    // the recognizer. If both are held simultaneously the most-recent press
+    // wins (mLastComboGripHand), matching how the recognizer routes joystick
+    // input when the user has both grips down.
+    public enum ComboHand { NONE, LEFT, RIGHT }
+
+    private static final int COMBO_HAND_LEFT_IDX  = 0;
+    private static final int COMBO_HAND_RIGHT_IDX = 1;
+    // Indexed by the native-side hand ordinal (0=left, 1=right). Read/written
+    // on the UI thread only (handleGripStateChanged posts via runOnUiThread).
+    private final boolean[] mComboGripHeldByHand = new boolean[2];
+    private ComboHand mLastComboGripHand = ComboHand.NONE;
+
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
-    void handleGripStateChanged(final boolean held) {
-        android.util.Log.e("FingerDance", "handleGripStateChanged held=" + held + " mHUDEnabled=" + mHUDEnabled);
+    void handleGripStateChanged(final boolean held, final int hand) {
+        android.util.Log.e("FingerDance", "handleGripStateChanged held=" + held + " hand=" + hand + " mHUDEnabled=" + mHUDEnabled);
         runOnUiThread(() -> {
+            if (hand == COMBO_HAND_LEFT_IDX || hand == COMBO_HAND_RIGHT_IDX) {
+                mComboGripHeldByHand[hand] = held;
+                if (held) {
+                    mLastComboGripHand = (hand == COMBO_HAND_LEFT_IDX)
+                            ? ComboHand.LEFT : ComboHand.RIGHT;
+                } else if (!mComboGripHeldByHand[COMBO_HAND_LEFT_IDX]
+                        && !mComboGripHeldByHand[COMBO_HAND_RIGHT_IDX]) {
+                    mLastComboGripHand = ComboHand.NONE;
+                }
+            }
+            // HUD show/hide follows any-hand grip state — either hand shows
+            // the HUD, HUD hides only when neither hand is gripping.
+            final boolean anyGripHeld = mComboGripHeldByHand[COMBO_HAND_LEFT_IDX]
+                                     || mComboGripHeldByHand[COMBO_HAND_RIGHT_IDX];
             if (mHUDWidget != null) {
-                if (held && mHUDEnabled) {
+                if (anyGripHeld && mHUDEnabled) {
                     mHUDWidget.resetPath();
                     mHUDWidget.show(UIWidget.KEEP_WIDGET);
-                } else {
+                } else if (!anyGripHeld) {
                     mHUDWidget.hide(UIWidget.KEEP_WIDGET);
                 }
             }
         });
+    }
+
+    /**
+     * FingerDance (Phase 3b): expose which controller hand is currently driving
+     * combo input. Phase 3c's R4 dead-end CTA reads this to label the commit
+     * button glyph ("A" for right, "X" for left). Returns NONE when neither
+     * grip is held. Read on the UI thread only.
+     */
+    public ComboHand getActiveComboControllerHand() {
+        final boolean left  = mComboGripHeldByHand[COMBO_HAND_LEFT_IDX];
+        final boolean right = mComboGripHeldByHand[COMBO_HAND_RIGHT_IDX];
+        if (!left && !right) return ComboHand.NONE;
+        if (left && !right) return ComboHand.LEFT;
+        if (right && !left) return ComboHand.RIGHT;
+        // Both held — surface the most recent press so the CTA stays stable
+        // across "add second grip" transitions.
+        return mLastComboGripHand == ComboHand.NONE ? ComboHand.RIGHT : mLastComboGripHand;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})

@@ -87,9 +87,11 @@ const char* const kHandleComboEventSignature = "([II)V";
 const char* const kHandleComboProgressName = "handleComboProgress";
 const char* const kHandleComboProgressSignature = "([II)V";
 const char* const kHandleGripStateChangedName = "handleGripStateChanged";
-const char* const kHandleGripStateChangedSignature = "(Z)V";
+const char* const kHandleGripStateChangedSignature = "(ZI)V";
 const char* const kHandleComboPreviewName = "handleComboPreview";
 const char* const kHandleComboPreviewSignature = "(I)V";
+const char* const kHandleComboPreviewProgressName = "handleComboPreviewProgress";
+const char* const kHandleComboPreviewProgressSignature = "(IF)V";
 const char* const kHandleComboThumbstickPressName = "handleComboThumbstickPress";
 const char* const kHandleComboThumbstickPressSignature = "()V";
 
@@ -136,6 +138,7 @@ jmethodID sHandleComboEvent = nullptr;
 jmethodID sHandleComboProgress = nullptr;
 jmethodID sHandleGripStateChanged = nullptr;
 jmethodID sHandleComboPreview = nullptr;
+jmethodID sHandleComboPreviewProgress = nullptr;
 jmethodID sHandleComboThumbstickPress = nullptr;
 
 } // namespace
@@ -197,6 +200,7 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sHandleComboProgress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboProgressName, kHandleComboProgressSignature);
   sHandleGripStateChanged = FindJNIMethodID(sEnv, sBrowserClass, kHandleGripStateChangedName, kHandleGripStateChangedSignature);
   sHandleComboPreview  = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewName,  kHandleComboPreviewSignature);
+  sHandleComboPreviewProgress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewProgressName, kHandleComboPreviewProgressSignature);
   sHandleComboThumbstickPress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboThumbstickPressName, kHandleComboThumbstickPressSignature);
 }
 
@@ -253,6 +257,7 @@ VRBrowser::ShutdownJava() {
   sHandleComboProgress    = nullptr;
   sHandleGripStateChanged = nullptr;
   sHandleComboPreview     = nullptr;
+  sHandleComboPreviewProgress = nullptr;
   sHandleComboThumbstickPress = nullptr;
 }
 
@@ -566,10 +571,10 @@ VRBrowser::HandleComboProgress(const int* path, int length) {
 }
 
 void
-VRBrowser::HandleGripStateChanged(bool held) {
-    VRB_LOG("FingerDance: HandleGripStateChanged held=%d", (int)held);
+VRBrowser::HandleGripStateChanged(bool held, int hand) {
+    VRB_LOG("FingerDance: HandleGripStateChanged held=%d hand=%d", (int)held, hand);
     if (!ValidateMethodID(sEnv, sActivity, sHandleGripStateChanged, __FUNCTION__)) { return; }
-    sEnv->CallVoidMethod(sActivity, sHandleGripStateChanged, (jboolean)held);
+    sEnv->CallVoidMethod(sActivity, sHandleGripStateChanged, (jboolean)held, (jint)hand);
     CheckJNIException(sEnv, __FUNCTION__);
 }
 
@@ -577,6 +582,13 @@ void
 VRBrowser::HandleComboPreview(int previewNode) {
     if (!ValidateMethodID(sEnv, sActivity, sHandleComboPreview, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sHandleComboPreview, (jint)previewNode);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboPreviewProgress(int zoneId, float progress) {
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboPreviewProgress, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboPreviewProgress, (jint)zoneId, (jfloat)progress);
     CheckJNIException(sEnv, __FUNCTION__);
 }
 

@@ -20,4 +20,8 @@ void InputComboRecognizer::CancelSilent() {
     mEngine.CancelSilent();
 }
 
+void InputComboRecognizer::SetPreviewProgressCallback(PreviewProgressCb cb) {
+    mEngine.SetPreviewProgressCallback(std::move(cb));
+}
+
 } // namespace fingerdance

@@ -61,9 +61,13 @@ void HandleComboEvent(const int* path, int length);
 // FingerDance: update HUD with in-progress path (fires after each node is activated).
 void HandleComboProgress(const int* path, int length);
 // FingerDance: notify Java when grip is pressed/released so the HUD can show/hide.
-void HandleGripStateChanged(bool held);
+// hand: 0 = left, 1 = right (matches com.igalia.wolvic.VRBrowserActivity.ComboHand ordinal).
+void HandleGripStateChanged(bool held, int hand);
 // FingerDance: preview wedge highlight (fires every frame while grip held). 0=no zone.
 void HandleComboPreview(int previewNode);
+// FingerDance: continuous [0,1] progress for how hard the user is leaning
+// toward the preview zone. zoneId=0 with progress=0.0 means idle / released.
+void HandleComboPreviewProgress(int zoneId, float progress);
 // FingerDance: thumbstick button pressed while in combo mode — toggle HUD.
 void HandleComboThumbstickPress();
 } // namespace VRBrowser;

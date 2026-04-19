@@ -14,6 +14,9 @@ static constexpr float   PREVIEW_MAGNITUDE          = 0.25f;  // magnitude thres
 static constexpr float   CENTER_THRESHOLD           = 0.20f;  // magnitude below which = center (released)
 static constexpr int64_t CENTER_EMIT_DWELL_MS       = 800;    // how long at center before emitting combo
 static constexpr int     MAX_PATH_LENGTH            = 8;
+// Phase 3b: throttle threshold for the continuous preview-progress callback.
+// Process() emits only when |progress - last| >= this OR when the zone snaps.
+static constexpr float   PREVIEW_PROGRESS_EPSILON   = 0.02f;
 
 // Grid layout:
 //   1  2  3
@@ -27,15 +30,25 @@ struct ComboEvent {
     int length = 0;
 };
 
-using EventCallback         = std::function<void(const ComboEvent&)>;
-using ComboProgressCallback = std::function<void(const ComboEvent&)>;
-using PreviewCallback       = std::function<void(int previewNode)>;
+using EventCallback           = std::function<void(const ComboEvent&)>;
+using ComboProgressCallback   = std::function<void(const ComboEvent&)>;
+using PreviewCallback         = std::function<void(int previewNode)>;
+// Phase 3b: continuous progress in [0, 1] for how hard the user is leaning
+// toward the current preview zone. zoneId=0 means idle (below preview band).
+using PreviewProgressCallback = std::function<void(int zoneId, float progress)>;
 
 class ComboWindowEngine {
 public:
     explicit ComboWindowEngine(EventCallback callback,
                                ComboProgressCallback onProgress = nullptr,
                                PreviewCallback onPreview = nullptr);
+
+    // Phase 3b: register/replace the continuous preview-progress callback.
+    // Safe to call before Process() begins; single-threaded (same rules as
+    // the rest of the engine).
+    void SetPreviewProgressCallback(PreviewProgressCallback cb) {
+        mPreviewProgressCallback = std::move(cb);
+    }
 
     // Per-frame. Returns true (consumed) while grip is held.
     bool Process(float axisX, float axisY, bool thumbstickBtn, bool gripBtn, int64_t timestampMs);
@@ -62,9 +75,15 @@ private:
     void AppendNode(int node);
     void UpdatePreview(int newPreview);
 
-    EventCallback         mCallback;
-    ComboProgressCallback mProgressCallback;
-    PreviewCallback       mPreviewCallback;
+    // Phase 3b: fire mPreviewProgressCallback if zone changed OR |progress -
+    // last| >= PREVIEW_PROGRESS_EPSILON. Stores the emitted sample so the
+    // next call can decide whether to throttle.
+    void MaybeEmitPreviewProgress(int zone, float progress);
+
+    EventCallback           mCallback;
+    ComboProgressCallback   mProgressCallback;
+    PreviewCallback         mPreviewCallback;
+    PreviewProgressCallback mPreviewProgressCallback{nullptr};
 
     bool    mPrevGrip           = false;
     bool    mPrevThumbstickBtn  = false;
@@ -82,6 +101,12 @@ private:
 
     // Center-dwell timer for auto-emit.
     int64_t mCenterDwellStartMs = 0;
+
+    // Phase 3b: last-emitted preview-progress sample for throttling. Initial
+    // -1.0f is a sentinel that forces the first real sample (even 0.0f) to
+    // fire, so the HUD can always sync to a clean starting value.
+    float   mLastPreviewProgressValue = -1.0f;
+    int     mLastPreviewProgressZone  = 0;
 
     static std::atomic<bool> sFourDirMode;
 };

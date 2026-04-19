@@ -14,9 +14,10 @@ namespace fingerdance {
 // OpenXR update thread only.
 class InputComboRecognizer {
 public:
-    using ComboCallback    = EventCallback;
-    using ProgressCallback = ComboProgressCallback;
-    using PreviewCb        = PreviewCallback;
+    using ComboCallback           = EventCallback;
+    using ProgressCallback        = ComboProgressCallback;
+    using PreviewCb               = PreviewCallback;
+    using PreviewProgressCb       = PreviewProgressCallback;
 
     // callback   — fired when a combo completes.
     // onProgress — fired after each node is activated; used by the HUD. Optional.
@@ -40,6 +41,11 @@ public:
 
     // Silent cancel — call when an OS overlay steals focus.
     void CancelSilent();
+
+    // Phase 3b: forward the continuous preview-progress callback to the
+    // underlying engine. Kept as a setter (not a ctor argument) so the
+    // existing constructor signature stays stable.
+    void SetPreviewProgressCallback(PreviewProgressCb cb);
 
 private:
     ComboWindowEngine mEngine;

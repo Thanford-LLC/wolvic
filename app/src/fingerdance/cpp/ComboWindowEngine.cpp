@@ -4,6 +4,16 @@
 
 namespace fingerdance {
 
+namespace {
+// Phase 3b: local helper (no dependency on <algorithm>) so the hot path stays
+// pure arithmetic with no allocation.
+inline float ClampUnit(float v) {
+    if (v < 0.0f) return 0.0f;
+    if (v > 1.0f) return 1.0f;
+    return v;
+}
+} // namespace
+
 std::atomic<bool> ComboWindowEngine::sFourDirMode{true};
 
 ComboWindowEngine::ComboWindowEngine(EventCallback callback,
@@ -55,6 +65,12 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
             mAtMax = false;
             mCenterDwellStartMs = 0;
             UpdatePreview(0);
+            // Phase 3b: force-emit a single (0, 0.0f) so the HUD snaps back
+            // to idle brightness, then reset the sentinel so the next grip
+            // cycle starts clean.
+            MaybeEmitPreviewProgress(0, 0.0f);
+            mLastPreviewProgressValue = -1.0f;
+            mLastPreviewProgressZone = 0;
         }
         return false;
     }
@@ -98,6 +114,19 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
     }
     UpdatePreview(newPreview);
 
+    // Phase 3b: continuous preview-progress signal for the HUD. Maps the
+    // band [PREVIEW_MAGNITUDE, ACTIVATION_MAGNITUDE] onto [0, 1]. Throttled
+    // by MaybeEmitPreviewProgress so we only cross JNI on meaningful change
+    // (|Δ| >= PREVIEW_PROGRESS_EPSILON or zone-change snap).
+    float progress = 0.0f;
+    int   progressZone = 0;
+    if (mag >= PREVIEW_MAGNITUDE && zone != 0) {
+        progress = ClampUnit((mag - PREVIEW_MAGNITUDE)
+                             / (ACTIVATION_MAGNITUDE - PREVIEW_MAGNITUDE));
+        progressZone = zone;
+    }
+    MaybeEmitPreviewProgress(progressZone, progress);
+
     // Center-dwell auto-emit: if path has content and joystick returned to
     // center, start a timer; when CENTER_EMIT_DWELL_MS elapses, emit.
     if (mag < CENTER_THRESHOLD && mPathLength > 0) {
@@ -130,6 +159,24 @@ void ComboWindowEngine::CancelSilent() {
     mAtMax = false;
     mLastActivatedNode = 0;
     mCenterDwellStartMs = 0;
+    // Phase 3b: cancellation means the HUD should drop back to idle. Force a
+    // single (0, 0.0f) emit if we weren't already there, then reset the
+    // throttle sentinel so the next grip cycle re-syncs from scratch.
+    MaybeEmitPreviewProgress(0, 0.0f);
+    mLastPreviewProgressValue = -1.0f;
+    mLastPreviewProgressZone = 0;
+}
+
+void ComboWindowEngine::MaybeEmitPreviewProgress(int zone, float progress) {
+    if (!mPreviewProgressCallback) return;
+    const bool zoneChanged = (zone != mLastPreviewProgressZone);
+    const float delta = progress - mLastPreviewProgressValue;
+    const float absDelta = delta < 0.0f ? -delta : delta;
+    const bool crossedEpsilon = absDelta >= PREVIEW_PROGRESS_EPSILON;
+    if (!zoneChanged && !crossedEpsilon) return;
+    mPreviewProgressCallback(zone, progress);
+    mLastPreviewProgressValue = progress;
+    mLastPreviewProgressZone = zone;
 }
 
 void ComboWindowEngine::EmitIfNonEmpty() {
