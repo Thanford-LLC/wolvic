@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.preference.PreferenceManager;
 
 import com.igalia.wolvic.VRBrowserActivity;
@@ -70,6 +71,9 @@ public class ComboDispatcher {
 
     private final Windows mWindows;
     private final WidgetManagerDelegate mWidgetManager;
+    /** Test-only override for {@link #is4DirMode()}. Null in production. */
+    @VisibleForTesting
+    Boolean mForcedMode4DirForTest = null;
     private final Map<String, Integer> mTable8Dir = new HashMap<>();
     private final Map<String, Integer> mTable4Dir = new HashMap<>();
     private final java.util.concurrent.CopyOnWriteArrayList<BindingsListener> mBindingsListeners =
@@ -88,6 +92,19 @@ public class ComboDispatcher {
         mWidgetManager = widgetManager;
         buildTables();
         pushModeToNative();
+    }
+
+    /**
+     * Test-only constructor: skips native push + UI wiring, forces a mode.
+     * Used by unit tests that only exercise the table-building logic
+     * (getAllBindings / getActionForExactPath / getLegalNextNodes).
+     */
+    @VisibleForTesting
+    public ComboDispatcher(boolean is4DirMode) {
+        mWindows = null;
+        mWidgetManager = null;
+        mForcedMode4DirForTest = is4DirMode;
+        buildTables();
     }
 
     private boolean mLastPushed4DirMode = false;
@@ -400,6 +417,7 @@ public class ComboDispatcher {
     }
 
     private boolean is4DirMode() {
+        if (mForcedMode4DirForTest != null) return mForcedMode4DirForTest;
         Context ctx = contextForPrefs();
         if (ctx == null) return true;  // default to 4-dir (ergonomic default)
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
