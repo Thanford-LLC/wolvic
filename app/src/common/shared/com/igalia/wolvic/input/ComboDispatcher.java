@@ -93,7 +93,7 @@ public class ComboDispatcher {
         if (mLastPushed4DirMode == null || mLastPushed4DirMode != now4Dir) {
             boolean first = (mLastPushed4DirMode == null);
             mLastPushed4DirMode = now4Dir;
-            if (!first) fireBindingsChanged();
+            if (!first) stampBindingChange(null);
         }
     }
 
@@ -166,7 +166,7 @@ public class ComboDispatcher {
         mTable8Dir.clear();
         mTable4Dir.clear();
         buildTables();
-        fireBindingsChanged();
+        stampBindingChange(null);
     }
 
     private void putBoth(int action, int... path) {
@@ -351,6 +351,19 @@ public class ComboDispatcher {
 
     public String getLastChangedPathId() { return mLastChangedPathId; }
     public long getLastChangedAtMillis() { return mLastChangedAtMillis; }
+
+    /**
+     * Stamps recency state (pathId + timestamp) and fires bindingsChanged to
+     * subscribers. Use this whenever the dispatch tables have just changed.
+     * A null pathId means "bulk change, no specific path" (e.g., mode flip,
+     * reloadBindings with no override); the HUD selector's 30s recency bias
+     * treats null as "no specific tip to boost".
+     */
+    private void stampBindingChange(String pathId) {
+        mLastChangedPathId = pathId;
+        mLastChangedAtMillis = System.currentTimeMillis();
+        fireBindingsChanged();
+    }
 
     private void fireBindingsChanged() {
         for (BindingsListener l : mBindingsListeners) {
