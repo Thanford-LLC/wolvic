@@ -42,7 +42,7 @@ import java.util.Map;
  *       Spannable of rotated-arrow spans + action icon (or a plain meta
  *       string) for the HUD to draw.
  *   <li>{@link #buildAll} — enumerate the current dispatcher bindings +
- *       three meta tips into a fully classified pool ready for
+ *       meta tips into a fully classified pool ready for
  *       {@link ComboTipSelector}.
  * </ul>
  *
@@ -228,6 +228,28 @@ public final class ComboTipBuilder {
     }
 
     /**
+     * Compose the preview-fire tip shown in the bottom strip while the user is
+     * actively leaning toward a bound combo. Text-only: {@code "Release:
+     * {action name}"}. The inline ImageSpan variant (rounds 4-5) never sat
+     * cleanly on the 28sp VR line — ALIGN_BASELINE trailed below x-height,
+     * ALIGN_CENTER read as a trailing footnote — and the ghost pill on the
+     * aimed zone already shows the icon, so repeating it in the strip added
+     * no information. Cached by {@code actionInt} alone.
+     */
+    public static Spannable renderReleaseToFireTip(@NonNull Context ctx, int actionInt) {
+        String cacheKey = "RTF#" + actionInt;
+        Spannable cached = BINDING_TIP_CACHE.get(cacheKey);
+        if (cached != null) return cached;
+
+        int nameRes = ComboActionNames.nameFor(actionInt);
+        String actionName = (nameRes != 0) ? ctx.getString(nameRes) : "";
+        SpannableStringBuilder sb = new SpannableStringBuilder(
+                ctx.getString(R.string.fd_tip_release_to_fire, actionName));
+        BINDING_TIP_CACHE.put(cacheKey, sb);
+        return sb;
+    }
+
+    /**
      * Loads the arrow drawable, tints it, wraps it in a per-node rotation
      * so the tip reads the stroke direction at a glance. Node layout:
      * <pre>
@@ -320,7 +342,7 @@ public final class ComboTipBuilder {
     // ---------------------------------------------------------------------
 
     /**
-     * Enumerates the three meta tips followed by every active binding in
+     * Enumerates the meta tips followed by every active binding in
      * the dispatcher, each classified by {@link #classify(int[])}.
      *
      * <p>Mode (4-dir vs 8-dir) is implicit: {@code dispatcher.getAllBindings()}
@@ -347,20 +369,19 @@ public final class ComboTipBuilder {
                 null, ComboDispatcher.A_NONE,
                 R.string.fd_meta_tip_origin,
                 Difficulty.MUST_KNOW));
+        out.add(new TipCandidate(
+                "meta:" + R.string.fd_meta_tip_long_press_settings,
+                null, ComboDispatcher.A_NONE,
+                R.string.fd_meta_tip_long_press_settings,
+                Difficulty.MUST_KNOW));
 
-        // Binding tips.
-        Map<String, Integer> bindings = dispatcher.getAllBindings();
-        for (Map.Entry<String, Integer> e : bindings.entrySet()) {
-            int[] path = parsePathKey(e.getKey());
-            int action = e.getValue();
-            out.add(new TipCandidate(
-                    "bind:" + Arrays.toString(path),
-                    path,
-                    action,
-                    /* metaStringRes */ 0,
-                    classify(path)));
-        }
-
+        // Binding tips intentionally omitted: rendered as
+        // {arrow-glyphs}+{action-icon}, which read as an untranslated icon
+        // soup at 1.5m in VR. Round-8 user feedback: "some tips are just
+        // some icons, without any meaning, please remove them." The
+        // preview-fire label already teaches bindings in context when the
+        // user actually commits a node, so we rely on that surface for
+        // binding discovery instead of the idle rotation.
         return Collections.unmodifiableList(out);
     }
 

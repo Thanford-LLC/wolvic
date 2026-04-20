@@ -449,6 +449,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         // Windows
         mWindows = new Windows(this);
         mComboDispatcher = new com.igalia.wolvic.input.ComboDispatcher(mWindows, this);
+        mHUDWidget.attachDispatcher(mComboDispatcher);
         mWindows.setDelegate(new Windows.Delegate() {
             @Override
             public void onFocusedWindowChanged(@NonNull WindowWidget aFocusedWindow, @Nullable WindowWidget aPrevFocusedWindow) {

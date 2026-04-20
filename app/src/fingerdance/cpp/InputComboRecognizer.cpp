@@ -20,6 +20,10 @@ void InputComboRecognizer::CancelSilent() {
     mEngine.CancelSilent();
 }
 
+bool InputComboRecognizer::IsPathEmpty() const {
+    return mEngine.IsPathEmpty();
+}
+
 void InputComboRecognizer::SetPreviewProgressCallback(PreviewProgressCb cb) {
     mEngine.SetPreviewProgressCallback(std::move(cb));
 }

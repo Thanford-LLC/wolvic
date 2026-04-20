@@ -17,6 +17,10 @@ static constexpr int     MAX_PATH_LENGTH            = 8;
 // Phase 3b: throttle threshold for the continuous preview-progress callback.
 // Process() emits only when |progress - last| >= this OR when the zone snaps.
 static constexpr float   PREVIEW_PROGRESS_EPSILON   = 0.02f;
+// Round-10: sliding-rim arm dwell. While mAtMax, a zone change no longer
+// commits instantly — it must hold for ARM_DWELL_MS first, so the HUD can
+// show the stick-reactive fill ramping up to commit instead of snapping.
+static constexpr int64_t ARM_DWELL_MS               = 80;
 
 // Grid layout:
 //   1  2  3
@@ -65,6 +69,7 @@ public:
 
     int GetPathLength() const { return mPathLength; }
     int GetPathNode(int i) const { return (i >= 0 && i < mPathLength) ? mPath[i] : 0; }
+    bool IsPathEmpty() const { return mPathLength == 0; }
 
 private:
     // Instantaneous zone from axis — 4 or 8 zones depending on mode.
@@ -101,6 +106,13 @@ private:
 
     // Center-dwell timer for auto-emit.
     int64_t mCenterDwellStartMs = 0;
+
+    // Round-10: sliding-rim arm dwell. During mAtMax, a candidate new zone
+    // must remain the instantaneous zone for ARM_DWELL_MS before it commits.
+    // mArmingZone tracks the candidate (0 = not arming). mArmingStartMs is
+    // the timestamp the candidate first became the instantaneous zone.
+    int     mArmingZone         = 0;
+    int64_t mArmingStartMs      = 0;
 
     // Phase 3b: last-emitted preview-progress sample for throttling. Initial
     // -1.0f is a sentinel that forces the first real sample (even 0.0f) to

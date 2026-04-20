@@ -1089,10 +1089,19 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         // FingerDance: both hands are combo hands. Grip activates combo mode.
         const int64_t timestampMs = static_cast<int64_t>(
             frameState.predictedDisplayTime / 1'000'000LL);
+        // Capture "was the recognizer idle?" BEFORE Process runs. Process may
+        // cancel the path on thumbstick-just-pressed (CLAUDE.md §5.4:
+        // joystick click mid-path = silent cancel). The HUD-toggle JNI
+        // below should fire only for the idle case, so we snapshot the
+        // pre-Process path state.
+        const bool pathWasEmpty = mComboRecognizer.IsPathEmpty();
         bool consumed = mComboRecognizer.Process(
             state->x, -state->y, thumbstickBtnClicked, squeezeClicked, timestampMs);
-        // FingerDance: thumbstick press while grip held = toggle HUD
-        if (thumbstickBtnClicked && squeezeClicked && !mPrevThumbstickForHUD) {
+        // FingerDance: thumbstick click while grip held — toggle HUD only
+        // when the recognizer was already idle. Mid-path clicks routed to
+        // the native Cancel path above already cleared the combo and must
+        // not also hide the HUD.
+        if (thumbstickBtnClicked && squeezeClicked && !mPrevThumbstickForHUD && pathWasEmpty) {
           crow::VRBrowser::HandleComboThumbstickPress();
         }
         mPrevThumbstickForHUD = thumbstickBtnClicked && squeezeClicked;

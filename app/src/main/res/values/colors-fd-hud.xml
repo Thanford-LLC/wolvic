@@ -16,8 +16,13 @@
     <color name="fd_hud_wedge_hit">#FF4B4FC7</color>
     <!-- Center disc: matches bg, recedes visually. -->
     <color name="fd_hud_center">#F0070825</color>
-    <!-- Idle arrow: yellow at 50% — matches wedge opacity. -->
-    <color name="fd_hud_text_idle">#80FDDE0A</color>
+    <!-- Idle arrow: brand yellow at full alpha. Round-9 feedback: the
+         prior 50% alpha caused the arrows to blend into the 70% ghost-
+         route yellow overlay, so the direction cues disappeared during
+         BUILDING state. Idle/preview differentiation still reads
+         clearly from the wedge-background brightness flip (navy 50% →
+         navy 100%) and the preview-wedge accent color. -->
+    <color name="fd_hud_text_idle">#FFFDDE0A</color>
     <!-- Preview arrow: yellow at 100% — glows. -->
     <color name="fd_hud_text_preview">#FFFDDE0A</color>
     <color name="fd_hud_text_hit">#FFFDDE0A</color>
@@ -27,8 +32,11 @@
     <!-- Combo-tips HUD layer (Phase 1 additions) -->
     <!-- Ghost next-move trace line/circle — brand yellow @ 70% alpha. -->
     <color name="fd_hud_ghost_yellow">#B3FDDE0A</color>
-    <!-- Idle tip-strip text — fd-text-dim at full alpha, muted on purpose. -->
-    <color name="fd_hud_tip_text">#FF6C6FA8</color>
+    <!-- Idle tip-strip text — brand yellow. Round-9 feedback prefers the
+         strip to read in the brand accent color rather than the muted
+         navy-gray it started as, so the meta tips share the same hue as
+         the dial arrows and ghost routes. -->
+    <color name="fd_hud_tip_text">#FFFDDE0A</color>
     <!-- Icon-pill background behind action icons — fd-blue @ 80% alpha. -->
     <color name="fd_hud_label_pill">#CC111259</color>
 </resources>

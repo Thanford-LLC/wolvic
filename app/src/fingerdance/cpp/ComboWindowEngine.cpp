@@ -54,9 +54,23 @@ int ComboWindowEngine::NodeFromAxis(float x, float y) {
 bool ComboWindowEngine::Process(float axisX, float axisY,
                                 bool thumbstickBtn, bool gripBtn,
                                 int64_t timestampMs) {
-    const bool gripJustReleased = !gripBtn && mPrevGrip;
+    const bool gripJustReleased       = !gripBtn && mPrevGrip;
+    const bool thumbstickJustPressed  =  thumbstickBtn && !mPrevThumbstickBtn;
     mPrevGrip          = gripBtn;
     mPrevThumbstickBtn = thumbstickBtn;
+
+    // FingerDance (CLAUDE.md §5.4): joystick click mid-path = silent cancel.
+    // No fire, no toast. CancelSilent() already resets state and fires an
+    // empty progress event so the HUD drops its path. We re-assert
+    // mPrev{Grip,ThumbstickBtn} after the reset because CancelSilent zeroes
+    // them for the grip-release path, and we still need edge detection on
+    // the next tick.
+    if (gripBtn && thumbstickJustPressed && mPathLength > 0) {
+        CancelSilent();
+        mPrevGrip          = gripBtn;
+        mPrevThumbstickBtn = thumbstickBtn;
+        return true;
+    }
 
     if (!gripBtn) {
         if (gripJustReleased) {
@@ -64,6 +78,8 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
             mLastActivatedNode = 0;
             mAtMax = false;
             mCenterDwellStartMs = 0;
+            mArmingZone = 0;
+            mArmingStartMs = 0;
             UpdatePreview(0);
             // Phase 3b: force-emit a single (0, 0.0f) so the HUD snaps back
             // to idle brightness, then reset the sentinel so the next grip
@@ -99,9 +115,27 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
     } else {
         if (mag < ACTIVATION_RELEASE) {
             mAtMax = false;
+            mArmingZone = 0;
+            mArmingStartMs = 0;
         } else if (zone != 0 && zone != mLastActivatedNode) {
-            AppendNode(zone);
-            mLastActivatedNode = zone;
+            // Round-10: sliding-rim arming. The new zone must hold for
+            // ARM_DWELL_MS before committing so the HUD can paint a
+            // stick-reactive fill ramp on the candidate ghost. Prior
+            // behavior committed instantly — no preview phase in
+            // sliding-rim mode.
+            if (zone != mArmingZone) {
+                mArmingZone = zone;
+                mArmingStartMs = timestampMs;
+            } else if (timestampMs - mArmingStartMs >= ARM_DWELL_MS) {
+                AppendNode(zone);
+                mLastActivatedNode = zone;
+                mArmingZone = 0;
+                mArmingStartMs = 0;
+            }
+        } else {
+            // Back on the last-committed zone → cancel any arming.
+            mArmingZone = 0;
+            mArmingStartMs = 0;
         }
     }
 
@@ -120,7 +154,15 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
     // (|Δ| >= PREVIEW_PROGRESS_EPSILON or zone-change snap).
     float progress = 0.0f;
     int   progressZone = 0;
-    if (mag >= PREVIEW_MAGNITUDE && zone != 0) {
+    if (mAtMax && mArmingZone != 0) {
+        // Round-10: sliding-rim arming phase. Map elapsed dwell time onto
+        // [0, 1] so the HUD paints the candidate ghost's stick-reactive
+        // fill ramping up to commit. The commit itself happens when we
+        // cross ARM_DWELL_MS in the activation block above.
+        const int64_t elapsed = timestampMs - mArmingStartMs;
+        progress = ClampUnit((float)elapsed / (float)ARM_DWELL_MS);
+        progressZone = mArmingZone;
+    } else if (mag >= PREVIEW_MAGNITUDE && zone != 0 && !mAtMax) {
         progress = ClampUnit((mag - PREVIEW_MAGNITUDE)
                              / (ACTIVATION_MAGNITUDE - PREVIEW_MAGNITUDE));
         progressZone = zone;
@@ -152,6 +194,7 @@ void ComboWindowEngine::UpdatePreview(int newPreview) {
 }
 
 void ComboWindowEngine::CancelSilent() {
+    const bool hadPath = mPathLength > 0;
     ResetPath();
     mPrevGrip = false;
     mPrevThumbstickBtn = false;
@@ -159,6 +202,19 @@ void ComboWindowEngine::CancelSilent() {
     mAtMax = false;
     mLastActivatedNode = 0;
     mCenterDwellStartMs = 0;
+    mArmingZone = 0;
+    mArmingStartMs = 0;
+    // Fire an empty progress event so the HUD clears its path buffer —
+    // otherwise a thumbstick-click cancel leaves the committed nodes painted
+    // on the dial until the user releases grip. Mirror EmitIfNonEmpty()'s
+    // pattern so only callers that actually dropped nodes trigger the
+    // redraw.
+    if (hadPath && mProgressCallback) {
+        ComboEvent empty;
+        empty.path   = mPath;
+        empty.length = 0;
+        mProgressCallback(empty);
+    }
     // Phase 3b: cancellation means the HUD should drop back to idle. Force a
     // single (0, 0.0f) emit if we weren't already there, then reset the
     // throttle sentinel so the next grip cycle re-syncs from scratch.

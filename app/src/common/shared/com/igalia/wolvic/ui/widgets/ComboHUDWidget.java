@@ -14,8 +14,10 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.SparseArray;
@@ -68,15 +70,23 @@ import java.util.Set;
  */
 public class ComboHUDWidget extends UIWidget implements ComboDispatcher.BindingsListener {
 
-    private static final int WIDGET_W = 480;
-    // Phase 3a: canvas grows by 60px for the tip strip (6px pad + 48px text + 6px pad).
-    private static final int WIDGET_H = 540;
-    private static final int TIP_STRIP_H = 60;
+    // Canvas widened from 480 → 720 for the tip strip. The dial itself is
+    // height-constrained (outerR = min(cx, cy) * 0.70 pinned to cy), so the
+    // extra horizontal pixels stay transparent around the dial and give the
+    // strip room for full-length accent labels like "Release: Scroll to
+    // bottom" or "Press A to create combo" without ellipsizing at 28sp.
+    // worldWidth scales proportionally so pixels-per-meter stays constant
+    // and the dial's physical size in VR is unchanged.
+    private static final int WIDGET_W = 720;
+    // Phase 3a: canvas grows for the bottom tip strip.
+    private static final int WIDGET_H = 608;
+    private static final int TIP_STRIP_H = 128;
     // World-lock Y offset so the dial centroid keeps its current head-lock
-    // sweet spot despite the extra 60px of canvas below. 30px is half of the
-    // added bottom strip; converting via the widget's world-width/px ratio
-    // gives the equivalent vertical meters.
-    private static final int DIAL_CENTROID_OFFSET_PX = 30;
+    // sweet spot despite the extra strip of canvas below. Equals
+    // TIP_STRIP_H / 2 (strip is the only asymmetric addition below the dial);
+    // converting via the widget's world-width/px ratio gives the equivalent
+    // vertical meters.
+    private static final int DIAL_CENTROID_OFFSET_PX = 64;
 
     private static final long TIP_ROTATION_INTERVAL_MS = 4000L;
     private static final long TIP_FADE_MS = 150L;
@@ -167,10 +177,13 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private final Path mWedgePathScratch = new Path();
     private final RectF mOuterRectScratch = new RectF();
     private final RectF mInnerRectScratch = new RectF();
-    // Phase 3c: pre-allocated scratch for breathing animation (partial Bezier + re-strike arc).
+    // Phase 3c: pre-allocated scratch for breathing animation (partial route + re-strike circle).
     private final PathMeasure mPathMeasureScratch = new PathMeasure();
     private final Path mPartialPathScratch = new Path();
-    private final Path mReStrikeArcScratch = new Path();
+    // Scratch path for the near-full dashed circle used by re-strike and
+    // arrival-ring strokes. Built via buildDashedCircle (arcTo 0→359.99°).
+    private final Path mCircleScratch = new Path();
+    private final RectF mArcRectScratch = new RectF();
 
     // Cached 4-dir/8-dir mode flag. Avoids a SharedPreferences read per frame
     // in drawHUD. Updated at attach time and on BindingsChanged (mode flips
@@ -207,6 +220,26 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private final Runnable mRotateTipRunnable = this::advanceTip;
 
+    // Ghost/breathing animation pump.
+    //
+    // View.postInvalidateOnAnimation() schedules invalidate via Choreographer
+    // frame callbacks. Wolvic's UIWidget renders onto an off-screen surface
+    // sampled by the VR render thread, and Choreographer callbacks do not
+    // fire reliably on that path — so animations either stutter or stop
+    // after a single frame. This Handler-driven tick runs every
+    // GHOST_TICK_INTERVAL_MS while grip is held, forcing a canvas
+    // invalidate that ripples through the VR texture upload. Self-
+    // cancelling on grip release; no-op when the view is detached.
+    private static final long GHOST_TICK_INTERVAL_MS = 16L;
+    private final Runnable mGhostAnimTickRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!mGripHeld || mDispatcher == null) return;
+            if (mCanvasView != null) mCanvasView.invalidate();
+            mMainHandler.postDelayed(this, GHOST_TICK_INTERVAL_MS);
+        }
+    };
+
     // Commit-preview label cache.
     // Version-gated off mGhostCommittedPathVersion so the fast path (cache hit)
     // allocates zero — no Arrays.copyOf / Arrays.toString per frame.
@@ -216,16 +249,36 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // Cache key for handedness — invalidates when hand identity changes mid-combo.
     // Stored as ordinal int (NONE=0, LEFT=1, RIGHT=2) to stay primitive.
     private int mCommitPreviewHandOrdinal = -1;
+    // Cached accent flag alongside the commit-preview Spannable. Applied on both
+    // fast-path and slow-path returns so the strip color stays correct when the
+    // pickStripText flow transitions between releaseToFire (accent) and a cached
+    // commit-preview (dim binding tip or accent CTA).
+    private boolean mCommitPreviewIsAccent = false;
 
-    // Ellipsize cache for drawTipStrip — avoids per-frame TextUtils.ellipsize
-    // allocation (§5.2 zero-heap on hot path).
-    // Cache keys: the active TipCandidate object reference (changes on tip rotation)
-    // + the committed-path version (changes on every node commit or binding change)
-    // + the available strip width. All three must match for a cache hit.
-    @Nullable private CharSequence mEllipsizedTip;
-    @Nullable private ComboTipBuilder.TipCandidate mEllipsizedTipKey;
-    private int mEllipsizedTipVersion = -1;
-    private float mEllipsizedTipWidth = -1f;
+    // Cache for composeReleaseToFireLabel — avoids per-frame Arrays.copyOf +
+    // ComboDispatcher key lookup during a sustained preview lean. Key is
+    // (previewZone, mGhostCommittedPathVersion); value is the resolved action
+    // int (A_NONE means "not bound — return null"). The version field already
+    // bumps on: bindings change, commit, and (when path empty) zone change.
+    private int mReleaseToFireCacheZone    = -1;
+    private int mReleaseToFireCacheVersion = -1;
+    private int mReleaseToFireCacheAction  = ComboDispatcher.A_NONE;
+
+    // Tracks whether the current strip text is an accent label (yellow brand
+    // emphasis: "Release to fire" or dead-end "Press A to save Combo" CTA) vs.
+    // an idle/commit-preview tip (dim). Updated in pickStripText(), consumed in
+    // drawTipStrip() to set paint color.
+    private boolean mCurrentStripIsAccent = false;
+
+    // Tip-strip StaticLayout cache — avoids per-frame StaticLayout construction
+    // on the hot path (§5.2 zero-heap). StaticLayout is the only Canvas-friendly
+    // path that actually draws ImageSpan replacement glyphs; canvas.drawText
+    // walks characters only and silently skips spans. Cache keys: the
+    // CharSequence reference (changes on tip rotation / committed-path change /
+    // preview-zone change) and the pixel width.
+    @Nullable private StaticLayout mTipStripLayout;
+    @Nullable private CharSequence mTipStripLayoutKey;
+    private int mTipStripLayoutWidth = -1;
 
     private View mCanvasView;
 
@@ -269,7 +322,13 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mPillPaint.setColor(mColorLabelPill);
 
         mTipPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        mTipPaint.setTextAlign(Paint.Align.CENTER);
+        // Paint.Align.LEFT (default) is required: StaticLayout uses
+        // Layout.Alignment.ALIGN_CENTER to center lines within the layout
+        // width, and when the backing Paint is set to Align.CENTER instead,
+        // StaticLayout shifts each line's origin by half the line width —
+        // the visible text landed hugging the left edge of the strip
+        // instead of centered under the dial.
+        mTipPaint.setTextAlign(Paint.Align.LEFT);
         mTipPaint.setColor(mColorTipText);
         // 28sp floor per CLAUDE.md §5.3. Convert sp → px via resource density.
         float sp = aContext.getResources().getDisplayMetrics().scaledDensity;
@@ -287,7 +346,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     protected void initializeWidgetPlacement(WidgetPlacement p) {
         p.width  = WIDGET_W;
         p.height = WIDGET_H;
-        p.worldWidth = 0.53f;  // scaled with WIDGET_W so the dial stays the same physical size
+        p.worldWidth = 0.795f;  // 0.53 * (720/480); keeps pixels-per-meter identical so the dial's physical size is unchanged.
         // World-space placement. y is measured from the reorient base (floor
         // level in Wolvic — eye level is ~1.6m for a standing adult). Place
         // at adult eye level, 1.5m forward. Add a small upward bump so the
@@ -459,7 +518,17 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      * applies EMA within the same zone and snaps across zone boundaries.
      */
     public void updatePreviewProgress(int zone, float progressRaw) {
+        int prevZone = mPreviewSmoother.zone();
         mPreviewSmoother.accept(zone, progressRaw);
+        // When the path is empty, the preview zone acts as a virtual-committed
+        // anchor for the ghost layer — zone changes must rebuild ghosts so the
+        // teaching arrows follow the user's current lean.
+        if (mPathLength == 0 && zone != prevZone) {
+            mGhostCommittedPathVersion++;
+            if (mCanvasView != null) mCanvasView.invalidate();
+        } else if (mCanvasView != null) {
+            mCanvasView.invalidate();
+        }
     }
 
     /**
@@ -472,13 +541,24 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mIsBuilding = gripHeld && mPathLength > 0;
         if (gripHeld) {
             if (mPathLength == 0) startTipRotation();
+            startGhostAnimTick();
         } else {
             stopTipRotation();
+            stopGhostAnimTick();
             mGhostRenderStartMs = -1L;
             mGhostAnim.resetCancel();
             mIsBuilding = false;
         }
         if (mCanvasView != null) mCanvasView.invalidate();
+    }
+
+    private void startGhostAnimTick() {
+        mMainHandler.removeCallbacks(mGhostAnimTickRunnable);
+        mMainHandler.postDelayed(mGhostAnimTickRunnable, GHOST_TICK_INTERVAL_MS);
+    }
+
+    private void stopGhostAnimTick() {
+        mMainHandler.removeCallbacks(mGhostAnimTickRunnable);
     }
 
     private boolean is4DirMode() {
@@ -567,6 +647,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // Fast path: committed path + bindings + hand all unchanged → zero alloc.
         if (mCommitPreviewPathVersion == mGhostCommittedPathVersion
                 && mCommitPreviewHandOrdinal == handOrdinal) {
+            mCurrentStripIsAccent = mCommitPreviewIsAccent;
             return mCommitPreviewSpannable;
         }
 
@@ -574,8 +655,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         int[] snapshot = Arrays.copyOf(path, length);
         int action = mDispatcher.getActionForExactPath(snapshot);
         Spannable out;
+        boolean accent;
         if (action != ComboDispatcher.A_NONE) {
-            // Path is itself a binding → render arrows + action-icon tip.
+            // Path is itself a binding → render arrows + action-icon tip (dim).
+            accent = false;
             out = ComboTipBuilder.renderBindingTip(
                     getContext(), snapshot, action,
                     (int) Math.round(mTipPaint.getTextSize()),
@@ -584,17 +667,21 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             // Prefix-only → null (blank strip). Dead-end → handedness CTA.
             Set<Integer> nexts = mDispatcher.getLegalNextNodes(snapshot);
             if (nexts.isEmpty()) {
-                // R4: handedness-reactive CTA.
+                // R4: handedness-reactive CTA. Accent-yellow brand emphasis.
                 String buttonGlyph = handOrdinalToGlyph(handOrdinal);
                 String cta = getContext().getString(R.string.fd_meta_tip_create_combo, buttonGlyph);
+                accent = true;
                 out = new SpannableString(cta);
             } else {
+                accent = false;
                 out = null;
             }
         }
         mCommitPreviewSpannable   = out;
         mCommitPreviewPathVersion = mGhostCommittedPathVersion;
         mCommitPreviewHandOrdinal = handOrdinal;
+        mCommitPreviewIsAccent    = accent;
+        mCurrentStripIsAccent     = accent;
         return out;
     }
 
@@ -647,13 +734,18 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mPillPaint.setAlpha(alpha);
         canvas.drawRoundRect(mPillRect, 8f, 8f, mPillPaint);
         Drawable icon = getTintedIcon(iconRes, 0xFFFDDE0A /* fd-yellow full alpha */);
-        if (icon == null) return;
-        int save = canvas.save();
+        if (icon == null || alpha <= 0) return;
+        // The cached drawable carries a PorterDuff.Mode.SRC_IN color filter
+        // baked with full-alpha yellow, which on hardware-accelerated canvas
+        // dominates Drawable.setAlpha — the icon stayed pinned at 255 while
+        // the pill background breathed. saveLayerAlpha renders the icon
+        // into an offscreen layer and composites the layer back at the
+        // requested alpha, bypassing the filter-dominance quirk.
+        int layerSave = canvas.saveLayerAlpha(
+                cx - 16f, cy - 16f, cx + 16f, cy + 16f, alpha);
         canvas.translate(cx, cy);
-        icon.setAlpha(alpha);
         icon.draw(canvas);
-        icon.setAlpha(255); // restore so cache entry stays at full alpha between frames
-        canvas.restoreToCount(save);
+        canvas.restoreToCount(layerSave);
     }
 
     // ── Lifecycle ────────────────────────────────────────
@@ -661,6 +753,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     @Override
     public void releaseWidget() {
         stopTipRotation();
+        stopGhostAnimTick();
         if (mDispatcher != null) {
             mDispatcher.removeBindingsListener(this);
             mDispatcher = null;
@@ -672,6 +765,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     @Override
     protected void onDetachedFromWindow() {
         stopTipRotation();
+        stopGhostAnimTick();
         if (mDispatcher != null) {
             mDispatcher.removeBindingsListener(this);
         }
@@ -684,6 +778,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private void drawHUD(Canvas canvas, int w, int h) {
         // Cache frame time once at top of onDraw for all per-ghost animation math.
         mCurrentFrameTimeMs = System.nanoTime() / 1_000_000L;
+        android.util.Log.d("FingerDance", "drawHUD w=" + w + " h=" + h
+                + " grip=" + mGripHeld + " building=" + mIsBuilding
+                + " pathLen=" + mPathLength + " ghosts=" + mGhostCount
+                + " lastNode=" + mLastNode);
 
         int tipStripPx = Math.round(TIP_STRIP_H * (h / (float) WIDGET_H));
         int dialH = h - tipStripPx;
@@ -713,8 +811,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mOuterRectScratch.set(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
         mInnerRectScratch.set(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
 
-        mTextPaint.setTextSize(outerR * 0.22f);
-        mTextPaint.setShadowLayer(6f, 0f, 3f, 0xB3000000);
+        // Pass 1: wedge fills + separator lines. Arrow glyphs are deferred
+        // to Pass 2 below so they render ABOVE the ghost layer (round-8
+        // feedback: "arrows should be above ghost routes").
         for (int i = 0; i < count; i++) {
             int node = nodes[i];
             boolean isPreview = (node == mPreviewNode);
@@ -737,29 +836,6 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
                     cx + outerR * (float) Math.cos(lineAngle),
                     cy + outerR * (float) Math.sin(lineAngle),
                     mLinePaint);
-
-            float midDeg = startAngle + halfWidth;
-            float midAngle = (float) Math.toRadians(midDeg);
-            float lx = cx + labelR * (float) Math.cos(midAngle);
-            float ly = cy + labelR * (float) Math.sin(midAngle);
-            mTextPaint.setColor(isPreview ? mColorTextPreview : mColorTextIdle);
-            float textY = ly - (mTextPaint.descent() + mTextPaint.ascent()) / 2f;
-            canvas.save();
-            canvas.rotate(midDeg + 90f, lx, ly);
-            canvas.drawText(ARROW_GLYPH, lx, textY, mTextPaint);
-            canvas.restore();
-        }
-        mTextPaint.clearShadowLayer();
-
-        float markerR = outerR + 4f;
-        float markerDotR = outerR * 0.08f;
-        mWedgePaint.setColor(mColorBg);
-        mWedgePaint.setAlpha(255);
-        for (int a : CARDINAL_ANGLES) {
-            double rad = Math.toRadians(-a);
-            float mx = cx + markerR * (float) Math.cos(rad);
-            float my = cy + markerR * (float) Math.sin(rad);
-            canvas.drawCircle(mx, my, markerDotR, mWedgePaint);
         }
 
         float dotR = outerR * 1.15f;
@@ -809,21 +885,51 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             canvas.drawCircle(cx, cy, 6f, mWedgePaint);
         }
 
-        // ── Phase 3c: ghost traces (BUILDING) ─────────────
-        if (mGripHeld && mPathLength > 0 && mDispatcher != null) {
-            drawGhostLayer(canvas, cx, cy, dotR, dotBaseR, nodes, count, stepDeg, halfWidth);
+        // ── Phase 3c: ghost traces (armed + lean) ─────
+        // Ghosts are the "legal next moves" teaching layer. Three sub-states:
+        //  • ARMED idle (grip held, path empty, no lean): dashed straight lines
+        //    radiate from the dial center to each bound starter direction.
+        //  • ARMED lean (grip held, path empty, stick leaning): dashed lines
+        //    bow from the lean node's dot to each node that extends the lean
+        //    into a bound 2-node combo. This teaches "where can I go next?".
+        //  • BUILDING (grip held, path committed): dashed lines bow from the
+        //    last committed node to each legal next node.
+        // Ghosts hide when grip is released or when the recognizer is disabled.
+        boolean hasGhostAnchor = mGripHeld && mDispatcher != null;
+        if (hasGhostAnchor) {
+            drawGhostLayer(canvas, cx, cy, outerR, dotR, dotBaseR,
+                    nodes, count, stepDeg, halfWidth);
         }
+
+        // Pass 2: arrow glyphs, rendered ABOVE the ghost layer so the
+        // direction cues are never obscured by dashed ghost routes.
+        mTextPaint.setTextSize(outerR * 0.22f);
+        mTextPaint.setShadowLayer(6f, 0f, 3f, 0xB3000000);
+        for (int i = 0; i < count; i++) {
+            int node = nodes[i];
+            boolean isPreview = (node == mPreviewNode);
+            float startAngle = -(i * stepDeg) - halfWidth;
+            float midDeg = startAngle + halfWidth;
+            float midAngle = (float) Math.toRadians(midDeg);
+            float lx = cx + labelR * (float) Math.cos(midAngle);
+            float ly = cy + labelR * (float) Math.sin(midAngle);
+            mTextPaint.setColor(isPreview ? mColorTextPreview : mColorTextIdle);
+            float textY = ly - (mTextPaint.descent() + mTextPaint.ascent()) / 2f;
+            canvas.save();
+            canvas.rotate(midDeg + 90f, lx, ly);
+            canvas.drawText(ARROW_GLYPH, lx, textY, mTextPaint);
+            canvas.restore();
+        }
+        mTextPaint.clearShadowLayer();
 
         // ── Phase 3a: bottom tip strip ────────────────────
         drawTipStrip(canvas, w, h, dialH, tipStripPx);
 
-        // ── Step 5: per-frame self-invalidate while BUILDING ──
-        // Dead-end check: mGhostCount == 0 && path has no legal nexts → static CTA.
-        // In that case, only re-invalidate when the hand changes (handled in
-        // composeCommitPreview version gate). Otherwise, keep animating.
-        if (mIsBuilding && mGhostCount > 0) {
-            mCanvasView.postInvalidateOnAnimation();
-        }
+        // Per-frame invalidate is driven by mGhostAnimTickRunnable on the main
+        // Handler (see startGhostAnimTick). postInvalidateOnAnimation() was
+        // tried first and does not fire reliably on Wolvic's UIWidget off-
+        // screen surface path, which caused the breathing animation to stop
+        // after a single frame.
     }
 
     /**
@@ -834,7 +940,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      * drawn here by iterating a preallocated fixed-capacity array.
      */
     private void drawGhostLayer(Canvas canvas, float cx, float cy,
-                                 float dotR, float dotBaseR,
+                                 float outerR, float dotR, float dotBaseR,
                                  int[] nodes, int count, float stepDeg, float halfWidth) {
         if (mLastGhostVersion != mGhostCommittedPathVersion) {
             rebuildGhostEntries();
@@ -848,17 +954,47 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         }
 
         // Update cancellation state machine once per frame.
-        mGhostAnim.updateCancellationState(mPreviewSmoother, mCurrentFrameTimeMs);
+        //
+        // Cancel-fade was designed for the pre-commit arm phase ("you're
+        // leaning past threshold toward firing this one, so dim the others").
+        // Once a node is committed and the stick is still held, the same lean
+        // is the user pausing at the committed node — NOT an intent to kill
+        // the other legal-next options. So disable cancel during BUILDING
+        // state: the aimed-ghost solid fill is still the "about to fire" cue,
+        // and the breathing ghosts stay visible so the user can see every
+        // legal next move the committed path offers.
+        if (mPathLength > 0) {
+            mGhostAnim.resetCancel();
+        } else {
+            mGhostAnim.updateCancellationState(mPreviewSmoother, mCurrentFrameTimeMs);
+        }
 
         int aimedZone   = mPreviewSmoother.zone();
         float nodeProgress = mPreviewSmoother.progress();
 
-        int lastNode = mCommittedPath[mPathLength - 1];
-        int idxFrom = indexOfNode(nodes, count, lastNode);
-        if (idxFrom < 0) return;
-        float fromMid = (float) Math.toRadians(-(idxFrom * stepDeg));
-        float fromX = cx + dotR * (float) Math.cos(fromMid);
-        float fromY = cy + dotR * (float) Math.sin(fromMid);
+        // Anchor selection:
+        //   path non-empty            → last committed node on the dot ring
+        //   path empty + active lean  → preview zone on the dot ring
+        //   path empty + no lean      → dial center (idle teaching lines)
+        int lastNode;
+        float fromX, fromY, fromMid;
+        boolean centerAnchor = (mPathLength == 0 && aimedZone <= 0);
+        if (centerAnchor) {
+            lastNode = 0;
+            fromX = cx;
+            fromY = cy;
+            fromMid = 0f;
+        } else {
+            lastNode = (mPathLength > 0)
+                    ? mCommittedPath[mPathLength - 1]
+                    : aimedZone;
+            if (lastNode <= 0) return;
+            int idxFrom = indexOfNode(nodes, count, lastNode);
+            if (idxFrom < 0) return;
+            fromMid = (float) Math.toRadians(-(idxFrom * stepDeg));
+            fromX = cx + dotR * (float) Math.cos(fromMid);
+            fromY = cy + dotR * (float) Math.sin(fromMid);
+        }
 
         int numGhosts = mGhostCount;
 
@@ -871,40 +1007,125 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             float toX   = cx + dotR * (float) Math.cos(toMid);
             float toY   = cy + dotR * (float) Math.sin(toMid);
 
-            // Phase offset for breathing stagger.
-            long phaseOffsetMs = (ComboGhostAnimation.PERIOD_MS / numGhosts) * i;
+            // Sync every ghost to phase 0. On-device testing showed that the
+            // staggered fan (originally intended as a rhythmic flourish in
+            // BUILDING state, where ghosts radiate from distinct nodes) reads
+            // as chaotic flicker, not rhythm — even when origins are visually
+            // distinct. Users consistently preferred unified breathing for
+            // every state. One schedule, shared pulse.
+            long phaseOffsetMs = 0L;
             long elapsed = mCurrentFrameTimeMs - mGhostRenderStartMs;
             long localPhaseMs = (elapsed + phaseOffsetMs) % ComboGhostAnimation.PERIOD_MS;
 
             // Cancel alpha — competitors of the winner fade out.
             float cancelAlpha = mGhostAnim.ghostCancelAlpha(g.nextNode, mCurrentFrameTimeMs);
 
-            // Is this the aimed ghost?
-            boolean isAimed = (g.nextNode == aimedZone && nodeProgress > 0f);
+            // Is this the aimed ghost? Re-strike ghosts (self-loop, nextNode ==
+            // lastNode) never go aimed: while the user is holding the stick at
+            // the just-committed node, the engine legitimately still reports
+            // that zone as the live direction, but the [lastNode, lastNode]
+            // combo does not actually fire until the stick returns to center
+            // and pushes out again. Treating the hold as "aimed" crossfaded the
+            // re-strike circle to solid yellow and froze its icon at 100% —
+            // users read that as "broken, not dashing, not breathing". Keep
+            // re-strike visuals on the breathing schedule regardless of live
+            // preview state.
+            boolean isAimed = (g.nextNode == aimedZone
+                    && nodeProgress > 0f
+                    && g.nextNode != lastNode);
 
             if (isAimed) {
                 // R3: Stick-reactive crossfade — pauses breathing, uses nodeProgress.
                 drawAimedGhost(canvas, cx, cy, fromX, fromY, toX, toY,
+                        fromMid, toMid, centerAnchor,
                         g.nextNode, lastNode, dotBaseR, g.actionInt,
-                        toMid, dotR, nodeProgress, cancelAlpha);
+                        dotR, nodeProgress, cancelAlpha);
             } else {
                 // R2: Breathing animation.
                 drawBreathingGhost(canvas, cx, cy, fromX, fromY, toX, toY,
+                        fromMid, toMid, centerAnchor,
                         g.nextNode, lastNode, dotBaseR, g.actionInt,
-                        toMid, dotR, localPhaseMs, cancelAlpha);
+                        dotR, localPhaseMs, cancelAlpha);
             }
         }
     }
 
     /**
-     * Draw a breathing ghost (R2). Extension phase draws partial route + ramps alpha;
-     * fade phase draws full route at decreasing alpha.
+     * Build the ghost route as an actual {@link Path} ready to stroke. Writes
+     * into {@code target}; always resets {@code target} first.
+     *
+     * <p><b>Adjacent cardinals / diagonals (non-opposite, non-self-loop):</b>
+     * a true circular arc on the HUD-centered dot ring. Both endpoints lie on
+     * that ring, so the arc is literally the 1/4-circle (4-dir) or 1/8-circle
+     * (8-dir) that the user physically traces with the joystick. No Bezier
+     * approximation — the visual IS the geometry.
+     *
+     * <p><b>Opposite-cardinal pair</b> (|delta| ≈ π, e.g. 2↔8 or 4↔6): straight
+     * line through dial center. Matches the actual joystick sweep, which for
+     * diametrically-opposite dots literally passes through center.
+     *
+     * <p><b>Center anchor mode</b> (centerAnchor=true): straight line from
+     * dial center to the toNode — the idle "here are your starter moves"
+     * dashed radial spokes.
+     *
+     * <p>Angle convention: {@code fromMid}/{@code toMid} are in radians using
+     * Android's canvas-space angle convention (0 = east, positive = CW in
+     * screen coords under Y-down). {@link Path#arcTo} uses the same convention
+     * in degrees, so radians→degrees is a direct conversion.
+     *
+     * <p>Zero allocation on the hot path — shares the widget's
+     * {@code mArcRectScratch}.
+     */
+    private void buildGhostRoute(Path target,
+                                  float fromX, float fromY,
+                                  float toX, float toY,
+                                  float fromMid, float toMid,
+                                  float cx, float cy, float dotR,
+                                  boolean centerAnchor) {
+        target.reset();
+        target.moveTo(fromX, fromY);
+        if (centerAnchor) {
+            target.lineTo(toX, toY);
+            return;
+        }
+        float delta = toMid - fromMid;
+        while (delta > (float) Math.PI)  delta -= (float) (2.0 * Math.PI);
+        while (delta < -(float) Math.PI) delta += (float) (2.0 * Math.PI);
+        // Opposite cardinal (|delta| ≈ π): straight line through center.
+        if (Math.abs(Math.abs(delta) - (float) Math.PI) < 1e-3f) {
+            target.lineTo(toX, toY);
+            return;
+        }
+        // Circular arc on the dot ring centered at dial center. Using the
+        // existing dot ring as the arc radius guarantees both endpoints sit
+        // exactly on the arc with no seam at node positions.
+        mArcRectScratch.set(cx - dotR, cy - dotR, cx + dotR, cy + dotR);
+        float startDeg = (float) Math.toDegrees(fromMid);
+        float sweepDeg = (float) Math.toDegrees(delta);
+        target.arcTo(mArcRectScratch, startDeg, sweepDeg, false);
+    }
+
+    // Build an almost-closed 359.99° arc into target. Required because
+    // DashPathEffect is unreliable on closed contours (Path.addCircle /
+    // canvas.drawCircle) under hardware acceleration — the dashes silently
+    // drop out. An open near-full arc renders dashes reliably.
+    private void buildDashedCircle(Path target, float cx, float cy, float r) {
+        target.reset();
+        mArcRectScratch.set(cx - r, cy - r, cx + r, cy + r);
+        target.arcTo(mArcRectScratch, 0f, 359.99f, true);
+    }
+
+    /**
+     * Draw a breathing ghost (R2). Alpha-only pulse — route extends in the
+     * first half of the breath cycle, then everything fades. Re-strike circles
+     * stay fully formed and breathe on alpha (no arc-sweep "spinner" effect).
      */
     private void drawBreathingGhost(Canvas canvas, float cx, float cy,
                                      float fromX, float fromY, float toX, float toY,
+                                     float fromMid, float toMid, boolean centerAnchor,
                                      int nextNode, int lastNode,
                                      float dotBaseR, int actionInt,
-                                     float toMid, float dotR,
+                                     float dotR,
                                      long localPhaseMs, float cancelAlpha) {
         float breathUnit = ComboGhostAnimation.breathAlphaUnit(localPhaseMs,
                 ComboGhostAnimation.PERIOD_MS);
@@ -918,42 +1139,30 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         int pillAlpha  = Math.round(255f * breathUnit * cancelAlpha);
 
         if (nextNode == lastNode) {
-            // Re-strike: sweep dashed circle in extension, fade in fade phase.
+            // Re-strike: always-full dashed circle, alpha breathes.
             if (routeAlpha > 0) {
                 mDashedGhostPaint.setAlpha(routeAlpha);
-                if (inExtension) {
-                    // Arc sweeps 0° → 360° * breathUnit.
-                    float sweepDeg = 360f * breathUnit;
-                    mReStrikeArcScratch.reset();
-                    float r = dotBaseR * 1.8f;
-                    RectF arcRect = mOuterRectScratch; // reuse scratch (safe: not in wedge loop)
-                    arcRect.set(fromX - r, fromY - r, fromX + r, fromY + r);
-                    mReStrikeArcScratch.arcTo(arcRect, 0f, sweepDeg, true);
-                    canvas.drawPath(mReStrikeArcScratch, mDashedGhostPaint);
-                } else {
-                    // Full circle in fade phase.
-                    canvas.drawCircle(fromX, fromY, dotBaseR * 1.8f, mDashedGhostPaint);
-                }
+                buildDashedCircle(mCircleScratch, fromX, fromY, dotBaseR * 1.8f);
+                canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
         } else {
-            // Route curve.
+            // Route arc (or straight line for opposite / center-anchor).
             if (routeAlpha > 0) {
                 mDashedGhostPaint.setAlpha(routeAlpha);
                 if (inExtension && breathUnit < 0.99f) {
-                    // Partial Bezier via PathMeasure.
-                    mGhostPathScratch.reset();
-                    mGhostPathScratch.moveTo(fromX, fromY);
-                    mGhostPathScratch.cubicTo(cx, cy, cx, cy, toX, toY);
+                    // Partial extension — measure and clip.
+                    buildGhostRoute(mGhostPathScratch, fromX, fromY, toX, toY,
+                            fromMid, toMid, cx, cy, dotR, centerAnchor);
                     mPathMeasureScratch.setPath(mGhostPathScratch, false);
                     float len = mPathMeasureScratch.getLength();
                     mPartialPathScratch.reset();
-                    mPathMeasureScratch.getSegment(0f, len * breathUnit, mPartialPathScratch, true);
+                    mPathMeasureScratch.getSegment(0f, len * breathUnit,
+                            mPartialPathScratch, true);
                     canvas.drawPath(mPartialPathScratch, mDashedGhostPaint);
                 } else {
-                    // Full curve (extension at 1.0 or fade phase).
-                    mGhostPathScratch.reset();
-                    mGhostPathScratch.moveTo(fromX, fromY);
-                    mGhostPathScratch.cubicTo(cx, cy, cx, cy, toX, toY);
+                    // Full route (extension at 1.0 or fade phase).
+                    buildGhostRoute(mGhostPathScratch, fromX, fromY, toX, toY,
+                            fromMid, toMid, cx, cy, dotR, centerAnchor);
                     canvas.drawPath(mGhostPathScratch, mDashedGhostPaint);
                 }
             }
@@ -961,7 +1170,8 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             // Arrival ring (dashed stroke around the toNode dot).
             if (ringAlpha > 0) {
                 mDashedGhostPaint.setAlpha(ringAlpha);
-                canvas.drawCircle(toX, toY, dotBaseR * 1.2f, mDashedGhostPaint);
+                buildDashedCircle(mCircleScratch, toX, toY, dotBaseR * 1.2f);
+                canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
         }
 
@@ -981,9 +1191,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      */
     private void drawAimedGhost(Canvas canvas, float cx, float cy,
                                   float fromX, float fromY, float toX, float toY,
+                                  float fromMid, float toMid, boolean centerAnchor,
                                   int nextNode, int lastNode,
                                   float dotBaseR, int actionInt,
-                                  float toMid, float dotR,
+                                  float dotR,
                                   float nodeProgress, float cancelAlpha) {
         // Crossfade: dashed at (1-progress), solid at progress.
         int dashedAlpha = Math.round(255f * 0.70f * (1f - nodeProgress) * cancelAlpha);
@@ -994,16 +1205,16 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             // Re-strike: full dashed circle fading to solid circle.
             if (dashedAlpha > 0) {
                 mDashedGhostPaint.setAlpha(dashedAlpha);
-                canvas.drawCircle(fromX, fromY, dotBaseR * 1.8f, mDashedGhostPaint);
+                buildDashedCircle(mCircleScratch, fromX, fromY, dotBaseR * 1.8f);
+                canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
             if (solidAlpha > 0) {
                 mSolidGhostPaint.setAlpha(solidAlpha);
                 canvas.drawCircle(fromX, fromY, dotBaseR * 1.8f, mSolidGhostPaint);
             }
         } else {
-            mGhostPathScratch.reset();
-            mGhostPathScratch.moveTo(fromX, fromY);
-            mGhostPathScratch.cubicTo(cx, cy, cx, cy, toX, toY);
+            buildGhostRoute(mGhostPathScratch, fromX, fromY, toX, toY,
+                    fromMid, toMid, cx, cy, dotR, centerAnchor);
 
             if (dashedAlpha > 0) {
                 mDashedGhostPaint.setAlpha(dashedAlpha);
@@ -1014,12 +1225,13 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
                 canvas.drawPath(mGhostPathScratch, mSolidGhostPaint);
             }
 
-            // Arrival ring crossfade.
+            // Arrival ring crossfade — dashed path, solid drawCircle.
             int dashedRingAlpha = Math.round(255f * 0.70f * (1f - nodeProgress) * cancelAlpha);
             int solidRingAlpha  = Math.round(255f * nodeProgress * cancelAlpha);
             if (dashedRingAlpha > 0) {
                 mDashedGhostPaint.setAlpha(dashedRingAlpha);
-                canvas.drawCircle(toX, toY, dotBaseR * 1.2f, mDashedGhostPaint);
+                buildDashedCircle(mCircleScratch, toX, toY, dotBaseR * 1.2f);
+                canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
             if (solidRingAlpha > 0) {
                 mSolidGhostPaint.setAlpha(solidRingAlpha);
@@ -1042,27 +1254,50 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      */
     private void rebuildGhostEntries() {
         mGhostCount = 0;
-        if (mDispatcher == null || mPathLength == 0) return;
-        int lastNode = mCommittedPath[mPathLength - 1];
+        if (mDispatcher == null) return;
 
-        System.arraycopy(mCommittedPath, 0, mExtendedPathScratch, 0, mPathLength);
-        int extLen = mPathLength + 1;
+        // Anchor selection (mirrors drawGhostLayer):
+        //   path non-empty            → committed last node
+        //   path empty + active lean  → preview zone (teaching-during-lean)
+        //   path empty + no lean      → empty path (idle starter teaching)
+        int lastNode;
+        int anchorLen;
+        if (mPathLength > 0) {
+            lastNode = mCommittedPath[mPathLength - 1];
+            System.arraycopy(mCommittedPath, 0, mExtendedPathScratch, 0, mPathLength);
+            anchorLen = mPathLength;
+        } else {
+            int preview = mPreviewSmoother.zone();
+            if (preview > 0) {
+                lastNode = preview;
+                mExtendedPathScratch[0] = preview;
+                anchorLen = 1;
+            } else {
+                lastNode = 0;
+                anchorLen = 0;
+            }
+        }
+        int extLen = anchorLen + 1;
 
-        Set<Integer> legalNexts = mDispatcher.getLegalNextNodes(
-                Arrays.copyOf(mCommittedPath, mPathLength));
+        int[] anchorPath = Arrays.copyOf(mExtendedPathScratch, anchorLen);
+        Set<Integer> legalNexts = mDispatcher.getLegalNextNodes(anchorPath);
         for (Integer boxedNext : legalNexts) {
             int nextNode = boxedNext;
             if (nextNode == 5) continue;
-            mExtendedPathScratch[mPathLength] = nextNode;
+            mExtendedPathScratch[anchorLen] = nextNode;
             int[] extended = Arrays.copyOf(mExtendedPathScratch, extLen);
             int action = mDispatcher.getActionForExactPath(extended);
             if (action == ComboDispatcher.A_NONE) continue;
             insertGhostSorted(nextNode, extLen, action);
         }
 
-        // Re-strike fallback.
-        if (!legalNexts.contains(lastNode) && !containsGhostForNode(lastNode)) {
-            mExtendedPathScratch[mPathLength] = lastNode;
+        // Re-strike fallback: only meaningful when we have a real anchor node
+        // (anchorLen > 0). In center-anchor idle mode, lastNode == 0 so there
+        // is no re-strike semantics to preserve.
+        if (anchorLen > 0
+                && !legalNexts.contains(lastNode)
+                && !containsGhostForNode(lastNode)) {
+            mExtendedPathScratch[anchorLen] = lastNode;
             int[] extended = Arrays.copyOf(mExtendedPathScratch, extLen);
             int action = mDispatcher.getActionForExactPath(extended);
             if (action != ComboDispatcher.A_NONE) {
@@ -1134,28 +1369,57 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private void drawTipStrip(Canvas canvas, int w, int h, int dialH, int tipStripPx) {
         CharSequence cs = pickStripText();
         if (cs == null || cs.length() == 0) return;
-        float stripCenterY = dialH + tipStripPx * 0.5f;
-        float baseline = stripCenterY - (mTipPaint.descent() + mTipPaint.ascent()) / 2f;
-        float availWidth = w - 16f;
-        // Cache the ellipsize result to avoid per-frame allocation (§5.2 zero-heap).
-        // Key: current TipCandidate identity + committed-path version + available width.
-        // mCurrentTip is null while BUILDING (path > 0), so version key covers that leg.
-        if (mCurrentTip != mEllipsizedTipKey
-                || mGhostCommittedPathVersion != mEllipsizedTipVersion
-                || availWidth != mEllipsizedTipWidth) {
-            mEllipsizedTip = TextUtils.ellipsize(cs, mTipPaint, availWidth, TextUtils.TruncateAt.END);
-            mEllipsizedTipKey = mCurrentTip;
-            mEllipsizedTipVersion = mGhostCommittedPathVersion;
-            mEllipsizedTipWidth = availWidth;
+        int availWidth = Math.max(0, w - 16);
+
+        // Swap text color based on strip role: yellow when actively signaling
+        // "release to fire", dim otherwise. StaticLayout reads mTipPaint's
+        // color at draw time, so a plain setColor on the shared paint is
+        // enough — no layout rebuild needed for the text portion.
+        int desiredColor = mCurrentStripIsAccent ? mColorGhostYellow : mColorTipText;
+        if (mTipPaint.getColor() != desiredColor) {
+            mTipPaint.setColor(desiredColor);
         }
-        CharSequence rendered = mEllipsizedTip;
-        canvas.drawText(rendered, 0, rendered.length(), w / 2f, baseline, mTipPaint);
+
+        // Rebuild the StaticLayout only when the text identity or width changes.
+        // The composeReleaseToFireTip / composeCommitPreview / rendering helpers
+        // upstream return cached Spannables for stable inputs, so the reference
+        // compare here acts as a real cache key.
+        if (cs != mTipStripLayoutKey || availWidth != mTipStripLayoutWidth) {
+            mTipStripLayout = new StaticLayout(
+                    cs, mTipPaint, availWidth,
+                    Layout.Alignment.ALIGN_CENTER,
+                    1f, 0f, false);
+            mTipStripLayoutKey = cs;
+            mTipStripLayoutWidth = availWidth;
+        }
+        if (mTipStripLayout == null) return;
+
+        // Center the layout vertically inside the 60px strip (dialH .. dialH+tipStripPx).
+        float yOffset = dialH + (tipStripPx - mTipStripLayout.getHeight()) * 0.5f;
+        int save = canvas.save();
+        canvas.translate(8f, yOffset);
+        mTipStripLayout.draw(canvas);
+        canvas.restoreToCount(save);
     }
 
     @Nullable
     private CharSequence pickStripText() {
         if (!mGripHeld) return null;
+
+        // Highest priority: "Release to fire: [icon] [name]" whenever the user
+        // is leaning toward a zone that, combined with the committed path,
+        // forms an exact bound action. Covers both fresh combos (path empty,
+        // leaning toward a single-tap binding like [2]=Scroll-Up) and combo
+        // extensions (path [2], leaning back to 2 for the [2,2]=Scroll-Top
+        // re-strike).
+        CharSequence releaseToFire = composeReleaseToFireLabel();
+        if (releaseToFire != null) {
+            mCurrentStripIsAccent = true;
+            return releaseToFire;
+        }
+
         if (mPathLength == 0) {
+            mCurrentStripIsAccent = false;
             if (mCurrentTip == null) return null;
             if (mCurrentTip.metaStringRes != 0) {
                 return ComboTipBuilder.renderMetaTip(
@@ -1169,7 +1433,86 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             }
             return null;
         }
-        // BUILDING. Commit preview label (R1 + R4).
+        // BUILDING without active lean. Commit preview label (R1 + R4).
+        // The dead-end CTA branch inside composeCommitPreview sets the accent
+        // flag; the binding-tip / prefix-blank branches reset it.
         return composeCommitPreview(mCommittedPath, mPathLength);
+    }
+
+    /**
+     * When the stick is actively leaned into a zone that completes a bound
+     * combo (either alone or appended to the committed path), return the
+     * "Release to fire: [icon] [action name]" Spannable. Returns {@code null}
+     * otherwise.
+     *
+     * <p>Zero allocation on the hot path: delegates to
+     * {@link ComboTipBuilder#renderReleaseToFireTip} which caches by
+     * {@code (actionInt, size, color)} — repeated frames during a sustained
+     * lean hit the cache.
+     */
+    @Nullable
+    private CharSequence composeReleaseToFireLabel() {
+        if (mDispatcher == null) return null;
+        int previewZone = mPreviewSmoother.zone();
+
+        // Resolution priority:
+        //   1. If the committed path is itself a bound combo, its action is
+        //      what releasing grip right now will actually fire. Show that —
+        //      even if the user is leaning further (the lean has not yet
+        //      crossed activation, so no new commit has happened). This is
+        //      the fix for the "committed at zone 4, label says Back" bug:
+        //      previously we always appended previewZone to the committed
+        //      path, computing [4,4] = A_BACK. Now committed [4] = A_SCROLL_
+        //      LEFT wins.
+        //   2. Otherwise, if the stick is leaned into a zone that extends
+        //      the (possibly empty) committed path into a bound combo,
+        //      show that virtual action — an anticipatory "if you push past
+        //      activation this will fire" cue. Covers the fresh-combo case
+        //      (path empty, leaning toward [2] = Scroll Up) and the prefix-
+        //      extension case (path [2], leaning toward [2,8] = Refresh
+        //      when [2] itself is unbound).
+        //   3. Otherwise return null — caller falls through to idle-tip or
+        //      commit-preview rendering.
+        //
+        // Zero-allocation cache keyed on (previewZone, committed-version).
+        // The version field bumps on bindings changes, commits, and zone-
+        // change-while-path-empty, so this key is sufficient.
+        int action;
+        if (mReleaseToFireCacheZone == previewZone
+                && mReleaseToFireCacheVersion == mGhostCommittedPathVersion) {
+            action = mReleaseToFireCacheAction;
+        } else {
+            action = ComboDispatcher.A_NONE;
+            // 1. Committed-path action takes priority when path is non-empty.
+            if (mPathLength > 0) {
+                int[] committed = Arrays.copyOf(mCommittedPath, mPathLength);
+                action = mDispatcher.getActionForExactPath(committed);
+            }
+            // 2. Virtual-extended fallback — only when committed path is
+            //    unbound/empty and the user is actively leaning.
+            if (action == ComboDispatcher.A_NONE
+                    && previewZone > 0 && previewZone != 5) {
+                int virtualLen = mPathLength + 1;
+                if (virtualLen <= mExtendedPathScratch.length) {
+                    System.arraycopy(mCommittedPath, 0,
+                            mExtendedPathScratch, 0, mPathLength);
+                    mExtendedPathScratch[mPathLength] = previewZone;
+                    int[] virtualPath = Arrays.copyOf(
+                            mExtendedPathScratch, virtualLen);
+                    action = mDispatcher.getActionForExactPath(virtualPath);
+                }
+            }
+            mReleaseToFireCacheZone    = previewZone;
+            mReleaseToFireCacheVersion = mGhostCommittedPathVersion;
+            mReleaseToFireCacheAction  = action;
+        }
+        if (action == ComboDispatcher.A_NONE) return null;
+
+        // Text-only label ("Release: {Action Name}"). The inline ImageSpan
+        // experiment from round 4/5 never read cleanly in VR — icon
+        // alignment on the 28sp line was fragile and the icon is already
+        // shown in the ghost pill for the aimed zone, so the strip doesn't
+        // need to repeat it.
+        return ComboTipBuilder.renderReleaseToFireTip(getContext(), action);
     }
 }

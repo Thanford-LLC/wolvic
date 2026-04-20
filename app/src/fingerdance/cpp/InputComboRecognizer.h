@@ -42,6 +42,11 @@ public:
     // Silent cancel — call when an OS overlay steals focus.
     void CancelSilent();
 
+    // True while no combo nodes have been committed. OpenXR reads this to
+    // decide whether a thumbstick click should toggle the HUD (idle) or
+    // cancel the in-progress combo (mid-path).
+    bool IsPathEmpty() const;
+
     // Phase 3b: forward the continuous preview-progress callback to the
     // underlying engine. Kept as a setter (not a ctor argument) so the
     // existing constructor signature stays stable.
