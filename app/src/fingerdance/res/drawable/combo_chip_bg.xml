@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (c) 2026 Thanford. All rights reserved.
+  Proprietary FingerDance drawable. Not licensed under the MPL 2.0 that
+  covers the surrounding Wolvic files.
+
+  Phase 3 — yellow-wash pill background for bound-combo chips. Accent-muted
+  fill keeps the arrow glyphs readable without shouting over the row label.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/fd_accent_muted" />
+    <corners android:radius="10dp" />
+    <padding
+        android:left="8dp"
+        android:top="4dp"
+        android:right="8dp"
+        android:bottom="4dp" />
+</shape>

@@ -32,4 +32,29 @@
         <item>true</item>
         <item>false</item>
     </string-array>
+
+    <!-- Phase 3 — categorised binding list section headers. -->
+    <string name="combos_section_system">System gestures</string>
+    <string name="combos_section_navigation">Navigation</string>
+    <string name="combos_section_position">Position</string>
+    <string name="combos_section_window">Window</string>
+    <string name="combos_section_library">Library</string>
+    <string name="combos_section_special">Special</string>
+
+    <!-- Phase 3 — info-only System Gestures rows. -->
+    <string name="combos_gesture_longpress">Long-press left joystick</string>
+    <string name="combos_gesture_longpress_action">Open Combos Settings</string>
+    <string name="combos_gesture_click_idle">Click joystick (idle)</string>
+    <string name="combos_gesture_click_idle_action">Toggle combo HUD</string>
+    <string name="combos_gesture_click_midpath">Click joystick (mid-path)</string>
+    <string name="combos_gesture_click_midpath_action">Cancel combo</string>
+
+    <!-- Per sealed T1: only the CURRENT mode's escape path is listed (easter-egg framing). -->
+    <string name="combos_gesture_mode_4dir_escape">Push up eight times</string>
+    <string name="combos_gesture_mode_4dir_escape_action">Switch to 8-dir mode</string>
+    <string name="combos_gesture_mode_8dir_escape">Push up four times</string>
+    <string name="combos_gesture_mode_8dir_escape_action">Switch to 4-dir mode</string>
+
+    <!-- Empty-state copy for action rows with zero bindings (user deleted defaults). -->
+    <string name="combos_row_unbound">Not bound</string>
 </resources>

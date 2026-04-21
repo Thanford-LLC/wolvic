@@ -91,6 +91,15 @@
                     android:text="@string/combos_buzz_on_combo_sub"
                     android:textAlignment="textStart" />
 
+                <!-- Phase 3 — read-only categorised combo list. CombosListBuilder
+                     inflates section headers, System Gestures info rows, and
+                     one action row per known A_* into this container. -->
+                <LinearLayout
+                    android:id="@+id/combos_list_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
             </LinearLayout>
         </com.igalia.wolvic.ui.views.CustomScrollView>
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (c) 2026 Thanford. All rights reserved.
+  Proprietary FingerDance layout. Not licensed under the MPL 2.0 that
+  covers the surrounding Wolvic files.
+
+  Phase 3 — info-only row for the System Gestures section.
+  "Gesture label  →  Action it triggers". No chips, no +Create affordance.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/system_gesture_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="28sp"
+        android:textColor="@color/fd_text_muted"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/system_gesture_action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:textSize="28sp"
+        android:textColor="@color/fd_text"
+        android:textAlignment="viewEnd" />
+
+</LinearLayout>

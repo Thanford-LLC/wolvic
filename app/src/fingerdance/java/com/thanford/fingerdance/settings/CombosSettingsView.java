@@ -9,12 +9,15 @@ package com.thanford.fingerdance.settings;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Point;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 
 import androidx.databinding.DataBindingUtil;
 import androidx.preference.PreferenceManager;
 
 import com.igalia.wolvic.R;
+import com.igalia.wolvic.VRBrowserActivity;
 import com.igalia.wolvic.databinding.OptionsCombosBinding;
 import com.igalia.wolvic.input.ComboDispatcher;
 import com.igalia.wolvic.ui.views.settings.RadioGroupSetting;
@@ -41,12 +44,15 @@ import com.igalia.wolvic.ui.widgets.settings.SettingsView;
  * <p>Phase 3 and later layer the categorised binding list, bind flow, and
  * bookmark integration on top of this chrome.
  */
-public class CombosSettingsView extends SettingsView {
+public class CombosSettingsView extends SettingsView
+        implements ComboDispatcher.BindingsListener {
 
     private OptionsCombosBinding mBinding;
     private RadioGroupSetting.OnCheckedChangeListener mModeListener;
     private SwitchSetting.OnCheckedChangeListener mHudListener;
     private SwitchSetting.OnCheckedChangeListener mBuzzListener;
+    private ComboDispatcher mDispatcher;
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
     public CombosSettingsView(Context aContext, WidgetManagerDelegate aWidgetManager) {
         super(aContext, aWidgetManager);
@@ -104,6 +110,51 @@ public class CombosSettingsView extends SettingsView {
         // users want it).
         mBinding.footerLayout.setFooterButtonClickListener(view -> {
             new ComboBindingStore(getContext()).clearAll();
+        });
+
+        // --- Phase 3 — read-only categorised combo list ---
+        // Fetch the live dispatcher via the activity accessor, populate the
+        // list container, and subscribe for refresh on mode toggle / reset.
+        if (mDispatcher != null) {
+            mDispatcher.removeBindingsListener(this);
+        }
+        Context ctx = getContext();
+        if (ctx instanceof VRBrowserActivity) {
+            mDispatcher = ((VRBrowserActivity) ctx).getComboDispatcher();
+        }
+        if (mDispatcher != null) {
+            CombosListBuilder.populate(ctx, mBinding.combosListContainer, mDispatcher);
+            mDispatcher.addBindingsListener(this);
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (mDispatcher != null) {
+            mDispatcher.removeBindingsListener(this);
+        }
+        super.onDetachedFromWindow();
+    }
+
+    @Override
+    protected void onDismiss() {
+        if (mDispatcher != null) {
+            mDispatcher.removeBindingsListener(this);
+        }
+        super.onDismiss();
+    }
+
+    // --- ComboDispatcher.BindingsListener ---
+    // stampBindingChange fires on the caller's thread; post to main so the
+    // list rebuild runs on the UI thread even when future phases trigger
+    // binding changes from the input thread.
+    @Override
+    public void onBindingsChanged() {
+        mMainHandler.post(() -> {
+            if (mBinding != null && mDispatcher != null) {
+                CombosListBuilder.populate(getContext(),
+                        mBinding.combosListContainer, mDispatcher);
+            }
         });
     }
 

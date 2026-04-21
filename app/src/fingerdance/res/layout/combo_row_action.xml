@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (c) 2026 Thanford. All rights reserved.
+  Proprietary FingerDance layout. Not licensed under the MPL 2.0 that
+  covers the surrounding Wolvic files.
+
+  Phase 3 — editable action row. Left: action label (28sp). Right: one or more
+  chips showing every bound combo path for this action (arrows via
+  ComboTipBuilder.renderArrowsOnly). Chips are non-interactive in Phase 3 —
+  delete-X lands in Phase 4, +Create in Phase 5.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/action_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="28sp"
+        android:textColor="@color/fd_text"
+        android:textAlignment="viewStart" />
+
+    <LinearLayout
+        android:id="@+id/chip_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical|end" />
+
+</LinearLayout>

@@ -2335,6 +2335,14 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         return mWindows;
     }
 
+    // FingerDance: proprietary Combos Settings panel needs read access to the
+    // dispatcher so its adapter can call getAllBindings()/isCombo4DirMode() and
+    // register as a BindingsListener. Not on WidgetManagerDelegate to avoid
+    // widening that interface.
+    public com.igalia.wolvic.input.ComboDispatcher getComboDispatcher() {
+        return mComboDispatcher;
+    }
+
     @Override
     public void saveState() {
         mWindows.saveState();

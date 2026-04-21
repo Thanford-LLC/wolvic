@@ -228,6 +228,37 @@ public final class ComboTipBuilder {
     }
 
     /**
+     * Like {@link #renderBindingTip} but arrows only — no trailing action icon.
+     * Used by the Combos Settings panel where the action label appears as row
+     * chrome and repeating the action icon inside the chip would duplicate it.
+     * Cached separately under an {@code "arrows#"} key so the binding-tip and
+     * chip renders don't evict each other.
+     */
+    public static Spannable renderArrowsOnly(@NonNull Context ctx,
+                                             @NonNull int[] path,
+                                             int iconSizePx,
+                                             int color) {
+        String cacheKey = "arrows#" + Arrays.toString(path)
+                + "#" + iconSizePx + "#" + color;
+        Spannable cached = BINDING_TIP_CACHE.get(cacheKey);
+        if (cached != null) return cached;
+
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        for (int node : path) {
+            if (node == 5) continue;
+            int start = sb.length();
+            sb.append(' ');
+            Drawable arrow = createRotatedArrow(ctx, node, iconSizePx, color);
+            if (arrow != null) {
+                sb.setSpan(new ImageSpan(arrow, ImageSpan.ALIGN_BASELINE),
+                        start, sb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+        BINDING_TIP_CACHE.put(cacheKey, sb);
+        return sb;
+    }
+
+    /**
      * Compose the preview-fire tip shown in the bottom strip while the user is
      * actively leaning toward a bound combo. Text-only: {@code "Release:
      * {action name}"}. The inline ImageSpan variant (rounds 4-5) never sat

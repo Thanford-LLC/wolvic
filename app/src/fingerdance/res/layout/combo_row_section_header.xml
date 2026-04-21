@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (c) 2026 Thanford. All rights reserved.
+  Proprietary FingerDance layout. Not licensed under the MPL 2.0 that
+  covers the surrounding Wolvic files.
+
+  Phase 3 — section header row. Yellow-accent band above each category
+  group in the Combos Settings list (System Gestures, Navigation, …).
+-->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/section_title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="6dp"
+    android:textSize="24sp"
+    android:textStyle="bold"
+    android:textColor="@color/fd_accent"
+    android:fontFamily="sans-serif"
+    android:textAlignment="viewStart" />
