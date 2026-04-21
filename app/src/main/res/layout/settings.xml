@@ -171,6 +171,13 @@
                         android:orientation="horizontal">
 
                         <com.igalia.wolvic.ui.views.HoneycombButton
+                            android:id="@+id/combosButton"
+                            style="?attr/honeycombButtonStyle"
+                            app:honeycombButtonIcon="@drawable/ic_settings_combos"
+                            app:honeycombButtonText="@string/settings_combos"
+                            app:honeycombButtonTextSize="@dimen/settings_main_button_text_width" />
+
+                        <com.igalia.wolvic.ui.views.HoneycombButton
                             android:id="@+id/languageButton"
                             style="?attr/honeycombButtonStyle"
                             app:honeycombButtonIcon="@drawable/ic_settings_language"

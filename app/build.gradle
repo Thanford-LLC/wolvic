@@ -489,7 +489,8 @@ android {
             java.srcDirs = [
                     'app',
                     'src/common/shared',
-                    'src/main/cpp/vrb/android/java'
+                    'src/main/cpp/vrb/android/java',
+                    'src/fingerdance/java'
             ]
 
             // FingerDance skin selection.
@@ -502,6 +503,7 @@ android {
                 throw new GradleException("Invalid fdSkin=${fdSkin}. Allowed: ${fdSkinAllowed}")
             }
             res.srcDirs += ["src/main/res-fd-${fdSkin}"]
+            res.srcDirs += ["src/fingerdance/res"]
             assets.srcDirs += ["src/main/assets-fd-${fdSkin}"]
         }
 

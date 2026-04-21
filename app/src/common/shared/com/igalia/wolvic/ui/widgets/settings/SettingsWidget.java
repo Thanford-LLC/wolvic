@@ -255,6 +255,14 @@ public class SettingsWidget extends UIDialog implements SettingsView.Delegate {
             showView(SettingsView.SettingViewType.CONTROLLER);
         });
 
+        mBinding.combosButton.setOnClickListener(view -> {
+            if (mAudio != null) {
+                mAudio.playSound(AudioEngine.Sound.CLICK);
+            }
+
+            showView(SettingsView.SettingViewType.COMBOS);
+        });
+
         mBinding.whatsNewButton.setOnClickListener(v -> {
             if (mAudio != null) {
                 mAudio.playSound(AudioEngine.Sound.CLICK);
@@ -484,6 +492,9 @@ public class SettingsWidget extends UIDialog implements SettingsView.Delegate {
                 break;
             case CONTROLLER:
                 showView(new ControllerOptionsView(getContext(), mWidgetManager));
+                break;
+            case COMBOS:
+                showView(new com.thanford.fingerdance.settings.CombosSettingsView(getContext(), mWidgetManager));
                 break;
             case TRACKING_EXCEPTION:
                 showView(new TrackingPermissionsOptionsView(getContext(), mWidgetManager));

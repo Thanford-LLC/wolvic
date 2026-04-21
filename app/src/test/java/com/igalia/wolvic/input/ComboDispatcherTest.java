@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.igalia.wolvic.TestApplication;
+import com.thanford.fingerdance.settings.Binding;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -150,7 +151,7 @@ public class ComboDispatcherTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void getAllBindingsIsUnmodifiable() {
-        mDispatcher4Dir.getAllBindings().put("[9,9,9,9,9]", 999);
+        mDispatcher4Dir.getAllBindings().put("[9,9,9,9,9]", Binding.of(999));
     }
 
     // ---- Legal-next rebuilt after rebinding ----------------------------

@@ -32,6 +32,7 @@ public abstract class SettingsView extends FrameLayout {
         FXA,
         ENVIRONMENT,
         CONTROLLER,
+        COMBOS,
         TRACKING_EXCEPTION,
         LOGINS_AND_PASSWORDS,
         SAVED_LOGINS,

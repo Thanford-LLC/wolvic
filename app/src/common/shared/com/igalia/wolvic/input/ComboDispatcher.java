@@ -16,6 +16,7 @@ import com.igalia.wolvic.ui.widgets.Windows;
 import com.igalia.wolvic.ui.widgets.WindowWidget;
 import com.igalia.wolvic.ui.widgets.WidgetManagerDelegate;
 import com.igalia.wolvic.utils.UrlUtils;
+import com.thanford.fingerdance.settings.Binding;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -74,8 +75,12 @@ public class ComboDispatcher {
     /** Test-only override for {@link #is4DirMode()}. Null in production. */
     @VisibleForTesting
     Boolean mForcedMode4DirForTest = null;
-    private final Map<String, Integer> mTable8Dir = new HashMap<>();
-    private final Map<String, Integer> mTable4Dir = new HashMap<>();
+    // volatile: UI-thread rebinds build a fresh HashMap locally and atomically
+    // publish via reference reassignment; the input/render thread only reads
+    // through these fields. Without volatile, dispatch() could observe a
+    // half-resized HashMap during rebind (A1 race — fix per plan §D-E1).
+    private volatile Map<String, Binding> mTable8Dir = new HashMap<>();
+    private volatile Map<String, Binding> mTable4Dir = new HashMap<>();
     private final java.util.concurrent.CopyOnWriteArrayList<BindingsListener> mBindingsListeners =
             new java.util.concurrent.CopyOnWriteArrayList<>();
     // volatile: getLastChangedPathId() / getLastChangedAtMillis() are public
@@ -120,8 +125,13 @@ public class ComboDispatcher {
     @VisibleForTesting
     public void setBindingForTest(@NonNull int[] path, int actionInt) {
         String k = key(path);
-        mTable8Dir.put(k, actionInt);
-        mTable4Dir.put(k, actionInt);
+        Map<String, Binding> four = new HashMap<>(mTable4Dir);
+        Map<String, Binding> eight = new HashMap<>(mTable8Dir);
+        Binding b = Binding.of(actionInt);
+        four.put(k, b);
+        eight.put(k, b);
+        mTable4Dir = four;
+        mTable8Dir = eight;
         mNextNodeIndexDirty = true;
         stampBindingChange(k);
     }
@@ -142,6 +152,12 @@ public class ComboDispatcher {
     }
 
     private void buildTables() {
+        // Build fresh local maps, populate, then publish atomically by reassigning
+        // the volatile fields. Readers on the input thread see either the old
+        // reference or the new reference consistently — never a half-resized map.
+        Map<String, Binding> four = new HashMap<>();
+        Map<String, Binding> eight = new HashMap<>();
+
         // Shared cardinal combos — identical in both modes.
         int[][] shared = {
             {A_SCROLL_UP,     2},
@@ -151,29 +167,30 @@ public class ComboDispatcher {
         };
         for (int[] s : shared) {
             String k = key(s[1]);
-            mTable8Dir.put(k, s[0]);
-            mTable4Dir.put(k, s[0]);
+            Binding b = Binding.of(s[0]);
+            eight.put(k, b);
+            four.put(k, b);
         }
-        putBoth(A_SCROLL_TOP,    2, 2);
-        putBoth(A_SCROLL_BOTTOM, 8, 8);
-        putBoth(A_BACK,          4, 4);
-        putBoth(A_FORWARD,       6, 6);
-        putBoth(A_REFRESH,       2, 8);
-        putBoth(A_FIND_IN_PAGE,  8, 2);
-        putBoth(A_STOP,          4, 6);
-        putBoth(A_HISTORY,       2, 2, 2);
+        putBoth(four, eight, A_SCROLL_TOP,    2, 2);
+        putBoth(four, eight, A_SCROLL_BOTTOM, 8, 8);
+        putBoth(four, eight, A_BACK,          4, 4);
+        putBoth(four, eight, A_FORWARD,       6, 6);
+        putBoth(four, eight, A_REFRESH,       2, 8);
+        putBoth(four, eight, A_FIND_IN_PAGE,  8, 2);
+        putBoth(four, eight, A_STOP,          4, 6);
+        putBoth(four, eight, A_HISTORY,       2, 2, 2);
 
         // 8-dir specific
-        mTable8Dir.put(key(3),           A_NEW_WINDOW);
-        mTable8Dir.put(key(1),           A_CLOSE_WINDOW);
-        mTable8Dir.put(key(3, 3),        A_DUPLICATE);
-        mTable8Dir.put(key(2, 3, 6),     A_NEXT_WINDOW);
-        mTable8Dir.put(key(2, 1, 4),     A_PREV_WINDOW);
-        mTable8Dir.put(key(9),           A_URL_BAR);
-        mTable8Dir.put(key(7),           A_OPEN_BOOKMARKS);
-        mTable8Dir.put(key(8, 8, 8),     A_ADD_BOOKMARK);
-        mTable8Dir.put(key(2, 1, 4, 7, 8), A_READER_MODE);
-        mTable8Dir.put(key(2, 3, 6, 9, 8), A_PRIVATE_WINDOW);
+        eight.put(key(3),              Binding.of(A_NEW_WINDOW));
+        eight.put(key(1),              Binding.of(A_CLOSE_WINDOW));
+        eight.put(key(3, 3),           Binding.of(A_DUPLICATE));
+        eight.put(key(2, 3, 6),        Binding.of(A_NEXT_WINDOW));
+        eight.put(key(2, 1, 4),        Binding.of(A_PREV_WINDOW));
+        eight.put(key(9),              Binding.of(A_URL_BAR));
+        eight.put(key(7),              Binding.of(A_OPEN_BOOKMARKS));
+        eight.put(key(8, 8, 8),        Binding.of(A_ADD_BOOKMARK));
+        eight.put(key(2, 1, 4, 7, 8),  Binding.of(A_READER_MODE));
+        eight.put(key(2, 3, 6, 9, 8),  Binding.of(A_PRIVATE_WINDOW));
 
         // 4-dir-only entries. All cardinal-based, so they don't collide with
         // 8-dir's diagonal bindings — mirror them into the 8-dir table too so
@@ -193,30 +210,33 @@ public class ComboDispatcher {
         };
         for (int[][] entry : fourDirCombos) {
             String k = key(entry[0]);
-            int action = entry[1][0];
-            mTable4Dir.put(k, action);
-            mTable8Dir.putIfAbsent(k, action);
+            Binding b = Binding.of(entry[1][0]);
+            four.put(k, b);
+            eight.putIfAbsent(k, b);
         }
+
+        // Atomic publish — readers see a fully-built map after these writes.
+        mTable4Dir = four;
+        mTable8Dir = eight;
     }
 
     /**
-     * Rebuilds the combo tables from persisted user overrides. v1 ships a stub
-     * body — the Settings screen plan wires up SharedPreferences persistence.
-     * Fires BindingsChanged on completion so subscribed listeners (HUD tip pool)
-     * can refresh.
+     * Rebuilds the combo tables from defaults. v1 ships without user-override
+     * reading — the Settings persistence plan wires up ComboBindingStore in
+     * Phase 2. For now this just restamps defaults and fires BindingsChanged
+     * so subscribed listeners (HUD tip pool) refresh.
      */
     public void reloadBindings() {
-        // Reset to defaults; Settings persistence plan will add SharedPreferences override reading.
-        mTable8Dir.clear();
-        mTable4Dir.clear();
         buildTables();
         stampBindingChange(null);
     }
 
-    private void putBoth(int action, int... path) {
+    private static void putBoth(Map<String, Binding> four, Map<String, Binding> eight,
+                                int action, int... path) {
         String k = key(path);
-        mTable8Dir.put(k, action);
-        mTable4Dir.put(k, action);
+        Binding b = Binding.of(action);
+        eight.put(k, b);
+        four.put(k, b);
     }
 
     private static String key(int... path) {
@@ -261,8 +281,9 @@ public class ComboDispatcher {
         Log.d(LOGTAG, "dispatch path=" + Arrays.toString(combo)
                 + " mode=" + (is4DirMode() ? "4dir" : "8dir"));
 
-        Map<String, Integer> table = currentTable();
-        Integer action = table.get(key(combo));
+        Map<String, Binding> table = currentTable();
+        Binding binding = table.get(key(combo));
+        Integer action = binding != null ? binding.action : null;
 
         // 4-dir fallback: if the native classifier emitted diagonals due to
         // thumbstick drift, enumerate every cardinal interpretation and take
@@ -291,7 +312,7 @@ public class ComboDispatcher {
         return is4DirMode();
     }
 
-    private Integer resolveCardinalInterpretation(int[] combo, Map<String, Integer> table, boolean collapseRuns) {
+    private Integer resolveCardinalInterpretation(int[] combo, Map<String, Binding> table, boolean collapseRuns) {
         int[] buf = new int[combo.length];
         Integer[] found = new Integer[]{null};
         boolean[] ambiguous = new boolean[]{false};
@@ -305,14 +326,15 @@ public class ComboDispatcher {
     }
 
     private void enumerate(int[] combo, int idx, int[] buf,
-                           Map<String, Integer> table,
+                           Map<String, Binding> table,
                            Integer[] found, boolean[] ambiguous,
                            boolean collapseRuns) {
         if (ambiguous[0]) return;
         if (idx == combo.length) {
             int[] lookup = collapseRuns ? collapseAdjacent(buf) : buf;
-            Integer a = table.get(key(lookup));
-            if (a == null) return;
+            Binding bb = table.get(key(lookup));
+            if (bb == null) return;
+            Integer a = bb.action;
             if (found[0] == null) {
                 found[0] = a;
             } else if (!found[0].equals(a)) {
@@ -342,9 +364,10 @@ public class ComboDispatcher {
     /**
      * Returns the active dispatch table (4-dir or 8-dir based on current mode) as
      * an unmodifiable view. Key is the grid-path identifier produced by
-     * key(int...); value is an A_* action constant.
+     * key(int...); value is a {@link Binding} wrapping the A_* action plus an
+     * optional parametric payload (bookmark_id etc., reserved for Phase 2).
      */
-    public java.util.Map<String, Integer> getAllBindings() {
+    public java.util.Map<String, Binding> getAllBindings() {
         return java.util.Collections.unmodifiableMap(currentTable());
     }
 
@@ -356,8 +379,8 @@ public class ComboDispatcher {
      */
     public int getActionForExactPath(int[] path) {
         if (path == null) return A_NONE;
-        Integer action = currentTable().get(key(path));
-        return action == null ? A_NONE : action;
+        Binding binding = currentTable().get(key(path));
+        return binding == null ? A_NONE : binding.action;
     }
 
     /**
@@ -431,7 +454,7 @@ public class ComboDispatcher {
         }
     }
 
-    private Map<String, Integer> currentTable() {
+    private Map<String, Binding> currentTable() {
         return is4DirMode() ? mTable4Dir : mTable8Dir;
     }
 
