@@ -94,6 +94,7 @@ import com.igalia.wolvic.ui.widgets.dialogs.LegalDocumentDialogWidget;
 import com.igalia.wolvic.ui.widgets.dialogs.PromptDialogWidget;
 import com.igalia.wolvic.ui.widgets.dialogs.SendTabDialogWidget;
 import com.igalia.wolvic.ui.widgets.dialogs.WhatsNewWidget;
+import com.igalia.wolvic.ui.widgets.settings.SettingsView;
 import com.igalia.wolvic.ui.widgets.menus.VideoProjectionMenuWidget;
 import com.igalia.wolvic.utils.BitmapCache;
 import com.igalia.wolvic.utils.ConnectivityReceiver;
@@ -234,6 +235,10 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     com.igalia.wolvic.input.ComboDispatcher mComboDispatcher;
     com.igalia.wolvic.ui.widgets.ComboHUDWidget mHUDWidget;
     boolean mHUDEnabled = true;  // FingerDance: thumbstick press toggles HUD visibility
+    // FingerDance (Phase 6): stable id for the one-shot long-press onboarding
+    // hint. Kept FD-namespaced so it cannot collide with Wolvic's own
+    // NotificationManager ids.
+    private static final int FD_LONGPRESS_ONBOARDING_NOTIFICATION_ID = 0xFD0601;
     RootWidget mRootWidget;
     KeyboardWidget mKeyboard;
     NavigationBarWidget mNavigationBar;
@@ -519,6 +524,12 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
             mPlatformPlugin.registerListener(this);
 
         mWindows.restoreSessions();
+
+        // FingerDance (Phase 6): schedule the one-shot long-press onboarding
+        // hint. 3s delay lets the splash fade complete before the tooltip
+        // appears above the Tray. Gated inside the helper so repeat launches
+        // are no-ops.
+        mTray.postDelayed(this::maybeShowLongPressOnboardingHint, 3000L);
     }
 
     private void onPresentingImmersiveChange(boolean presenting) {
@@ -1323,6 +1334,53 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
                 mHUDWidget.hide(UIWidget.KEEP_WIDGET);
             }
         });
+    }
+
+    // FingerDance (Phase 6): native JNI receiver — left joystick held >=
+    // LONG_PRESS_MS with grip OFF. Opens Combos Settings directly. Grip-OFF
+    // gating lives in the native engine (ComboWindowEngine); we just route
+    // to the Tray on the UI thread. No combo dispatch needed — this is an
+    // input-event → UI-action bridge, not a path emit.
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleLongPressThumbstick() {
+        android.util.Log.d("FingerDance", "handleLongPressThumbstick → openCombosSettings");
+        runOnUiThread(this::openCombosSettings);
+    }
+
+    // FingerDance (Phase 6): open the Combos settings panel from anywhere.
+    // Safe to call from any thread via runOnUiThread(); must be on UI thread
+    // when invoked directly. Guards against null Tray (cold-start edge per
+    // Eng Review E-gap: long-press firing before mTray initialized).
+    public void openCombosSettings() {
+        if (mTray == null) {
+            android.util.Log.w("FingerDance", "openCombosSettings: mTray null, dropping");
+            return;
+        }
+        mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
+    }
+
+    // FingerDance (Phase 6): first-launch discovery hint for the long-press
+    // joystick gesture. One-shot per install lifetime, gated by
+    // ComboBindingStore.KEY_LONGPRESS_HINT_SEEN. Anchored above the Tray so
+    // it lands in the subtitle zone per CLAUDE.md §5.3 (never the top 20%
+    // which occludes web content). Marks the flag immediately so a process
+    // kill during the 5s window doesn't double-show on next launch.
+    private void maybeShowLongPressOnboardingHint() {
+        if (mTray == null) return;
+        com.thanford.fingerdance.settings.ComboBindingStore store =
+                new com.thanford.fingerdance.settings.ComboBindingStore(this);
+        if (store.hasSeenLongPressHint()) return;
+        com.igalia.wolvic.ui.widgets.NotificationManager.Notification hint =
+                new com.igalia.wolvic.ui.widgets.NotificationManager.Builder(mTray)
+                        .withString(R.string.combos_longpress_onboarding_hint)
+                        .withPosition(com.igalia.wolvic.ui.widgets.NotificationManager.Notification.TOP)
+                        .withMargin(20.0f)
+                        .withDuration(5000)
+                        .build();
+        com.igalia.wolvic.ui.widgets.NotificationManager.show(
+                FD_LONGPRESS_ONBOARDING_NOTIFICATION_ID, hint);
+        store.markLongPressHintSeen();
     }
 
     // FingerDance (Phase 3b): which controller hand owns the active combo grip.

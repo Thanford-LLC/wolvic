@@ -60,6 +60,16 @@ OpenXRInputSource::OpenXRInputSource(XrInstance instance, XrSession session, Ope
   mComboRecognizer.SetPreviewProgressCallback([](int zoneId, float progress) {
       crow::VRBrowser::HandleComboPreviewProgress(zoneId, progress);
   });
+  // Phase 6: long-press thumbstick (grip-OFF, >= LONG_PRESS_MS) opens Combos
+  // Settings. Only the LEFT-hand recognizer registers this callback so we
+  // don't double-fire when both hands tick. Matches design D-A20
+  // ("Long-press left joystick → Open Combos Settings"). The engine gates
+  // the accumulator to grip-OFF internally — no additional guard here.
+  if (mHandeness == OpenXRHandFlags::Left) {
+      mComboRecognizer.SetLongPressCallback([]() {
+          crow::VRBrowser::HandleLongPressThumbstick();
+      });
+  }
 }
 
 OpenXRInputSource::~OpenXRInputSource()

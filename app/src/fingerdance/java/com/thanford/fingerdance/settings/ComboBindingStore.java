@@ -37,6 +37,10 @@ public final class ComboBindingStore {
     public static final String KEY_BLOB = "bindings_blob";
     public static final String CORRUPT_PREFIX = "bindings_blob_corrupt_";
 
+    // Phase 6: one-shot flag — first successful long-press hint has been shown.
+    // Cleared only by clearing app data (matches pref file lifecycle).
+    private static final String KEY_LONGPRESS_HINT_SEEN = "fd_onboard_settings_hint_seen";
+
     public static final int SCHEMA_VERSION = 1;
 
     private static final String JSON_VERSION = "version";
@@ -54,6 +58,24 @@ public final class ComboBindingStore {
     @NonNull
     private SharedPreferences prefs() {
         return mAppContext.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
+    }
+
+    /**
+     * Phase 6: returns true once the first-launch long-press onboarding hint has
+     * been shown. One-shot — never flips back to false for the install lifetime
+     * (matches the pref-file lifecycle; clearing app data re-arms the hint).
+     */
+    public boolean hasSeenLongPressHint() {
+        return prefs().getBoolean(KEY_LONGPRESS_HINT_SEEN, false);
+    }
+
+    /**
+     * Phase 6: mark the long-press onboarding hint as shown. Call immediately
+     * after the hint UI is presented so a process kill mid-hint doesn't double-
+     * show. Idempotent — safe to call repeatedly.
+     */
+    public void markLongPressHintSeen() {
+        prefs().edit().putBoolean(KEY_LONGPRESS_HINT_SEEN, true).apply();
     }
 
     /**

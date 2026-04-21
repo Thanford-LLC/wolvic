@@ -59,6 +59,14 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
     mPrevGrip          = gripBtn;
     mPrevThumbstickBtn = thumbstickBtn;
 
+    // Phase 6: long-press accumulator is grip-OFF only. If grip is held, zero
+    // the tracker so a prior incomplete hold can't misfire after grip
+    // releases. This also covers the case where grip is grabbed mid-hold.
+    if (gripBtn) {
+        mThumbstickDownTime = 0;
+        mLongPressFired     = false;
+    }
+
     // FingerDance (CLAUDE.md §5.4): joystick click mid-path = silent cancel.
     // No fire, no toast. CancelSilent() already resets state and fires an
     // empty progress event so the HUD drops its path. We re-assert
@@ -88,6 +96,27 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
             mLastPreviewProgressValue = -1.0f;
             mLastPreviewProgressZone = 0;
         }
+
+        // Phase 6: long-press thumbstick (grip-OFF) opens Combos Settings.
+        // Grip-OFF gate is why this can't collide with the silent-cancel
+        // branch above (grip-HELD). The edge starts the timer; every
+        // subsequent frame we re-check elapsed and fire once at threshold.
+        // mLongPressFired latches until release so we fire exactly once.
+        if (thumbstickBtn) {
+            if (thumbstickJustPressed) {
+                mThumbstickDownTime = timestampMs;
+                mLongPressFired     = false;
+            } else if (!mLongPressFired
+                       && mThumbstickDownTime != 0
+                       && (timestampMs - mThumbstickDownTime) >= LONG_PRESS_MS) {
+                mLongPressFired = true;
+                if (mLongPressCallback) mLongPressCallback();
+            }
+        } else {
+            mThumbstickDownTime = 0;
+            mLongPressFired     = false;
+        }
+
         return false;
     }
 

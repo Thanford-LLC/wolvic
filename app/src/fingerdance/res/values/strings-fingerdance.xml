@@ -84,4 +84,9 @@
 
     <!-- Phase 5 — + Create button on action rows. -->
     <string name="combos_row_create_button">+ Create</string>
+
+    <!-- Phase 6 — first-launch onboarding hint. Shown once per install lifetime
+         above the Tray after the splash fades; dismisses automatically. The
+         one-shot gate lives in ComboBindingStore (KEY_LONGPRESS_HINT_SEEN). -->
+    <string name="combos_longpress_onboarding_hint">Tip: long-press the left joystick to open Combos Settings</string>
 </resources>

@@ -28,4 +28,8 @@ void InputComboRecognizer::SetPreviewProgressCallback(PreviewProgressCb cb) {
     mEngine.SetPreviewProgressCallback(std::move(cb));
 }
 
+void InputComboRecognizer::SetLongPressCallback(LongPressCb cb) {
+    mEngine.SetLongPressCallback(std::move(cb));
+}
+
 } // namespace fingerdance

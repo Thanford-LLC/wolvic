@@ -70,6 +70,8 @@ void HandleComboPreview(int previewNode);
 void HandleComboPreviewProgress(int zoneId, float progress);
 // FingerDance: thumbstick button pressed while in combo mode — toggle HUD.
 void HandleComboThumbstickPress();
+// FingerDance: thumbstick held >= LONG_PRESS_MS with grip OFF — open Combos Settings.
+void HandleLongPressThumbstick();
 } // namespace VRBrowser;
 
 } // namespace crow

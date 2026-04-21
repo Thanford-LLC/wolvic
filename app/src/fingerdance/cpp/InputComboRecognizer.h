@@ -18,6 +18,7 @@ public:
     using ProgressCallback        = ComboProgressCallback;
     using PreviewCb               = PreviewCallback;
     using PreviewProgressCb       = PreviewProgressCallback;
+    using LongPressCb             = LongPressCallback;
 
     // callback   — fired when a combo completes.
     // onProgress — fired after each node is activated; used by the HUD. Optional.
@@ -51,6 +52,11 @@ public:
     // underlying engine. Kept as a setter (not a ctor argument) so the
     // existing constructor signature stays stable.
     void SetPreviewProgressCallback(PreviewProgressCb cb);
+
+    // Phase 6: forward the long-press thumbstick callback. Fires once per
+    // qualifying hold (grip-OFF, thumbstick held >= LONG_PRESS_MS). Used to
+    // open Combos Settings from anywhere.
+    void SetLongPressCallback(LongPressCb cb);
 
 private:
     ComboWindowEngine mEngine;

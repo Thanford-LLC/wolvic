@@ -21,6 +21,10 @@ static constexpr float   PREVIEW_PROGRESS_EPSILON   = 0.02f;
 // commits instantly — it must hold for ARM_DWELL_MS first, so the HUD can
 // show the stick-reactive fill ramping up to commit instead of snapping.
 static constexpr int64_t ARM_DWELL_MS               = 80;
+// Phase 6: thumbstick long-press threshold. Gate is grip-OFF; during grip-HELD
+// the same thumbstick-click edge is consumed for silent-cancel. Firing once
+// at this threshold opens Combos Settings via the registered callback.
+static constexpr int64_t LONG_PRESS_MS              = 800;
 
 // Grid layout:
 //   1  2  3
@@ -40,6 +44,10 @@ using PreviewCallback         = std::function<void(int previewNode)>;
 // Phase 3b: continuous progress in [0, 1] for how hard the user is leaning
 // toward the current preview zone. zoneId=0 means idle (below preview band).
 using PreviewProgressCallback = std::function<void(int zoneId, float progress)>;
+// Phase 6: fires once per long-press, after thumbstick button has been held
+// for LONG_PRESS_MS with grip released. Called on the OpenXR thread — the
+// receiver is expected to marshal to the UI thread before touching view state.
+using LongPressCallback       = std::function<void()>;
 
 class ComboWindowEngine {
 public:
@@ -52,6 +60,12 @@ public:
     // the rest of the engine).
     void SetPreviewProgressCallback(PreviewProgressCallback cb) {
         mPreviewProgressCallback = std::move(cb);
+    }
+
+    // Phase 6: register/replace the long-press callback. Fires once per
+    // qualifying hold; safe to call before Process() begins.
+    void SetLongPressCallback(LongPressCallback cb) {
+        mLongPressCallback = std::move(cb);
     }
 
     // Per-frame. Returns true (consumed) while grip is held.
@@ -89,6 +103,8 @@ private:
     ComboProgressCallback   mProgressCallback;
     PreviewCallback         mPreviewCallback;
     PreviewProgressCallback mPreviewProgressCallback{nullptr};
+    // Phase 6: optional long-press callback; nullptr = no settings entry wired.
+    LongPressCallback       mLongPressCallback{nullptr};
 
     bool    mPrevGrip           = false;
     bool    mPrevThumbstickBtn  = false;
@@ -119,6 +135,11 @@ private:
     // fire, so the HUD can always sync to a clean starting value.
     float   mLastPreviewProgressValue = -1.0f;
     int     mLastPreviewProgressZone  = 0;
+
+    // Phase 6: long-press tracker. Active only in the grip-OFF code path.
+    // Two scalar fields; zero heap per CLAUDE.md §5.2.
+    int64_t mThumbstickDownTime = 0;
+    bool    mLongPressFired     = false;
 
     static std::atomic<bool> sFourDirMode;
 };

@@ -94,6 +94,8 @@ const char* const kHandleComboPreviewProgressName = "handleComboPreviewProgress"
 const char* const kHandleComboPreviewProgressSignature = "(IF)V";
 const char* const kHandleComboThumbstickPressName = "handleComboThumbstickPress";
 const char* const kHandleComboThumbstickPressSignature = "()V";
+const char* const kHandleLongPressThumbstickName = "handleLongPressThumbstick";
+const char* const kHandleLongPressThumbstickSignature = "()V";
 
 JNIEnv* sEnv = nullptr;
 jclass sBrowserClass = nullptr;
@@ -140,6 +142,7 @@ jmethodID sHandleGripStateChanged = nullptr;
 jmethodID sHandleComboPreview = nullptr;
 jmethodID sHandleComboPreviewProgress = nullptr;
 jmethodID sHandleComboThumbstickPress = nullptr;
+jmethodID sHandleLongPressThumbstick = nullptr;
 
 } // namespace
 
@@ -202,6 +205,7 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sHandleComboPreview  = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewName,  kHandleComboPreviewSignature);
   sHandleComboPreviewProgress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewProgressName, kHandleComboPreviewProgressSignature);
   sHandleComboThumbstickPress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboThumbstickPressName, kHandleComboThumbstickPressSignature);
+  sHandleLongPressThumbstick = FindJNIMethodID(sEnv, sBrowserClass, kHandleLongPressThumbstickName, kHandleLongPressThumbstickSignature);
 }
 
 JNIEnv * VRBrowser::Env()
@@ -259,6 +263,7 @@ VRBrowser::ShutdownJava() {
   sHandleComboPreview     = nullptr;
   sHandleComboPreviewProgress = nullptr;
   sHandleComboThumbstickPress = nullptr;
+  sHandleLongPressThumbstick = nullptr;
 }
 
 void
@@ -597,6 +602,14 @@ VRBrowser::HandleComboThumbstickPress() {
     VRB_LOG("FingerDance: HandleComboThumbstickPress");
     if (!ValidateMethodID(sEnv, sActivity, sHandleComboThumbstickPress, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sHandleComboThumbstickPress);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleLongPressThumbstick() {
+    VRB_LOG("FingerDance: HandleLongPressThumbstick");
+    if (!ValidateMethodID(sEnv, sActivity, sHandleLongPressThumbstick, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleLongPressThumbstick);
     CheckJNIException(sEnv, __FUNCTION__);
 }
 
