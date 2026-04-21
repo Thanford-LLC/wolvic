@@ -9,6 +9,7 @@ package com.thanford.fingerdance.settings;
 import android.content.Context;
 import android.text.Spannable;
 import android.util.SparseArray;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import androidx.core.content.ContextCompat;
 
 import com.igalia.wolvic.R;
 import com.igalia.wolvic.input.ComboDispatcher;
+import com.igalia.wolvic.ui.widgets.UIWidget;
 import com.igalia.wolvic.ui.widgets.combo.ComboTipBuilder;
 
 import java.util.ArrayList;
@@ -40,8 +42,9 @@ import java.util.Map;
  *       bound path as a chip. Unbound actions render a "Not bound" chip.</li>
  * </ol>
  *
- * <p>No interactions in Phase 3 — chip X-delete lands Phase 4,
- * {@code + Create} lands Phase 5.
+ * <p>Phase 4 wires each bound-combo chip's trailing {@code ✕} to a
+ * {@link ComboUnbindConfirmDialog} → {@link ComboDispatcher#removeBinding}.
+ * {@code + Create} still lands in Phase 5.
  */
 public final class CombosListBuilder {
 
@@ -70,7 +73,7 @@ public final class CombosListBuilder {
         LayoutInflater inflater = LayoutInflater.from(ctx);
 
         addSystemGesturesSection(inflater, container, dispatcher.isCombo4DirMode());
-        addActionSections(ctx, inflater, container, dispatcher.getAllBindings());
+        addActionSections(ctx, inflater, container, dispatcher.getAllBindings(), dispatcher);
     }
 
     private static void addSystemGesturesSection(@NonNull LayoutInflater inflater,
@@ -100,7 +103,8 @@ public final class CombosListBuilder {
     private static void addActionSections(@NonNull Context ctx,
                                           @NonNull LayoutInflater inflater,
                                           @NonNull LinearLayout container,
-                                          @NonNull Map<String, Binding> bindings) {
+                                          @NonNull Map<String, Binding> bindings,
+                                          @NonNull ComboDispatcher dispatcher) {
         SparseArray<List<int[]>> pathsByAction = invertBindings(bindings);
         int[] actionIds = ComboActionRegistry.knownActions();
 
@@ -113,7 +117,7 @@ public final class CombosListBuilder {
                     addSectionHeader(inflater, container, DISPLAY_HEADERS[i]);
                     headerAdded = true;
                 }
-                addActionRow(ctx, inflater, container, actionId, pathsByAction.get(actionId));
+                addActionRow(ctx, inflater, container, actionId, pathsByAction.get(actionId), dispatcher);
             }
         }
     }
@@ -156,7 +160,8 @@ public final class CombosListBuilder {
                                      @NonNull LayoutInflater inflater,
                                      @NonNull LinearLayout container,
                                      int actionId,
-                                     @Nullable List<int[]> paths) {
+                                     @Nullable List<int[]> paths,
+                                     @NonNull ComboDispatcher dispatcher) {
         View row = inflater.inflate(R.layout.combo_row_action, container, false);
         ((TextView) row.findViewById(R.id.action_label)).setText(ComboActionRegistry.labelFor(actionId));
 
@@ -165,50 +170,92 @@ public final class CombosListBuilder {
         int iconSizePx = (int) (24f * ctx.getResources().getDisplayMetrics().density);
 
         if (paths == null || paths.isEmpty()) {
-            chipContainer.addView(makeUnboundChip(inflater, chipContainer));
+            chipContainer.addView(makeUnboundChip(chipContainer));
         } else {
             for (int[] path : paths) {
-                chipContainer.addView(makePathChip(ctx, inflater, chipContainer, path, iconSizePx, chipColor));
+                chipContainer.addView(makePathChip(ctx, chipContainer, path, iconSizePx, chipColor,
+                        dispatcher, actionId));
             }
         }
         container.addView(row);
     }
 
-    private static TextView makePathChip(@NonNull Context ctx,
-                                         @NonNull LayoutInflater inflater,
-                                         @NonNull ViewGroup parent,
-                                         @NonNull int[] path,
-                                         int iconSizePx,
-                                         int chipColor) {
-        TextView chip = makeBaseChip(ctx, parent);
+    /**
+     * Phase 4 — bound-combo chip as a horizontal {@link LinearLayout} wrapper
+     * holding [arrows TextView][X TextView]. Wrapper carries the pill background
+     * so the arrows and X sit inside the same capsule; the X has its own
+     * onClickListener that launches {@link ComboUnbindConfirmDialog}. Arrows
+     * TextView stays non-clickable so tapping the glyphs does not fire the
+     * destructive flow by accident.
+     */
+    private static View makePathChip(@NonNull Context ctx,
+                                     @NonNull ViewGroup parent,
+                                     @NonNull int[] path,
+                                     int iconSizePx,
+                                     int chipColor,
+                                     @NonNull ComboDispatcher dispatcher,
+                                     int actionId) {
+        float density = ctx.getResources().getDisplayMetrics().density;
+        int marginPx = (int) (4f * density);
+        int padH = (int) (10f * density);
+        int padV = (int) (4f * density);
+
+        LinearLayout wrap = new LinearLayout(ctx);
+        wrap.setOrientation(LinearLayout.HORIZONTAL);
+        wrap.setGravity(Gravity.CENTER_VERTICAL);
+        wrap.setBackgroundResource(R.drawable.combo_chip_bg);
+        wrap.setPadding(padH, padV, padH, padV);
+        LinearLayout.LayoutParams wrapLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        wrapLp.setMarginStart(marginPx);
+        wrapLp.setMarginEnd(marginPx);
+        wrap.setLayoutParams(wrapLp);
+
+        TextView arrowsView = new TextView(ctx);
+        arrowsView.setTextSize(20f);
+        arrowsView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text));
         Spannable arrows = ComboTipBuilder.renderArrowsOnly(ctx, path, iconSizePx, chipColor);
-        chip.setText(arrows);
-        return chip;
+        arrowsView.setText(arrows);
+        wrap.addView(arrowsView);
+
+        TextView xView = new TextView(ctx);
+        xView.setText("\u2715"); // multiplication X (U+2715)
+        xView.setTextSize(20f);
+        xView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text_muted));
+        int xPadLeft = (int) (8f * density);
+        int xPadHitbox = (int) (6f * density);
+        xView.setPadding(xPadLeft, xPadHitbox, xPadHitbox, xPadHitbox);
+        xView.setContentDescription(ctx.getString(R.string.combos_chip_delete_content_desc));
+        xView.setClickable(true);
+        xView.setFocusable(true);
+        xView.setOnClickListener(v ->
+                new ComboUnbindConfirmDialog(ctx, dispatcher, path, actionId)
+                        .show(UIWidget.REQUEST_FOCUS));
+        wrap.addView(xView);
+
+        return wrap;
     }
 
-    private static TextView makeUnboundChip(@NonNull LayoutInflater inflater,
-                                            @NonNull ViewGroup parent) {
-        TextView chip = makeBaseChip(parent.getContext(), parent);
-        chip.setText(R.string.combos_row_unbound);
-        chip.setTextColor(ContextCompat.getColor(parent.getContext(), R.color.fd_text_dim));
-        return chip;
-    }
+    private static View makeUnboundChip(@NonNull ViewGroup parent) {
+        Context ctx = parent.getContext();
+        float density = ctx.getResources().getDisplayMetrics().density;
+        int marginPx = (int) (4f * density);
+        int padH = (int) (10f * density);
+        int padV = (int) (4f * density);
 
-    private static TextView makeBaseChip(@NonNull Context ctx, @NonNull ViewGroup parent) {
         TextView chip = new TextView(ctx);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
-        int marginPx = (int) (4f * ctx.getResources().getDisplayMetrics().density);
         lp.setMarginStart(marginPx);
         lp.setMarginEnd(marginPx);
         chip.setLayoutParams(lp);
         chip.setBackgroundResource(R.drawable.combo_chip_bg);
-        int padH = (int) (10f * ctx.getResources().getDisplayMetrics().density);
-        int padV = (int) (4f * ctx.getResources().getDisplayMetrics().density);
         chip.setPadding(padH, padV, padH, padV);
         chip.setTextSize(20f);
-        chip.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text));
+        chip.setText(R.string.combos_row_unbound);
+        chip.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text_dim));
         return chip;
     }
 

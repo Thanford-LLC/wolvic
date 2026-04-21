@@ -57,4 +57,13 @@
 
     <!-- Empty-state copy for action rows with zero bindings (user deleted defaults). -->
     <string name="combos_row_unbound">Not bound</string>
+
+    <!-- Phase 4 — chip X-delete confirm dialog. Cancel button reuses Wolvic's
+         MPL-licensed R.string.cancel_button (already translated into 24 locales). -->
+    <string name="combos_delete_confirm_title">Unbind combo?</string>
+    <string name="combos_delete_confirm_body">This combo will no longer fire. You can re-create it later from Combos Settings.</string>
+    <string name="combos_delete_confirm_positive">Unbind</string>
+
+    <!-- Accessibility label for the X button on a bound-combo chip. -->
+    <string name="combos_chip_delete_content_desc">Unbind this combo</string>
 </resources>

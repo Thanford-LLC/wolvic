@@ -44,6 +44,11 @@ public class ComboDispatcher {
 
     // Action identifiers — used as values in both combo tables.
     public static final int A_NONE           = 0;
+    // Phase 4 sentinel: an override entry with action == A_REMOVED signals
+    // "delete this path from the defaults table." A_NONE (0) is filtered as
+    // "missing/unknown action" by ComboBindingStore.parseBindings, so the
+    // sentinel must be non-zero; negative keeps it unambiguous vs. real actions.
+    public static final int A_REMOVED        = -1;
     public static final int A_SCROLL_UP       = 1;
     public static final int A_SCROLL_DOWN     = 2;
     public static final int A_SCROLL_LEFT     = 3;
@@ -74,6 +79,9 @@ public class ComboDispatcher {
 
     private final Windows mWindows;
     private final WidgetManagerDelegate mWidgetManager;
+    // Phase 4: persisted app context so removeBinding()/setBinding() can
+    // instantiate ComboBindingStore. Null in the test-only ctor.
+    private final Context mAppContext;
     /** Test-only override for {@link #is4DirMode()}. Null in production. */
     @VisibleForTesting
     Boolean mForcedMode4DirForTest = null;
@@ -118,6 +126,7 @@ public class ComboDispatcher {
         Context appCtx = (widgetManager instanceof Context)
                 ? ((Context) widgetManager).getApplicationContext()
                 : null;
+        mAppContext = appCtx;
         mHapticController = (appCtx != null)
                 ? new ComboHapticController(appCtx, widgetManager)
                 : null;
@@ -166,6 +175,7 @@ public class ComboDispatcher {
     public ComboDispatcher(boolean is4DirMode) {
         mWindows = null;
         mWidgetManager = null;
+        mAppContext = null;
         mForcedMode4DirForTest = is4DirMode;
         mHapticController = null;
         mDefaultPrefs = null;
@@ -291,20 +301,61 @@ public class ComboDispatcher {
             eight.putIfAbsent(k, b);
         }
 
+        // Phase 4: layer user overrides on top of defaults.
+        //   override.action == A_REMOVED  → delete the default binding at that path
+        //   override.action >= 1          → replace the default binding at that path
+        // ComboBindingStore already filters action == 0, so the loop body only
+        // sees real action ints (positive) or the A_REMOVED sentinel (negative).
+        if (mAppContext != null) {
+            Map<String, Binding> overrides = new ComboBindingStore(mAppContext).load();
+            for (Map.Entry<String, Binding> e : overrides.entrySet()) {
+                int[] p = ComboBindingStore.keyToPath(e.getKey());
+                if (p.length == 0) continue;
+                String k = key(p);
+                Binding b = e.getValue();
+                if (b.action == A_REMOVED) {
+                    four.remove(k);
+                    eight.remove(k);
+                } else {
+                    four.put(k, b);
+                    eight.put(k, b);
+                }
+            }
+        }
+
         // Atomic publish — readers see a fully-built map after these writes.
         mTable4Dir = four;
         mTable8Dir = eight;
     }
 
     /**
-     * Rebuilds the combo tables from defaults. v1 ships without user-override
-     * reading — the Settings persistence plan wires up ComboBindingStore in
-     * Phase 2. For now this just restamps defaults and fires BindingsChanged
-     * so subscribed listeners (HUD tip pool) refresh.
+     * Rebuilds the combo tables from defaults, then layers any user overrides
+     * read from ComboBindingStore. Fires BindingsChanged so subscribed listeners
+     * (HUD tip pool, Settings row list) refresh. Invoked automatically when the
+     * KEY_BLOB pref changes (Reset footer, removeBinding, future setBinding);
+     * safe to call directly from the UI thread.
      */
     public void reloadBindings() {
         buildTables();
         stampBindingChange(null);
+    }
+
+    /**
+     * Phase 4 — mark {@code path} as removed in the user-override blob. The
+     * KEY_BLOB pref listener fires reloadBindings() immediately after save(),
+     * which rebuilds defaults and applies the A_REMOVED sentinel to erase this
+     * binding from both tables. No-op when {@code mAppContext} is null (test
+     * ctor) or the path is empty.
+     */
+    public void removeBinding(@NonNull int[] path) {
+        if (mAppContext == null || path.length == 0) {
+            return;
+        }
+        ComboBindingStore store = new ComboBindingStore(mAppContext);
+        Map<String, Binding> overrides = new HashMap<>(store.load());
+        overrides.put(ComboBindingStore.pathToKey(path), Binding.of(A_REMOVED));
+        store.save(overrides);
+        // KEY_BLOB listener auto-fires reloadBindings() → BindingsListener → UI refresh.
     }
 
     private static void putBoth(Map<String, Binding> four, Map<String, Binding> eight,
