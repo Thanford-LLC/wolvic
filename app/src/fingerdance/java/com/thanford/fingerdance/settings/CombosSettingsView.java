@@ -23,6 +23,7 @@ import com.igalia.wolvic.input.ComboDispatcher;
 import com.igalia.wolvic.ui.views.settings.RadioGroupSetting;
 import com.igalia.wolvic.ui.views.settings.SwitchSetting;
 import com.igalia.wolvic.ui.widgets.ComboHUDWidget;
+import com.igalia.wolvic.ui.widgets.UIWidget;
 import com.igalia.wolvic.ui.widgets.WidgetManagerDelegate;
 import com.igalia.wolvic.ui.widgets.WidgetPlacement;
 import com.igalia.wolvic.ui.widgets.settings.SettingsView;
@@ -101,15 +102,16 @@ public class CombosSettingsView extends SettingsView
         mBinding.combosBuzzSwitch.setValue(buzzOn, false);
         mBinding.combosBuzzSwitch.setOnCheckedChangeListener(mBuzzListener);
 
-        // --- Reset footer ---
-        // Wipes the user override blob. The dispatcher's pref listener on
-        // ComboBindingStore.KEY_BLOB fires reloadBindings() automatically.
-        // We do NOT reset the three toggles above — those are panel-level
-        // preferences, not combo bindings, and resetting them is a separate
-        // concern (Phase 3 can expose a dedicated "restore toggles" row if
-        // users want it).
+        // --- Reset footer (Phase 5 cherry-pick) ---
+        // Phase 2 wired this footer to call clearAll() directly; Phase 5 adds
+        // a confirm dialog because reset annihilates every user-customised
+        // binding. POSITIVE in ComboResetConfirmDialog calls clearAll() which
+        // wipes the override blob — the dispatcher's pref listener on
+        // ComboBindingStore.KEY_BLOB fires reloadBindings() automatically and
+        // the BindingsListener spine refreshes this list. Toggles above are
+        // deliberately untouched (panel prefs, not combo bindings).
         mBinding.footerLayout.setFooterButtonClickListener(view -> {
-            new ComboBindingStore(getContext()).clearAll();
+            new ComboResetConfirmDialog(getContext()).show(UIWidget.REQUEST_FOCUS);
         });
 
         // --- Phase 3 — read-only categorised combo list ---

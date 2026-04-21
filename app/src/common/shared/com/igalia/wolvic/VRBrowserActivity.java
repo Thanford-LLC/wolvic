@@ -2343,6 +2343,12 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         return mComboDispatcher;
     }
 
+    // Phase 5 — FingerDance accessor. BindComboView dims the HUD to 0.3 alpha
+    // during capture so the dialog chrome carries the authoritative trace.
+    public com.igalia.wolvic.ui.widgets.ComboHUDWidget getComboHUDWidget() {
+        return mHUDWidget;
+    }
+
     @Override
     public void saveState() {
         mWindows.saveState();

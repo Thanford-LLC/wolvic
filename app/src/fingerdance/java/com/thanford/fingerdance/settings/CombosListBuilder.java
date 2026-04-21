@@ -177,7 +177,44 @@ public final class CombosListBuilder {
                         dispatcher, actionId));
             }
         }
+        chipContainer.addView(makeCreateButton(ctx, chipContainer, dispatcher, actionId));
         container.addView(row);
+    }
+
+    /**
+     * Phase 5 — "+ Create" button at the trailing end of each action row.
+     * Launches {@link BindComboView} in FROM_SETTINGS mode with the row's
+     * action locked. User draws a path and commits via the dialog's Bind
+     * button → {@link ComboDispatcher#setBinding} → blob-listener spine
+     * refreshes this list.
+     */
+    private static View makeCreateButton(@NonNull Context ctx,
+                                         @NonNull ViewGroup parent,
+                                         @NonNull ComboDispatcher dispatcher,
+                                         int actionId) {
+        float density = ctx.getResources().getDisplayMetrics().density;
+        int marginPx = (int) (4f * density);
+        int padH = (int) (10f * density);
+        int padV = (int) (4f * density);
+
+        TextView btn = new TextView(ctx);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMarginStart(marginPx);
+        lp.setMarginEnd(marginPx);
+        btn.setLayoutParams(lp);
+        btn.setBackgroundResource(R.drawable.combo_chip_bg);
+        btn.setPadding(padH, padV, padH, padV);
+        btn.setTextSize(20f);
+        btn.setText(R.string.combos_row_create_button);
+        btn.setTextColor(ContextCompat.getColor(ctx, R.color.fd_accent));
+        btn.setClickable(true);
+        btn.setFocusable(true);
+        btn.setOnClickListener(v ->
+                new BindComboView(ctx, dispatcher, actionId)
+                        .show(UIWidget.REQUEST_FOCUS));
+        return btn;
     }
 
     /**

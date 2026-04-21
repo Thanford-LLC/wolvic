@@ -66,4 +66,22 @@
 
     <!-- Accessibility label for the X button on a bound-combo chip. -->
     <string name="combos_chip_delete_content_desc">Unbind this combo</string>
+
+    <!-- Phase 5 — Bind Combo dialog, FROM_SETTINGS flow.
+         Cancel button reuses Wolvic's MPL-licensed R.string.cancel_button. -->
+    <string name="combos_bind_from_settings_title">Bind combo to %1$s</string>
+    <string name="combos_bind_draw_prompt">Hold grip and draw your combo</string>
+    <string name="combos_bind_button_bind">Bind</string>
+    <string name="combos_bind_same_action_error">Already bound to this action — draw a different combo.</string>
+    <string name="combos_bind_conflict_warning">Already bound to %1$s — binding will replace it.</string>
+    <string name="combos_bind_prefix_collision_warning">Warning: this combo shares a prefix with another binding. The shorter one will fire first.</string>
+
+    <!-- Phase 5 cherry-pick — Reset-to-defaults confirm dialog (footer
+         button label reuses the existing combos_reset_button string). -->
+    <string name="combos_reset_confirm_title">Reset all combos?</string>
+    <string name="combos_reset_confirm_body">This will undo every combo you changed, deleted, or created. System gestures and toggles are unaffected.</string>
+    <string name="combos_reset_confirm_positive">Reset all</string>
+
+    <!-- Phase 5 — + Create button on action rows. -->
+    <string name="combos_row_create_button">+ Create</string>
 </resources>

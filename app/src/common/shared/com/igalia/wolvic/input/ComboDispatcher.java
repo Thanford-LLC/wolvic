@@ -2,9 +2,12 @@ package com.igalia.wolvic.input;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.preference.PreferenceManager;
 
@@ -77,6 +80,18 @@ public class ComboDispatcher {
         void onBindingsChanged();
     }
 
+    /**
+     * Phase 5 — capture-mode listener. When the user is drawing a combo in
+     * {@code BindComboView} (FROM_SETTINGS flow), the dispatcher routes emitted
+     * paths to the active listener INSTEAD of firing an action. Callbacks are
+     * delivered on the main thread so the listener can touch UI directly.
+     * Calling {@link #setCaptureMode(boolean, CaptureListener)} while a capture
+     * is already active silently replaces the previous listener.
+     */
+    public interface CaptureListener {
+        void onPathCaptured(@NonNull int[] path);
+    }
+
     private final Windows mWindows;
     private final WidgetManagerDelegate mWidgetManager;
     // Phase 4: persisted app context so removeBinding()/setBinding() can
@@ -93,6 +108,13 @@ public class ComboDispatcher {
     private volatile Map<String, Binding> mTable4Dir = new HashMap<>();
     private final java.util.concurrent.CopyOnWriteArrayList<BindingsListener> mBindingsListeners =
             new java.util.concurrent.CopyOnWriteArrayList<>();
+    // Phase 5 — capture mode. When mCaptureMode==true AND mCaptureListener!=null,
+    // dispatch() posts the emitted path to the listener on the main thread and
+    // returns WITHOUT consulting the dispatch table or firing a haptic. Both
+    // fields are volatile so the input thread sees the UI-thread flip promptly.
+    private volatile boolean mCaptureMode = false;
+    private volatile CaptureListener mCaptureListener = null;
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     // volatile: getLastChangedPathId() / getLastChangedAtMillis() are public
     // getters that may be polled from the render thread while stampBindingChange
     // writes from the input/Settings thread. The memory barrier is required so
@@ -358,6 +380,36 @@ public class ComboDispatcher {
         // KEY_BLOB listener auto-fires reloadBindings() → BindingsListener → UI refresh.
     }
 
+    /**
+     * Phase 5 — write a user-override binding for {@code path} → {@code binding}.
+     * Takes a full {@link Binding} (not just an action int) so future parametric
+     * actions (e.g. A_GOTO_BOOKMARK with a bookmark_id) just pass a param-bearing
+     * Binding without widening the API. No-op when mAppContext is null (test ctor)
+     * or path is empty. The KEY_BLOB pref listener fires reloadBindings() →
+     * BindingsListener → UI refresh automatically after save().
+     */
+    public void setBinding(@NonNull int[] path, @NonNull Binding binding) {
+        if (mAppContext == null || path.length == 0) {
+            return;
+        }
+        ComboBindingStore store = new ComboBindingStore(mAppContext);
+        Map<String, Binding> overrides = new HashMap<>(store.load());
+        overrides.put(ComboBindingStore.pathToKey(path), binding);
+        store.save(overrides);
+    }
+
+    /**
+     * Phase 5 — enter/leave capture mode. While in capture mode the dispatcher
+     * routes emitted paths to the listener on the main thread and does NOT
+     * consult the dispatch table. Passing {@code enabled=true, listener=null}
+     * is treated as disabled (prevents orphan state). Safe to call from any
+     * thread; the UI thread is expected.
+     */
+    public void setCaptureMode(boolean enabled, @Nullable CaptureListener listener) {
+        mCaptureListener = enabled ? listener : null;
+        mCaptureMode = enabled && listener != null;
+    }
+
     private static void putBoth(Map<String, Binding> four, Map<String, Binding> eight,
                                 int action, int... path) {
         String k = key(path);
@@ -401,6 +453,19 @@ public class ComboDispatcher {
 
     public void dispatch(int[] path, int length) {
         if (length <= 0 || length > 8) return;
+        // Phase 5 — capture-mode routing. When BindComboView is recording a
+        // draw, hand the path off to the listener on the UI thread and skip
+        // the dispatch table AND haptic entirely. Snapshot the listener before
+        // posting so a concurrent setCaptureMode(false, null) can't null it
+        // out between the check and the post.
+        if (mCaptureMode) {
+            CaptureListener listener = mCaptureListener;
+            if (listener != null) {
+                int[] captured = Arrays.copyOf(path, length);
+                mMainHandler.post(() -> listener.onPathCaptured(captured));
+                return;
+            }
+        }
         // Re-push mode every dispatch — covers preference flips without
         // needing a SharedPreferences listener wired up.
         pushModeToNative();
