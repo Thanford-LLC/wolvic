@@ -282,6 +282,28 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     private View mCanvasView;
 
+    // ── Phase 2 (Combos Settings): HUD dim + visibility prefs ────────
+    // mDimMultiplier is a global alpha multiplier applied in drawHUD via
+    // Canvas.saveLayerAlpha so the existing 18 paint.setAlpha call sites
+    // stay untouched. 1.0 = full opacity (skip layer — no offscreen
+    // allocation overhead in the normal path). 0.3 = dimmed during
+    // Bind Combo capture mode (plan §T3).
+    //
+    // mVisiblePref mirrors the user's Settings toggle. show() no-ops
+    // while false so the existing grip-driven show() from
+    // VRBrowserActivity.handleGripStateChanged can't resurrect a HUD
+    // the user explicitly hid.
+    public static final String PREF_HUD_VISIBLE   = "fingerdance_hud_visible";
+    public static final String PREF_COMBO_HAPTICS = "fingerdance_combo_haptics";
+    private volatile float   mDimMultiplier = 1.0f;
+    private volatile boolean mVisiblePref   = true;
+
+    // Held as a strong reference — SharedPreferences stores listeners in a
+    // WeakHashMap, so a field-held listener is required to keep it alive.
+    // Lets CombosSettingsView write PREF_HUD_VISIBLE directly (cross-package,
+    // no MPL diff to expose mHUDWidget) and have the HUD react immediately.
+    private SharedPreferences.OnSharedPreferenceChangeListener mPrefListener;
+
     public ComboHUDWidget(Context aContext) {
         super(aContext);
         mColorBg           = aContext.getColor(R.color.fd_hud_bg);
@@ -370,6 +392,27 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     }
 
     private void initialize() {
+        // Seed the Settings-persisted visibility pref once at construction.
+        // VRBrowserActivity's grip-gated show() will consult mVisiblePref
+        // via our show() override, so a user who disabled the HUD in
+        // Settings won't see it resurrected on the next grip press.
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        mVisiblePref = prefs.getBoolean(PREF_HUD_VISIBLE, true);
+
+        // React to pref writes from CombosSettingsView (cross-package).
+        mPrefListener = (sharedPrefs, key) -> {
+            if (!PREF_HUD_VISIBLE.equals(key)) return;
+            boolean nowVisible = sharedPrefs.getBoolean(PREF_HUD_VISIBLE, true);
+            if (mVisiblePref == nowVisible) return;
+            mVisiblePref = nowVisible;
+            if (nowVisible) {
+                super.show(UIWidget.KEEP_WIDGET);
+            } else {
+                hide(UIWidget.KEEP_WIDGET);
+            }
+        };
+        prefs.registerOnSharedPreferenceChangeListener(mPrefListener);
+
         mCanvasView = new View(getContext()) {
             @Override
             protected void onDraw(Canvas canvas) {
@@ -386,7 +429,53 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     @Override
     public void show(@ShowFlags int aShowFlags) {
+        // Honour the Settings "HUD visible" toggle. When the user has
+        // disabled the HUD, the existing grip-gated show() call from
+        // VRBrowserActivity.handleGripStateChanged lands here and we
+        // silently drop it. setHudVisible(true) is the only way to
+        // bring the HUD back after the user hid it via Settings.
+        if (!mVisiblePref) return;
         super.show(aShowFlags);
+    }
+
+    /**
+     * Phase 2 §T3: dim the HUD during Bind Combo capture mode.
+     * <p>
+     * Implementation uses a global alpha multiplier applied via
+     * Canvas.saveLayerAlpha in drawHUD — avoids patching the 18 individual
+     * paint.setAlpha call sites, and the fast path (mDimMultiplier == 1.0f)
+     * skips the offscreen layer entirely so there's no per-frame allocation
+     * overhead outside of capture mode. Plan §E3.
+     */
+    public void setHudDimmed(boolean dimmed) {
+        float next = dimmed ? 0.3f : 1.0f;
+        if (mDimMultiplier == next) return;
+        mDimMultiplier = next;
+        if (mCanvasView != null) mCanvasView.postInvalidate();
+    }
+
+    /**
+     * Phase 2: user-facing HUD show/hide toggle persisted to SharedPreferences.
+     * Unlike the transient thumbstick-click toggle in VRBrowserActivity
+     * (mHUDEnabled, not persisted), this survives process restart and
+     * suppresses the grip-driven show() in handleGripStateChanged.
+     */
+    public void setHudVisible(boolean visible) {
+        if (mVisiblePref == visible) return;
+        mVisiblePref = visible;
+        PreferenceManager.getDefaultSharedPreferences(getContext())
+                .edit()
+                .putBoolean(PREF_HUD_VISIBLE, visible)
+                .apply();
+        if (visible) {
+            super.show(UIWidget.KEEP_WIDGET);
+        } else {
+            hide(UIWidget.KEEP_WIDGET);
+        }
+    }
+
+    public boolean isHudVisiblePref() {
+        return mVisiblePref;
     }
 
     /**
@@ -758,6 +847,11 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             mDispatcher.removeBindingsListener(this);
             mDispatcher = null;
         }
+        if (mPrefListener != null) {
+            PreferenceManager.getDefaultSharedPreferences(getContext())
+                    .unregisterOnSharedPreferenceChangeListener(mPrefListener);
+            mPrefListener = null;
+        }
         mTintedIconCache.clear();
         super.releaseWidget();
     }
@@ -782,6 +876,15 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
                 + " grip=" + mGripHeld + " building=" + mIsBuilding
                 + " pathLen=" + mPathLength + " ghosts=" + mGhostCount
                 + " lastNode=" + mLastNode);
+
+        // Global alpha multiplier for Bind Combo capture dim (plan §T3).
+        // Fast path — when not dimmed, skip saveLayerAlpha entirely so we
+        // don't pay the offscreen-bitmap cost on every frame outside of
+        // capture mode. ~99% of frames hit this branch.
+        final float dim = mDimMultiplier;
+        final int dimSaveCount = (dim < 1.0f)
+                ? canvas.saveLayerAlpha(null, (int) (255 * dim))
+                : -1;
 
         int tipStripPx = Math.round(TIP_STRIP_H * (h / (float) WIDGET_H));
         int dialH = h - tipStripPx;
@@ -924,6 +1027,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
         // ── Phase 3a: bottom tip strip ────────────────────
         drawTipStrip(canvas, w, h, dialH, tipStripPx);
+
+        // Close the dim layer opened at the top of the method. Fast path
+        // (dimSaveCount == -1) skips this too — no layer was pushed.
+        if (dimSaveCount >= 0) canvas.restoreToCount(dimSaveCount);
 
         // Per-frame invalidate is driven by mGhostAnimTickRunnable on the main
         // Handler (see startGhostAnimTick). postInvalidateOnAnimation() was

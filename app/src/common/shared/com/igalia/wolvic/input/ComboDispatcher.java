@@ -17,6 +17,8 @@ import com.igalia.wolvic.ui.widgets.WindowWidget;
 import com.igalia.wolvic.ui.widgets.WidgetManagerDelegate;
 import com.igalia.wolvic.utils.UrlUtils;
 import com.thanford.fingerdance.settings.Binding;
+import com.thanford.fingerdance.settings.ComboBindingStore;
+import com.thanford.fingerdance.settings.ComboHapticController;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -96,9 +98,61 @@ public class ComboDispatcher {
     private final java.util.Map<String, java.util.Set<Integer>> mNextNodeIndex = new java.util.HashMap<>();
     private boolean mNextNodeIndexDirty = true;
 
+    // Phase 2 §D8 — haptic feedback on combo resolution. Null in the test-only
+    // constructor; production path always has a non-null instance.
+    private final ComboHapticController mHapticController;
+    // Strong refs — SharedPreferences uses WeakHashMap for listener registration,
+    // so we must hold both the prefs instance AND the listener lambda to keep
+    // them alive for the life of the dispatcher.
+    private final SharedPreferences mDefaultPrefs;
+    private final SharedPreferences mBindingsPrefs;
+    private final SharedPreferences.OnSharedPreferenceChangeListener mDefaultPrefListener;
+    private final SharedPreferences.OnSharedPreferenceChangeListener mBindingsPrefListener;
+
     public ComboDispatcher(@NonNull Windows windows, @NonNull WidgetManagerDelegate widgetManager) {
         mWindows = windows;
         mWidgetManager = widgetManager;
+        // widgetManager is the VRBrowserActivity in production (is-a Context).
+        // Cast defensively — if a non-Context delegate is ever passed in (tests,
+        // headless tools), disable haptics gracefully rather than crash.
+        Context appCtx = (widgetManager instanceof Context)
+                ? ((Context) widgetManager).getApplicationContext()
+                : null;
+        mHapticController = (appCtx != null)
+                ? new ComboHapticController(appCtx, widgetManager)
+                : null;
+
+        // Register a pref listener on the default prefs file so CombosSettingsView
+        // can flip 4-dir/8-dir mode without needing a direct handle to the dispatcher.
+        // Correctness is already guaranteed by pushModeToNative() at the top of
+        // dispatch(); this listener only provides immediate HUD-tip UI refresh.
+        mDefaultPrefs = (appCtx != null)
+                ? PreferenceManager.getDefaultSharedPreferences(appCtx)
+                : null;
+        mDefaultPrefListener = (prefs, key) -> {
+            if (COMBO_MODE_4DIR_KEY.equals(key)) {
+                pushModeToNative();
+                stampBindingChange(null);
+            }
+        };
+        if (mDefaultPrefs != null) {
+            mDefaultPrefs.registerOnSharedPreferenceChangeListener(mDefaultPrefListener);
+        }
+
+        // Second listener on the ComboBindingStore prefs file — fires when the
+        // Settings Reset footer clears the bindings blob; we then rebuild tables.
+        mBindingsPrefs = (appCtx != null)
+                ? appCtx.getSharedPreferences(ComboBindingStore.PREFS_FILE, Context.MODE_PRIVATE)
+                : null;
+        mBindingsPrefListener = (prefs, key) -> {
+            if (ComboBindingStore.KEY_BLOB.equals(key)) {
+                reloadBindings();
+            }
+        };
+        if (mBindingsPrefs != null) {
+            mBindingsPrefs.registerOnSharedPreferenceChangeListener(mBindingsPrefListener);
+        }
+
         buildTables();
         pushModeToNative();
     }
@@ -113,7 +167,29 @@ public class ComboDispatcher {
         mWindows = null;
         mWidgetManager = null;
         mForcedMode4DirForTest = is4DirMode;
+        mHapticController = null;
+        mDefaultPrefs = null;
+        mBindingsPrefs = null;
+        mDefaultPrefListener = null;
+        mBindingsPrefListener = null;
         buildTables();
+    }
+
+    /**
+     * Unregister SharedPreferences listeners + cancel any pending haptic
+     * runnables. Call from VRBrowserActivity.onDestroy() when the dispatcher
+     * is being torn down. Safe to call multiple times.
+     */
+    public void shutdown() {
+        if (mDefaultPrefs != null && mDefaultPrefListener != null) {
+            mDefaultPrefs.unregisterOnSharedPreferenceChangeListener(mDefaultPrefListener);
+        }
+        if (mBindingsPrefs != null && mBindingsPrefListener != null) {
+            mBindingsPrefs.unregisterOnSharedPreferenceChangeListener(mBindingsPrefListener);
+        }
+        if (mHapticController != null) {
+            mHapticController.shutdown();
+        }
     }
 
     /**
@@ -303,8 +379,10 @@ public class ComboDispatcher {
 
         if (action == null) {
             Log.d(LOGTAG, "Unrecognised combo: " + Arrays.toString(combo));
+            if (mHapticController != null) mHapticController.fireIllegalCombo();
             return;
         }
+        if (mHapticController != null) mHapticController.fireLegalCombo();
         runAction(action);
     }
 

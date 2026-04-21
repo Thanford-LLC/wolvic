@@ -3,6 +3,9 @@
   Copyright (c) 2026 Thanford. All rights reserved.
   Proprietary FingerDance layout. Not licensed under the MPL 2.0 that
   covers the surrounding Wolvic files.
+
+  Phase 2 — mode / HUD / haptics switches + reset footer.
+  Mirrors options_controller.xml chrome (SettingsHeader + CustomScrollView + SettingsFooter).
 -->
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -33,7 +36,7 @@
             android:layout_marginBottom="10dp"
             android:paddingStart="0dp"
             android:paddingEnd="30dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/footer_layout"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/header_layout">
@@ -41,8 +44,66 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:orientation="vertical">
+
+                <!-- Mode (4-dir / 8-dir). Bound to fingerdance_combo_4dir_mode pref:
+                     "true" = 4-dir, "false" = 8-dir (see strings-fingerdance.xml array). -->
+                <com.igalia.wolvic.ui.views.settings.RadioGroupSetting
+                    android:id="@+id/combos_mode_radio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:description="@string/combos_mode_title"
+                    app:options="@array/combos_mode_options"
+                    app:values="@array/combos_mode_values" />
+
+                <!-- HUD visibility. Persists to fingerdance_hud_visible via ComboHUDWidget.setHudVisible(). -->
+                <com.igalia.wolvic.ui.views.settings.SwitchSetting
+                    android:id="@+id/combos_hud_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:description="@string/combos_hud_show" />
+
+                <TextView
+                    style="@style/settingsText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/combos_hud_show_sub"
+                    android:textAlignment="textStart" />
+
+                <!-- Buzz on combo. Persists to fingerdance_combo_haptics.
+                     Gated AND'd with Wolvic global haptics pref inside WidgetManagerDelegate. -->
+                <com.igalia.wolvic.ui.views.settings.SwitchSetting
+                    android:id="@+id/combos_buzz_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:description="@string/combos_buzz_on_combo" />
+
+                <TextView
+                    style="@style/settingsText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/combos_buzz_on_combo_sub"
+                    android:textAlignment="textStart" />
+
+            </LinearLayout>
         </com.igalia.wolvic.ui.views.CustomScrollView>
+
+        <!-- Reset-to-defaults footer per Plan cherry-pick (load-bearing safety net). -->
+        <com.igalia.wolvic.ui.widgets.settings.SettingsFooter
+            android:id="@+id/footer_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:description="@string/combos_reset_title"
+            app:buttonText="@string/combos_reset_button"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

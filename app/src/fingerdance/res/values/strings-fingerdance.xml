@@ -7,4 +7,29 @@
 <resources>
     <!-- Combos Settings panel title + honeycomb button label on the main Settings page. -->
     <string name="settings_combos">Combos</string>
+
+    <!-- Phase 2 — mode / HUD / haptics toggles on the Combos Settings panel. -->
+    <string name="combos_mode_title">Combo mode</string>
+    <string name="combos_mode_4dir">4-dir</string>
+    <string name="combos_mode_8dir">8-dir</string>
+
+    <string name="combos_hud_show">Show combo HUD</string>
+    <string name="combos_hud_show_sub">Head-locked dial during grip</string>
+
+    <!-- Per Plan §T2: resolved copy is "Buzz on combo" with a one-line sub-label. -->
+    <string name="combos_buzz_on_combo">Buzz on combo</string>
+    <string name="combos_buzz_on_combo_sub">1 short buzz on fire, 2 on miss</string>
+
+    <string name="combos_reset_title">Reset combos</string>
+    <string name="combos_reset_button">Reset to defaults</string>
+
+    <!-- Mode radio options. "true" = 4-dir (matches existing fingerdance_combo_4dir_mode pref). -->
+    <string-array name="combos_mode_options">
+        <item>@string/combos_mode_4dir</item>
+        <item>@string/combos_mode_8dir</item>
+    </string-array>
+    <string-array name="combos_mode_values">
+        <item>true</item>
+        <item>false</item>
+    </string-array>
 </resources>
