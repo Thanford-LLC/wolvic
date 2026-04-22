@@ -75,6 +75,13 @@ public class ComboDispatcher {
     public static final int A_READER_MODE     = 25;
     public static final int A_PRIVATE_WINDOW  = 26;
 
+    // Phase 8a — unbound by default; user assigns via Combos Settings.
+    // Ints 27-31 were reserved per the plan; 29-31 (passthrough/resize) descoped.
+    public static final int A_TOGGLE_HUD          = 27;
+    public static final int A_TOGGLE_MODE         = 28;
+    public static final int A_TOGGLE_CURVE_WINDOW = 32;
+    public static final int A_GOTO_BOOKMARK       = 33;
+
     /** Listener for changes to the active binding table. */
     public interface BindingsListener {
         void onBindingsChanged();
@@ -127,6 +134,14 @@ public class ComboDispatcher {
     // mutated) and lazily on first getLegalNextNodes() call.
     private final java.util.Map<String, java.util.Set<Integer>> mNextNodeIndex = new java.util.HashMap<>();
     private boolean mNextNodeIndexDirty = true;
+
+    // Phase 7 — FROM_CAPTURE. Set by onAXButtonPressed(); cleared on first dispatch()
+    // that follows the button press. When true, the next grip-release path is captured
+    // and forwarded to Combos Settings (action picker) instead of dispatching normally.
+    private volatile boolean mPendingAXCapture = false;
+    // Stored by dispatch() when mPendingAXCapture is true + no binding found.
+    // Read by CombosListBuilder/CombosSettingsView to show the pre-captured path banner.
+    private volatile int[] mPendingCapturePath = null;
 
     // Phase 2 §D8 — haptic feedback on combo resolution. Null in the test-only
     // constructor; production path always has a non-null instance.
@@ -410,6 +425,28 @@ public class ComboDispatcher {
         mCaptureMode = enabled && listener != null;
     }
 
+    /**
+     * Phase 7 — called from VRBrowserActivity.handleComboAXPressed() (JNI).
+     * Marks the next grip-release as a FROM_CAPTURE request. Ignored when
+     * combos are suspended (capture mode active, settings open via mCaptureMode).
+     */
+    public void onAXButtonPressed(int hand) {
+        if (mCaptureMode) return; // already in capture mode, ignore
+        Log.d(LOGTAG, "onAXButtonPressed hand=" + hand + " → pending capture set");
+        mPendingAXCapture = true;
+    }
+
+    /** Returns the path captured via the FROM_CAPTURE A/X flow, or null if none pending. */
+    @Nullable
+    public int[] getPendingCapturePath() {
+        return mPendingCapturePath;
+    }
+
+    /** Clears the pending capture path after the UI has consumed it. */
+    public void clearPendingCapturePath() {
+        mPendingCapturePath = null;
+    }
+
     private static void putBoth(Map<String, Binding> four, Map<String, Binding> eight,
                                 int action, int... path) {
         String k = key(path);
@@ -495,9 +532,22 @@ public class ComboDispatcher {
 
         if (action == null) {
             Log.d(LOGTAG, "Unrecognised combo: " + Arrays.toString(combo));
+            // Phase 7: A/X was pressed before grip release → FROM_CAPTURE flow.
+            if (mPendingAXCapture) {
+                mPendingAXCapture = false;
+                mPendingCapturePath = combo;
+                Log.d(LOGTAG, "FROM_CAPTURE triggered: path=" + Arrays.toString(combo));
+                mMainHandler.post(() -> {
+                    if (mWidgetManager instanceof VRBrowserActivity) {
+                        ((VRBrowserActivity) mWidgetManager).openCombosSettings();
+                    }
+                });
+                return;
+            }
             if (mHapticController != null) mHapticController.fireIllegalCombo();
             return;
         }
+        mPendingAXCapture = false; // Bound path found — discard any pending capture intent.
         if (mHapticController != null) mHapticController.fireLegalCombo();
         runAction(action);
     }
@@ -563,6 +613,17 @@ public class ComboDispatcher {
      */
     public java.util.Map<String, Binding> getAllBindings() {
         return java.util.Collections.unmodifiableMap(currentTable());
+    }
+
+    /**
+     * Returns the 4-dir table regardless of current mode. Used by
+     * {@link com.thanford.fingerdance.settings.CombosListBuilder} to filter
+     * out 4-dir cardinal fallback paths when displaying the 8-dir list — if a
+     * path key appears in BOTH tables for the same action it was mirrored from
+     * the 4-dir defaults and should not clutter the 8-dir view.
+     */
+    public java.util.Map<String, Binding> get4DirBindings() {
+        return java.util.Collections.unmodifiableMap(mTable4Dir);
     }
 
     /**
@@ -688,7 +749,8 @@ public class ComboDispatcher {
             case A_ADD_BOOKMARK:   addToBookmarks();           break;
             case A_HISTORY:        openHistory();              break;
             case A_READER_MODE:    toggleReaderMode();         break;
-            case A_PRIVATE_WINDOW: togglePrivateMode();        break;
+            case A_PRIVATE_WINDOW:      togglePrivateMode();     break;
+            case A_TOGGLE_CURVE_WINDOW: toggleCurvedWindow();   break;
             default:               Log.d(LOGTAG, "No handler for action " + action); break;
         }
     }
@@ -805,6 +867,16 @@ public class ComboDispatcher {
         } else {
             mWindows.enterPrivateMode();
         }
+    }
+
+    private void toggleCurvedWindow() {
+        if (mAppContext == null || mWindows == null) return;
+        com.igalia.wolvic.browser.SettingsStore store =
+                com.igalia.wolvic.browser.SettingsStore.getInstance(mAppContext);
+        boolean nowCurved = store.isCurvedModeEnabled();
+        store.setCylinderDensity(nowCurved ? 0f
+                : com.igalia.wolvic.browser.SettingsStore.CYLINDER_DENSITY_ENABLED_DEFAULT);
+        mWindows.updateCurvedMode(true);
     }
 
     private void toggleReaderMode() {

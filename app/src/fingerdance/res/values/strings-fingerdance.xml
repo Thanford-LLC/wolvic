@@ -20,7 +20,9 @@
     <string name="combos_buzz_on_combo">Buzz on combo</string>
     <string name="combos_buzz_on_combo_sub">1 short buzz on fire, 2 on miss</string>
 
-    <string name="combos_reset_title">Reset combos</string>
+    <!-- S4 (2026-04-21): combos_reset_title removed — the "Reset combos" left
+         label in the footer duplicated the "Reset to defaults" button. Only
+         the button label survives now (options_combos.xml drops app:description). -->
     <string name="combos_reset_button">Reset to defaults</string>
 
     <!-- Mode radio options. "true" = 4-dir (matches existing fingerdance_combo_4dir_mode pref). -->
@@ -34,29 +36,36 @@
     </string-array>
 
     <!-- Phase 3 — categorised binding list section headers. -->
-    <string name="combos_section_system">System gestures</string>
+    <!-- S5 (2026-04-21): Quest 3 feedback — say "combos" everywhere the user
+         sees, keep code identifiers (combos_gesture_*) unchanged. -->
+    <string name="combos_section_system">System combos</string>
     <string name="combos_section_navigation">Navigation</string>
     <string name="combos_section_position">Position</string>
     <string name="combos_section_window">Window</string>
     <string name="combos_section_library">Library</string>
     <string name="combos_section_special">Special</string>
+    <string name="combos_section_unassigned">Unassigned</string>
+    <!-- S11 mode switch -->
+    <string name="combos_mode_8dir_switch">8-dir mode</string>
+    <string name="combos_mode_8dir_switch_sub">Enables diagonal directions. Gives 8 more paths. Leave off for simpler combos.</string>
+
+    <!-- Section header for advanced / power-user toggles pinned to the bottom of
+         the Combos panel. Intentionally last so newbies see bindings first. -->
+    <string name="combos_section_advanced">Advanced</string>
 
     <!-- Phase 3 — info-only System Gestures rows. -->
-    <string name="combos_gesture_longpress">Long-press left joystick</string>
+    <string name="combos_gesture_longpress">Long-press joystick</string>
     <string name="combos_gesture_longpress_action">Open Combos Settings</string>
     <string name="combos_gesture_click_idle">Click joystick (idle)</string>
     <string name="combos_gesture_click_idle_action">Toggle combo HUD</string>
     <string name="combos_gesture_click_midpath">Click joystick (mid-path)</string>
     <string name="combos_gesture_click_midpath_action">Cancel combo</string>
 
-    <!-- Per sealed T1: only the CURRENT mode's escape path is listed (easter-egg framing). -->
-    <string name="combos_gesture_mode_4dir_escape">Push up eight times</string>
-    <string name="combos_gesture_mode_4dir_escape_action">Switch to 8-dir mode</string>
-    <string name="combos_gesture_mode_8dir_escape">Push up four times</string>
-    <string name="combos_gesture_mode_8dir_escape_action">Switch to 4-dir mode</string>
-
-    <!-- Empty-state copy for action rows with zero bindings (user deleted defaults). -->
-    <string name="combos_row_unbound">Not bound</string>
+    <!-- S3: mode-escape paths ([2]×8 / [2]×4) ship in the binding table but
+         are intentionally NOT documented in the System Gestures section —
+         easter-egg framing per CLAUDE.md and the sealed Combos plan. The
+         combos_gesture_mode_4dir_escape* / 8dir_escape* strings that once
+         lived here were removed together with their UI rows. -->
 
     <!-- Phase 4 — chip X-delete confirm dialog. Cancel button reuses Wolvic's
          MPL-licensed R.string.cancel_button (already translated into 24 locales). -->
@@ -74,19 +83,28 @@
     <string name="combos_bind_button_bind">Bind</string>
     <string name="combos_bind_same_action_error">Already bound to this action — draw a different combo.</string>
     <string name="combos_bind_conflict_warning">Already bound to %1$s — binding will replace it.</string>
-    <string name="combos_bind_prefix_collision_warning">Warning: this combo shares a prefix with another binding. The shorter one will fire first.</string>
+    <string name="combos_bind_prefix_collision_warning">Note: another combo starts with the same moves. One may trigger before the other completes.</string>
 
     <!-- Phase 5 cherry-pick — Reset-to-defaults confirm dialog (footer
          button label reuses the existing combos_reset_button string). -->
     <string name="combos_reset_confirm_title">Reset all combos?</string>
-    <string name="combos_reset_confirm_body">This will undo every combo you changed, deleted, or created. System gestures and toggles are unaffected.</string>
+    <string name="combos_reset_confirm_body">This will undo every combo you changed, deleted, or created. System combos and toggles are unaffected.</string>
     <string name="combos_reset_confirm_positive">Reset all</string>
 
     <!-- Phase 5 — + Create button on action rows. -->
     <string name="combos_row_create_button">+ Create</string>
 
+    <!-- Phase 7 — FROM_CAPTURE banner shown at the top of Combos Settings when
+         the user drew an unbound combo and pressed A/X while browsing. -->
+    <string name="combos_capture_banner_prefix">Combo drawn:</string>
+    <string name="combos_capture_banner_suffix">— tap + Create on any action below to assign it.</string>
+
     <!-- Phase 6 — first-launch onboarding hint. Shown once per install lifetime
          above the Tray after the splash fades; dismisses automatically. The
-         one-shot gate lives in ComboBindingStore (KEY_LONGPRESS_HINT_SEEN). -->
-    <string name="combos_longpress_onboarding_hint">Tip: long-press the left joystick to open Combos Settings</string>
+         one-shot gate lives in ComboBindingStore (KEY_LONGPRESS_HINT_SEEN).
+         Teaches the CORE gesture (grip + joystick) per
+         feedback_onboarding_teaches_core_gesture.md — NOT the advanced
+         long-press-for-Settings gesture. Settings discovery is a second-order
+         concern solved by the Tray honeycomb and accidental long-presses. -->
+    <string name="combos_longpress_onboarding_hint">Tip: Hold grip and push the joystick to start a combo</string>
 </resources>

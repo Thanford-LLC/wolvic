@@ -61,15 +61,15 @@ OpenXRInputSource::OpenXRInputSource(XrInstance instance, XrSession session, Ope
       crow::VRBrowser::HandleComboPreviewProgress(zoneId, progress);
   });
   // Phase 6: long-press thumbstick (grip-OFF, >= LONG_PRESS_MS) opens Combos
-  // Settings. Only the LEFT-hand recognizer registers this callback so we
-  // don't double-fire when both hands tick. Matches design D-A20
-  // ("Long-press left joystick → Open Combos Settings"). The engine gates
-  // the accumulator to grip-OFF internally — no additional guard here.
-  if (mHandeness == OpenXRHandFlags::Left) {
-      mComboRecognizer.SetLongPressCallback([]() {
-          crow::VRBrowser::HandleLongPressThumbstick();
-      });
-  }
+  // Settings. Registered on BOTH hand recognizers per
+  // feedback_combos_hand_agnostic.md — users don't want to remember which
+  // hand is "the Settings hand" (overrides sealed-plan D-A20 "left-only").
+  // Double-fire from simultaneous ticks is deduped on the Java side by a
+  // short debounce window in VRBrowserActivity.openCombosSettings().
+  // The engine gates the accumulator to grip-OFF internally.
+  mComboRecognizer.SetLongPressCallback([]() {
+      crow::VRBrowser::HandleLongPressThumbstick();
+  });
 }
 
 OpenXRInputSource::~OpenXRInputSource()
@@ -980,6 +980,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     bool trackpadTouched { false };
     bool squeezeClicked { false };
     bool thumbstickBtnClicked { false };
+    bool faceABtnClicked { false };
 
     // https://www.w3.org/TR/webxr-gamepads-module-1/
     std::unordered_set<OpenXRButtonType> placeholders = {
@@ -1005,9 +1006,11 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         placeholders.erase(button.type);
         buttonCount++;
 
-        // Capture grip/thumbstick states for FingerDance combo recognizer.
+        // Capture grip/thumbstick/face states for FingerDance combo recognizer.
         if (button.type == OpenXRButtonType::Squeeze)    squeezeClicked      = state->clicked;
         if (button.type == OpenXRButtonType::Thumbstick) thumbstickBtnClicked = state->clicked;
+        if (button.type == OpenXRButtonType::ButtonA || button.type == OpenXRButtonType::ButtonX)
+            faceABtnClicked = state->clicked;
 
         auto browserButton = GetBrowserButton(button);
         auto immersiveButton = GetImmersiveButton(button);
@@ -1069,6 +1072,14 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     buttonCount += placeholders.size();
     delegate.SetButtonCount(mIndex, buttonCount);
 
+    // FingerDance: A/X face-button just-pressed while grip held + path active → FROM_CAPTURE.
+    // Java dispatcher decides whether to open the bind flow (checks mCombosEnabled, etc.).
+    if (faceABtnClicked && !mPrevFaceABtnClicked && squeezeClicked && !mComboRecognizer.IsPathEmpty()) {
+        const int hand = (mHandeness == OpenXRHandFlags::Left) ? 0 : 1;
+        crow::VRBrowser::HandleComboAXPressed(hand);
+    }
+    mPrevFaceABtnClicked = faceABtnClicked;
+
     // Axes
     // https://www.w3.org/TR/webxr-gamepads-module-1/#xr-standard-gamepad-mapping
     axesContainer = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -1107,14 +1118,24 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         const bool pathWasEmpty = mComboRecognizer.IsPathEmpty();
         bool consumed = mComboRecognizer.Process(
             state->x, -state->y, thumbstickBtnClicked, squeezeClicked, timestampMs);
-        // FingerDance: thumbstick click while grip held — toggle HUD only
-        // when the recognizer was already idle. Mid-path clicks routed to
-        // the native Cancel path above already cleared the combo and must
-        // not also hide the HUD.
-        if (thumbstickBtnClicked && squeezeClicked && !mPrevThumbstickForHUD && pathWasEmpty) {
-          crow::VRBrowser::HandleComboThumbstickPress();
+        // FingerDance: thumbstick click in idle (no ongoing combo) toggles HUD,
+        // regardless of grip state. Fire on RELEASE-edge with press-duration <
+        // LONG_PRESS_MS gate — the LONG_PRESS_MS gate prevents a Settings-open
+        // long-press from also firing a HUD toggle. pathWasEmpty gate prevents
+        // a mid-combo thumbstick click (silent-cancel case) from toggling HUD.
+        const bool heldNow  = thumbstickBtnClicked;
+        const bool wasHeld  = mPrevThumbstickForHUD;
+        if (heldNow && !wasHeld) {
+          mThumbstickPressStartMsForHUD = timestampMs;
+          mPathEmptyAtHUDPressStart = pathWasEmpty;
         }
-        mPrevThumbstickForHUD = thumbstickBtnClicked && squeezeClicked;
+        if (!heldNow && wasHeld && mPathEmptyAtHUDPressStart) {
+          const int64_t pressDurMs = timestampMs - mThumbstickPressStartMsForHUD;
+          if (pressDurMs < fingerdance::LONG_PRESS_MS) {
+            crow::VRBrowser::HandleComboThumbstickPress();
+          }
+        }
+        mPrevThumbstickForHUD = heldNow;
         static int fdAxisLog = 0;
         if (squeezeClicked && (fdAxisLog++ % 50 == 0)) {
             VRB_LOG("FingerDance: Axis x=%.3f y=%.3f grip=%d consumed=%d hand=%d", state->x, state->y, (int)squeezeClicked, (int)consumed, mIndex);

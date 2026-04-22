@@ -72,6 +72,9 @@ void HandleComboPreviewProgress(int zoneId, float progress);
 void HandleComboThumbstickPress();
 // FingerDance: thumbstick held >= LONG_PRESS_MS with grip OFF — open Combos Settings.
 void HandleLongPressThumbstick();
+// FingerDance: A (right) or X (left) face button pressed after a dead-end combo path.
+// hand: 0 = left (X button), 1 = right (A button).
+void HandleComboAXPressed(int hand);
 } // namespace VRBrowser;
 
 } // namespace crow

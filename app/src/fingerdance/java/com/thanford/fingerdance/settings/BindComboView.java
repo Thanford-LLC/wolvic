@@ -12,6 +12,7 @@ import android.text.SpannableStringBuilder;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.igalia.wolvic.R;
@@ -63,13 +64,33 @@ public class BindComboView extends PromptDialogWidget
     private final int mActionInt;
     private final String mActionLabel;
     private int[] mCapturedPath = new int[0];
+    // FROM_CAPTURE: path drawn before A/X press, pre-filled when opening from browsing.
+    // Null in the FROM_SETTINGS flow.
+    private final int[] mPreCapturedPath;
 
+    /** FROM_SETTINGS: user picks action → draws path. */
     public BindComboView(@NonNull Context ctx,
                          @NonNull ComboDispatcher dispatcher,
                          int actionInt) {
+        this(ctx, dispatcher, actionInt, null);
+    }
+
+    /** FROM_CAPTURE: path already drawn; user picks action. */
+    public static BindComboView forCapture(@NonNull Context ctx,
+                                           @NonNull ComboDispatcher dispatcher,
+                                           int actionInt,
+                                           @NonNull int[] capturedPath) {
+        return new BindComboView(ctx, dispatcher, actionInt, capturedPath);
+    }
+
+    private BindComboView(@NonNull Context ctx,
+                          @NonNull ComboDispatcher dispatcher,
+                          int actionInt,
+                          @Nullable int[] preCapturedPath) {
         super(ctx);
         mDispatcher = dispatcher;
         mActionInt = actionInt;
+        mPreCapturedPath = (preCapturedPath != null) ? preCapturedPath.clone() : null;
         int labelRes = ComboActionRegistry.labelFor(actionInt);
         mActionLabel = (labelRes != 0) ? ctx.getString(labelRes) : "";
         initialize(ctx);
@@ -78,6 +99,10 @@ public class BindComboView extends PromptDialogWidget
     @Override
     public void updateUI() {
         super.updateUI();
+        // Guard: first updateUI() fires from PromptDialogWidget's super(ctx) before
+        // BindComboView's instance field initializers (mCapturedPath) have run.
+        // All setup below safely awaits the second call triggered by initialize(ctx).
+        if (mCapturedPath == null) return;
 
         setButtons(new int[]{
                 R.string.cancel_button,
@@ -102,13 +127,23 @@ public class BindComboView extends PromptDialogWidget
     @Override
     public void show(@ShowFlags int aShowFlags) {
         super.show(aShowFlags);
-        mDispatcher.setCaptureMode(true, this);
+        if (mPreCapturedPath != null) {
+            // FROM_CAPTURE: path is already known; skip live capture mode.
+            // Immediately populate the captured path so the chrome renders it.
+            onPathCaptured(mPreCapturedPath);
+        } else {
+            mDispatcher.setCaptureMode(true, this);
+        }
         setHudDimmed(true);
     }
 
     @Override
     public void onDismiss() {
-        mDispatcher.setCaptureMode(false, null);
+        if (mPreCapturedPath == null) {
+            // Only clear capture mode if we entered it (FROM_SETTINGS).
+            mDispatcher.setCaptureMode(false, null);
+        }
+        mDispatcher.clearPendingCapturePath();
         setHudDimmed(false);
         super.onDismiss();
     }
@@ -160,14 +195,14 @@ public class BindComboView extends PromptDialogWidget
                     ? ctx.getString(otherLabelRes) : "";
             sb.append(ctx.getString(
                     R.string.combos_bind_conflict_warning, otherLabel));
-        } else if (hasPrefixCollision()) {
-            sb.append(ctx.getString(R.string.combos_bind_prefix_collision_warning));
         }
+        // Prefix-collision note removed: combos fire on grip-release only, so
+        // a shorter path sharing a prefix never "fires first" in practice.
         setBody(sb);
     }
 
     private boolean hasCapturedPath() {
-        return mCapturedPath.length > 0;
+        return mCapturedPath != null && mCapturedPath.length > 0;
     }
 
     /**

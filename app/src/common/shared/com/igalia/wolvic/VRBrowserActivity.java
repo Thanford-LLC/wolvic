@@ -1328,19 +1328,27 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     @Keep
     void handleComboThumbstickPress() {
         runOnUiThread(() -> {
-            mHUDEnabled = !mHUDEnabled;
+            if (mHUDWidget == null) return;
+            // Sync toggle with the persisted pref so the Settings switch and the
+            // joystick toggle always agree. Reading the pref here means a prior
+            // Settings change is honoured even though mHUDEnabled may have drifted.
+            android.content.SharedPreferences prefs =
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            mHUDEnabled = !prefs.getBoolean(
+                    com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_HUD_VISIBLE, true);
             android.util.Log.d("FingerDance", "HUD toggled: " + mHUDEnabled);
-            if (mHUDWidget != null && !mHUDEnabled) {
-                mHUDWidget.hide(UIWidget.KEEP_WIDGET);
-            }
+            // setHudVisible updates the pref AND shows/hides the widget, so
+            // show() will no longer be blocked by a stale mVisiblePref=false.
+            mHUDWidget.setHudVisible(mHUDEnabled);
         });
     }
 
-    // FingerDance (Phase 6): native JNI receiver — left joystick held >=
-    // LONG_PRESS_MS with grip OFF. Opens Combos Settings directly. Grip-OFF
-    // gating lives in the native engine (ComboWindowEngine); we just route
-    // to the Tray on the UI thread. No combo dispatch needed — this is an
-    // input-event → UI-action bridge, not a path emit.
+    // FingerDance (Phase 6): native JNI receiver — joystick (either hand) held
+    // >= LONG_PRESS_MS with grip OFF. Opens Combos Settings directly. Grip-OFF
+    // gating lives in the native engine (ComboWindowEngine); we just route to
+    // the Tray on the UI thread. Both hand recognizers register this callback
+    // per feedback_combos_hand_agnostic.md — dedupe happens via the
+    // openCombosSettings debounce window below.
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleLongPressThumbstick() {
@@ -1348,15 +1356,39 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         runOnUiThread(this::openCombosSettings);
     }
 
+    // FingerDance (Phase 7): A/X face button pressed while grip held + path
+    // non-empty → notify dispatcher so the next combo release opens FROM_CAPTURE.
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboAXPressed(int hand) {
+        android.util.Log.d("FingerDance", "handleComboAXPressed hand=" + hand);
+        if (mComboDispatcher != null) {
+            runOnUiThread(() -> mComboDispatcher.onAXButtonPressed(hand));
+        }
+    }
+
+    // Debounce for both-hands long-press. If the left and right recognizers
+    // both cross the 800ms threshold within this window, only the first one
+    // opens Settings. UI-thread only — no volatile needed.
+    private static final long OPEN_COMBOS_SETTINGS_DEBOUNCE_MS = 500L;
+    private long mLastOpenCombosSettingsMs = 0L;
+
     // FingerDance (Phase 6): open the Combos settings panel from anywhere.
     // Safe to call from any thread via runOnUiThread(); must be on UI thread
     // when invoked directly. Guards against null Tray (cold-start edge per
-    // Eng Review E-gap: long-press firing before mTray initialized).
+    // Eng Review E-gap: long-press firing before mTray initialized) and
+    // double-fire from simultaneous both-hand long-press ticks.
     public void openCombosSettings() {
         if (mTray == null) {
             android.util.Log.w("FingerDance", "openCombosSettings: mTray null, dropping");
             return;
         }
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - mLastOpenCombosSettingsMs < OPEN_COMBOS_SETTINGS_DEBOUNCE_MS) {
+            android.util.Log.d("FingerDance", "openCombosSettings: debounced (both-hands long-press)");
+            return;
+        }
+        mLastOpenCombosSettingsMs = now;
         mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
     }
 
@@ -2185,6 +2217,13 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         if (settings.isHapticFeedbackEnabled()) {
             queueRunnable(() -> triggerHapticFeedbackNative(settings.getHapticPulseDuration(), settings.getHapticPulseIntensity(), controllerId));
         }
+    }
+
+    @Override
+    public void triggerHapticFeedbackUnconditional(int controllerId, float durationMs, float intensity) {
+        // Call native directly (no queueRunnable) to minimise grip-release latency.
+        // triggerHapticFeedbackNative is safe to call from any thread.
+        triggerHapticFeedbackNative(durationMs, intensity, controllerId);
     }
 
     @Override

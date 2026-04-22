@@ -96,6 +96,8 @@ const char* const kHandleComboThumbstickPressName = "handleComboThumbstickPress"
 const char* const kHandleComboThumbstickPressSignature = "()V";
 const char* const kHandleLongPressThumbstickName = "handleLongPressThumbstick";
 const char* const kHandleLongPressThumbstickSignature = "()V";
+const char* const kHandleComboAXPressedName = "handleComboAXPressed";
+const char* const kHandleComboAXPressedSignature = "(I)V";
 
 JNIEnv* sEnv = nullptr;
 jclass sBrowserClass = nullptr;
@@ -143,6 +145,7 @@ jmethodID sHandleComboPreview = nullptr;
 jmethodID sHandleComboPreviewProgress = nullptr;
 jmethodID sHandleComboThumbstickPress = nullptr;
 jmethodID sHandleLongPressThumbstick = nullptr;
+jmethodID sHandleComboAXPressed = nullptr;
 
 } // namespace
 
@@ -206,6 +209,7 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sHandleComboPreviewProgress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewProgressName, kHandleComboPreviewProgressSignature);
   sHandleComboThumbstickPress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboThumbstickPressName, kHandleComboThumbstickPressSignature);
   sHandleLongPressThumbstick = FindJNIMethodID(sEnv, sBrowserClass, kHandleLongPressThumbstickName, kHandleLongPressThumbstickSignature);
+  sHandleComboAXPressed = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboAXPressedName, kHandleComboAXPressedSignature);
 }
 
 JNIEnv * VRBrowser::Env()
@@ -264,6 +268,7 @@ VRBrowser::ShutdownJava() {
   sHandleComboPreviewProgress = nullptr;
   sHandleComboThumbstickPress = nullptr;
   sHandleLongPressThumbstick = nullptr;
+  sHandleComboAXPressed = nullptr;
 }
 
 void
@@ -610,6 +615,14 @@ VRBrowser::HandleLongPressThumbstick() {
     VRB_LOG("FingerDance: HandleLongPressThumbstick");
     if (!ValidateMethodID(sEnv, sActivity, sHandleLongPressThumbstick, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sHandleLongPressThumbstick);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboAXPressed(int hand) {
+    VRB_LOG("FingerDance: HandleComboAXPressed hand=%d", hand);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboAXPressed, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboAXPressed, (jint)hand);
     CheckJNIException(sEnv, __FUNCTION__);
 }
 
