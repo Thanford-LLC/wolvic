@@ -111,18 +111,17 @@ if (!project.hasProperty('skipDesignCheck')) {
     task verifyDesignExports(type: Exec) {
         group = 'FingerDance'
         description = 'Verify generated colors-fd*.xml and _design-vars.css match DESIGN.md YAML tokens.'
-        def fingerdanceRepo = rootProject.projectDir.parentFile.parentFile
+        def fingerdanceRepo = rootProject.projectDir.parentFile
             .toPath().resolve('fingerdance').toFile()
         workingDir fingerdanceRepo
         commandLine 'node', 'tools/design-export.mjs',
             '--wolvic-root', rootProject.projectDir.parentFile.canonicalPath,
             '--check'
         ignoreExitValue false
-        doFirst {
-            if (!fingerdanceRepo.exists()) {
-                logger.lifecycle("WARNING: fingerdance repo not found at $fingerdanceRepo; skipping design check.")
-                enabled = false
-            }
+        // enabled must be set at configuration time, not inside doFirst
+        if (!fingerdanceRepo.exists()) {
+            logger.lifecycle("WARNING: fingerdance repo not found at $fingerdanceRepo; skipping design check.")
+            enabled = false
         }
     }
     preBuild.dependsOn verifyDesignExports
