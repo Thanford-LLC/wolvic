@@ -115,7 +115,7 @@ if (!project.hasProperty('skipDesignCheck')) {
             .toPath().resolve('fingerdance').toFile()
         workingDir fingerdanceRepo
         commandLine 'node', 'tools/design-export.mjs',
-            '--wolvic-root', rootProject.projectDir.parentFile.canonicalPath,
+            '--wolvic-root', rootProject.projectDir.canonicalPath,
             '--check'
         ignoreExitValue false
         // enabled must be set at configuration time, not inside doFirst
