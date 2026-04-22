@@ -166,6 +166,19 @@ public final class CombosListBuilder {
                 activeBindings, fourDirBindings, is4DirMode);
         int[] actionIds = ComboActionRegistry.knownActions();
 
+        // FROM_CAPTURE mode: only show unassigned actions so the user can pick a
+        // home for the new path without wading through already-bound rows.
+        if (pendingPath != null && pendingPath.length > 0) {
+            LinearLayout content = addExpandableSection(inflater, container,
+                    R.string.combos_section_unassigned, /* startExpanded= */ true);
+            for (int actionId : actionIds) {
+                if (primaryPathByAction.get(actionId) != null) continue; // already bound
+                addActionRow(ctx, inflater, content, actionId, null, dispatcher, pendingPath);
+            }
+            return;
+        }
+
+        // Normal (non-capture) mode: full categorised list.
         List<Integer> unassigned = new ArrayList<>();
 
         for (int i = 0; i < DISPLAY_ORDER.length; i++) {
