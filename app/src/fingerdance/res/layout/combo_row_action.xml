@@ -4,34 +4,50 @@
   Proprietary FingerDance layout. Not licensed under the MPL 2.0 that
   covers the surrounding Wolvic files.
 
-  Phase 3 — editable action row. Left: action label (28sp). Right: one or more
-  chips showing every bound combo path for this action (arrows via
-  ComboTipBuilder.renderArrowsOnly). Chips are non-interactive in Phase 3 —
-  delete-X lands in Phase 4, +Create in Phase 5.
+  S11 (2026-04-21): Three-column row per Quest 3 feedback:
+    Col 1 (action_label, weight=1): action name, left-aligned.
+    Col 2 (combo_cell, wrap_content): arrow chip or "—", centered.
+    Col 3 (button_cell, min 52dp): ✕ delete OR + Create, hover-revealed, rightmost.
+  Padding reduced 10→6dp to tighten row height.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="10dp"
-    android:paddingBottom="10dp"
+    android:paddingStart="@dimen/fd_pad_row_h"
+    android:paddingEnd="@dimen/fd_pad_row_h"
+    android:paddingTop="@dimen/fd_pad_row_v_action"
+    android:paddingBottom="@dimen/fd_pad_row_v_action"
     android:gravity="center_vertical">
 
+    <!-- Column 1: action name -->
     <TextView
         android:id="@+id/action_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textSize="28sp"
+        style="@style/settingsText"
         android:textColor="@color/fd_text"
         android:textAlignment="viewStart" />
 
+    <!-- Column 2: combo arrows pill or "—" (centered, weight=1) -->
     <LinearLayout
-        android:id="@+id/chip_container"
+        android:id="@+id/combo_cell"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginStart="@dimen/fd_pad_combo_margin"
+        android:layout_marginEnd="@dimen/fd_pad_combo_margin" />
+
+    <!-- Column 3: delete ✕ or + Create button (hover-revealed) -->
+    <LinearLayout
+        android:id="@+id/button_cell"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="@dimen/fd_min_touch_target"
         android:orientation="horizontal"
         android:gravity="center_vertical|end" />
 

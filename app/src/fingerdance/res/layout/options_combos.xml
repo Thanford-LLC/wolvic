@@ -4,8 +4,17 @@
   Proprietary FingerDance layout. Not licensed under the MPL 2.0 that
   covers the surrounding Wolvic files.
 
-  Phase 2 — mode / HUD / haptics switches + reset footer.
+  Phase 2 — HUD / haptics / mode switches + reset footer.
   Mirrors options_controller.xml chrome (SettingsHeader + CustomScrollView + SettingsFooter).
+
+  S10 (2026-04-21): HUD + Buzz + Mode switches moved to Advanced section per Quest 3
+  feedback ("advanced settings should be at the end of the page"). The top of
+  the panel now shows the combo list directly; Advanced (HUD, Buzz, Mode) is at
+  the bottom, collapsed by default (wired in CombosSettingsView).
+
+  S11 (2026-04-21): Mode switch changed from RadioGroupSetting to SwitchSetting per
+  Quest 3 feedback ("should be switch not radio box"). Advanced section header is now
+  collapsible with a chevron (wired in CombosSettingsView.java).
 -->
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -46,51 +55,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Mode (4-dir / 8-dir). Bound to fingerdance_combo_4dir_mode pref:
-                     "true" = 4-dir, "false" = 8-dir (see strings-fingerdance.xml array). -->
-                <com.igalia.wolvic.ui.views.settings.RadioGroupSetting
-                    android:id="@+id/combos_mode_radio"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:description="@string/combos_mode_title"
-                    app:options="@array/combos_mode_options"
-                    app:values="@array/combos_mode_values" />
-
-                <!-- HUD visibility. Persists to fingerdance_hud_visible via ComboHUDWidget.setHudVisible(). -->
-                <com.igalia.wolvic.ui.views.settings.SwitchSetting
-                    android:id="@+id/combos_hud_switch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:description="@string/combos_hud_show" />
-
-                <TextView
-                    style="@style/settingsText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:layout_marginEnd="24dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/combos_hud_show_sub"
-                    android:textAlignment="textStart" />
-
-                <!-- Buzz on combo. Persists to fingerdance_combo_haptics.
-                     Gated AND'd with Wolvic global haptics pref inside WidgetManagerDelegate. -->
-                <com.igalia.wolvic.ui.views.settings.SwitchSetting
-                    android:id="@+id/combos_buzz_switch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:description="@string/combos_buzz_on_combo" />
-
-                <TextView
-                    style="@style/settingsText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:layout_marginEnd="24dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/combos_buzz_on_combo_sub"
-                    android:textAlignment="textStart" />
-
                 <!-- Phase 3 — read-only categorised combo list. CombosListBuilder
                      inflates section headers, System Gestures info rows, and
                      one action row per known A_* into this container. -->
@@ -100,6 +64,108 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
 
+                <!-- S11 (2026-04-21) — Advanced section: collapsible header with
+                     chevron, collapsed by default. Wired in CombosSettingsView.java.
+                     Content container holds HUD switch, Buzz switch, Mode switch. -->
+                <LinearLayout
+                    android:id="@+id/combos_section_advanced_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/fd_pad_row_h"
+                    android:paddingEnd="@dimen/fd_pad_row_h"
+                    android:paddingTop="@dimen/fd_pad_row_top_section"
+                    android:paddingBottom="@dimen/fd_pad_row_bottom_section"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/combos_section_advanced"
+                        android:textSize="@dimen/fd_text_settings_section_title"
+                        android:textStyle="bold"
+                        android:textColor="@color/fd_accent"
+                        android:fontFamily="sans-serif"
+                        android:textAlignment="viewStart" />
+
+                    <TextView
+                        android:id="@+id/combos_section_advanced_chevron"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/fd_text_settings_chevron"
+                        android:textColor="@color/fd_accent"
+                        android:paddingStart="@dimen/fd_pad_chevron_start"
+                        android:text="&#9660;"
+                        android:textStyle="bold"
+                        android:rotation="-90" />
+                </LinearLayout>
+
+                <!-- Advanced content: hidden by default, toggled by header click. -->
+                <LinearLayout
+                    android:id="@+id/combos_advanced_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <!-- HUD visibility. Persists to fingerdance_hud_visible via ComboHUDWidget.setHudVisible(). -->
+                    <com.igalia.wolvic.ui.views.settings.SwitchSetting
+                        android:id="@+id/combos_hud_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:description="@string/combos_hud_show" />
+
+                    <TextView
+                        style="@style/settingsText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginEnd="24dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/combos_hud_show_sub"
+                        android:textAlignment="textStart" />
+
+                    <!-- Buzz on combo. Persists to fingerdance_combo_haptics.
+                         Gated AND'd with Wolvic global haptics pref inside WidgetManagerDelegate. -->
+                    <com.igalia.wolvic.ui.views.settings.SwitchSetting
+                        android:id="@+id/combos_buzz_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:description="@string/combos_buzz_on_combo" />
+
+                    <TextView
+                        style="@style/settingsText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginEnd="24dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/combos_buzz_on_combo_sub"
+                        android:textAlignment="textStart" />
+
+                    <!-- 8-dir mode toggle. Persists to fingerdance_combo_4dir_mode pref:
+                         switch ON = 8-dir mode (false for 4dir key), OFF = 4-dir mode. -->
+                    <com.igalia.wolvic.ui.views.settings.SwitchSetting
+                        android:id="@+id/combos_mode_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:description="@string/combos_mode_8dir_switch" />
+
+                    <TextView
+                        style="@style/settingsText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginEnd="24dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/combos_mode_8dir_switch_sub"
+                        android:textAlignment="textStart" />
+
+                </LinearLayout>
+
             </LinearLayout>
         </com.igalia.wolvic.ui.views.CustomScrollView>
 
@@ -108,7 +174,6 @@
             android:id="@+id/footer_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:description="@string/combos_reset_title"
             app:buttonText="@string/combos_reset_button"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

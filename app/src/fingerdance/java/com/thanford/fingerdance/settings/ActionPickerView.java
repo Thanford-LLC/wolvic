@@ -8,6 +8,7 @@ package com.thanford.fingerdance.settings;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.TypedValue;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -148,7 +149,8 @@ public class ActionPickerView extends PromptDialogWidget {
         if (mBinding != null && mBinding.body != null) {
             mBinding.body.setMovementMethod(LinkMovementMethod.getInstance());
             mBinding.body.setHighlightColor(Color.TRANSPARENT);
-            mBinding.body.setTextSize(24f);
+            mBinding.body.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                    getContext().getResources().getDimension(R.dimen.fd_text_action_picker_body));
         }
     }
 

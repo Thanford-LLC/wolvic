@@ -6,17 +6,41 @@
 
   Phase 3 — section header row. Yellow-accent band above each category
   group in the Combos Settings list (System Gestures, Navigation, …).
+  S10 (2026-04-21): chevron added for expand/collapse per Quest 3 feedback.
+  section_chevron is ▼ (expanded) or ▶ (collapsed), set programmatically.
 -->
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/section_title"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="14dp"
-    android:paddingBottom="6dp"
-    android:textSize="24sp"
-    android:textStyle="bold"
-    android:textColor="@color/fd_accent"
-    android:fontFamily="sans-serif"
-    android:textAlignment="viewStart" />
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/fd_pad_row_h"
+    android:paddingEnd="@dimen/fd_pad_row_h"
+    android:paddingTop="@dimen/fd_pad_row_top_section"
+    android:paddingBottom="@dimen/fd_pad_row_bottom_section"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/section_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="@dimen/fd_text_settings_section_title"
+        android:textStyle="bold"
+        android:textColor="@color/fd_accent"
+        android:fontFamily="sans-serif"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/section_chevron"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/fd_text_settings_chevron"
+        android:textStyle="bold"
+        android:textColor="@color/fd_accent"
+        android:paddingStart="@dimen/fd_pad_chevron_start"
+        android:text="&#9660;"
+        android:rotation="0" />
+
+</LinearLayout>
