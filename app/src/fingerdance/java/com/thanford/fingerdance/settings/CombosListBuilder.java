@@ -76,13 +76,6 @@ public final class CombosListBuilder {
         container.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(ctx);
 
-        // Phase 7: if user drew an unbound combo and pressed A/X, show a banner
-        // at the top prompting them to pick an action to bind the captured path to.
-        int[] pendingPath = dispatcher.getPendingCapturePath();
-        if (pendingPath != null && pendingPath.length > 0) {
-            addFromCaptureBanner(ctx, inflater, container, pendingPath, dispatcher);
-        }
-
         // In 8-dir mode we pass the 4-dir table so the builder can exclude
         // 4-dir-style fallback paths that were mirrored into the 8-dir table
         // (e.g. [6,6,6] → A_NEW_WINDOW). Paths that appear in BOTH tables at the
@@ -94,44 +87,7 @@ public final class CombosListBuilder {
                 || activeTable.equals(fourDirTable));
 
         addSystemGesturesSection(inflater, container);
-        addActionSections(ctx, inflater, container, activeTable, fourDirTable, is4DirMode, dispatcher, pendingPath);
-    }
-
-    /**
-     * Phase 7 FROM_CAPTURE banner: shown at the top of the list when the user
-     * drew an unbound combo and pressed A/X while browsing. Tells the user what
-     * path was captured and prompts them to tap + Create on any action row below.
-     */
-    private static void addFromCaptureBanner(@NonNull Context ctx,
-                                              @NonNull LayoutInflater inflater,
-                                              @NonNull LinearLayout container,
-                                              @NonNull int[] capturedPath,
-                                              @NonNull ComboDispatcher dispatcher) {
-        int chipColor  = ContextCompat.getColor(ctx, R.color.fd_accent);
-        int iconSizePx = (int) (20f * ctx.getResources().getDisplayMetrics().scaledDensity);
-        android.text.Spannable arrows = com.igalia.wolvic.ui.widgets.combo.ComboTipBuilder
-                .renderArrowsOnly(ctx, capturedPath, iconSizePx, chipColor);
-
-        TextView banner = new TextView(ctx);
-        banner.setTextSize(14f);
-        banner.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text));
-        banner.setBackgroundColor(ContextCompat.getColor(ctx, R.color.fd_surface_raised));
-        int padPx = (int) (12f * ctx.getResources().getDisplayMetrics().density);
-        banner.setPadding(padPx, padPx, padPx, padPx);
-
-        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder();
-        sb.append(ctx.getString(R.string.combos_capture_banner_prefix));
-        sb.append(" ");
-        sb.append(arrows);
-        sb.append(" ");
-        sb.append(ctx.getString(R.string.combos_capture_banner_suffix));
-        banner.setText(sb);
-
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = (int) (8f * ctx.getResources().getDisplayMetrics().density);
-        container.addView(banner, lp);
+        addActionSections(ctx, inflater, container, activeTable, fourDirTable, is4DirMode, dispatcher);
     }
 
     // S3 fix: mode-escape paths ([2]×8 in 4-dir, [2]×4 in 8-dir) remain wired
@@ -159,26 +115,12 @@ public final class CombosListBuilder {
                                           @NonNull Map<String, Binding> activeBindings,
                                           @NonNull Map<String, Binding> fourDirBindings,
                                           boolean is4DirMode,
-                                          @NonNull ComboDispatcher dispatcher,
-                                          @Nullable int[] pendingPath) {
+                                          @NonNull ComboDispatcher dispatcher) {
         // Build action → primary path map (one path per action, 8-dir-native preferred).
         SparseArray<int[]> primaryPathByAction = buildPrimaryPaths(
                 activeBindings, fourDirBindings, is4DirMode);
         int[] actionIds = ComboActionRegistry.knownActions();
 
-        // FROM_CAPTURE mode: only show unassigned actions so the user can pick a
-        // home for the new path without wading through already-bound rows.
-        if (pendingPath != null && pendingPath.length > 0) {
-            LinearLayout content = addExpandableSection(inflater, container,
-                    R.string.combos_section_unassigned, /* startExpanded= */ true);
-            for (int actionId : actionIds) {
-                if (primaryPathByAction.get(actionId) != null) continue; // already bound
-                addActionRow(ctx, inflater, content, actionId, null, dispatcher, pendingPath);
-            }
-            return;
-        }
-
-        // Normal (non-capture) mode: full categorised list.
         List<Integer> unassigned = new ArrayList<>();
 
         for (int i = 0; i < DISPLAY_ORDER.length; i++) {
@@ -197,7 +139,7 @@ public final class CombosListBuilder {
                     unassigned.add(actionId);
                     continue;
                 }
-                addActionRow(ctx, inflater, content, actionId, primary, dispatcher, pendingPath);
+                addActionRow(ctx, inflater, content, actionId, primary, dispatcher);
             }
         }
 
@@ -220,7 +162,7 @@ public final class CombosListBuilder {
             LinearLayout unassignedContent = addExpandableSection(inflater, container,
                     R.string.combos_section_unassigned, /* startExpanded= */ false);
             for (int actionId : unassigned) {
-                addActionRow(ctx, inflater, unassignedContent, actionId, null, dispatcher, pendingPath);
+                addActionRow(ctx, inflater, unassignedContent, actionId, null, dispatcher);
             }
         }
     }
@@ -327,8 +269,7 @@ public final class CombosListBuilder {
                                      @NonNull LinearLayout container,
                                      int actionId,
                                      @Nullable int[] primaryPath,
-                                     @NonNull ComboDispatcher dispatcher,
-                                     @Nullable int[] pendingCapturePath) {
+                                     @NonNull ComboDispatcher dispatcher) {
         View row = inflater.inflate(R.layout.combo_row_action, container, false);
         int labelRes = ComboActionRegistry.labelFor(actionId);
         ((TextView) row.findViewById(R.id.action_label))
@@ -348,7 +289,7 @@ public final class CombosListBuilder {
             naLabel.setTextSize(14f);
             naLabel.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text_dim));
             comboCell.addView(naLabel);
-            actionBtn = makeCreateButton(ctx, dispatcher, actionId, pendingCapturePath);
+            actionBtn = makeCreateButton(ctx, dispatcher, actionId);
         } else {
             // Bound: arrow pill in combo cell; hover-revealed ✕ in button cell.
             comboCell.addView(makeArrowPill(ctx, primaryPath, iconSizePx, chipColor));
@@ -478,8 +419,7 @@ public final class CombosListBuilder {
      */
     private static View makeCreateButton(@NonNull Context ctx,
                                          @NonNull ComboDispatcher dispatcher,
-                                         int actionId,
-                                         @Nullable int[] pendingCapturePath) {
+                                         int actionId) {
         float density = ctx.getResources().getDisplayMetrics().density;
         int padH = (int) (10f * density);
         int padV = (int) (4f * density);
@@ -492,12 +432,8 @@ public final class CombosListBuilder {
         btn.setTextColor(ContextCompat.getColor(ctx, R.color.fd_accent));
         btn.setClickable(true);
         btn.setFocusable(true);
-        btn.setOnClickListener(v -> {
-            BindComboView view = (pendingCapturePath != null && pendingCapturePath.length > 0)
-                    ? BindComboView.forCapture(ctx, dispatcher, actionId, pendingCapturePath)
-                    : new BindComboView(ctx, dispatcher, actionId);
-            view.show(UIWidget.REQUEST_FOCUS);
-        });
+        btn.setOnClickListener(v -> new BindComboView(ctx, dispatcher, actionId)
+                .show(UIWidget.REQUEST_FOCUS));
         return btn;
     }
 

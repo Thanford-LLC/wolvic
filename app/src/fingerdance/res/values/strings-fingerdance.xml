@@ -94,8 +94,8 @@
     <!-- Phase 5 — + Create button on action rows. -->
     <string name="combos_row_create_button">+ Create</string>
 
-    <!-- Phase 7 — FROM_CAPTURE banner shown at the top of Combos Settings when
-         the user drew an unbound combo and pressed A/X while browsing. -->
+    <!-- Phase 7 — ActionPickerView title and FROM_CAPTURE banner strings. -->
+    <string name="combos_assign_combo_title">Assign combo</string>
     <string name="combos_capture_banner_prefix">Combo drawn:</string>
     <string name="combos_capture_banner_suffix">— tap + Create on any action below to assign it.</string>
 

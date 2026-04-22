@@ -137,11 +137,8 @@ public class ComboDispatcher {
 
     // Phase 7 — FROM_CAPTURE. Set by onAXButtonPressed(); cleared on first dispatch()
     // that follows the button press. When true, the next grip-release path is captured
-    // and forwarded to Combos Settings (action picker) instead of dispatching normally.
+    // and forwarded to ActionPickerView instead of dispatching normally.
     private volatile boolean mPendingAXCapture = false;
-    // Stored by dispatch() when mPendingAXCapture is true + no binding found.
-    // Read by CombosListBuilder/CombosSettingsView to show the pre-captured path banner.
-    private volatile int[] mPendingCapturePath = null;
 
     // Phase 2 §D8 — haptic feedback on combo resolution. Null in the test-only
     // constructor; production path always has a non-null instance.
@@ -436,17 +433,6 @@ public class ComboDispatcher {
         mPendingAXCapture = true;
     }
 
-    /** Returns the path captured via the FROM_CAPTURE A/X flow, or null if none pending. */
-    @Nullable
-    public int[] getPendingCapturePath() {
-        return mPendingCapturePath;
-    }
-
-    /** Clears the pending capture path after the UI has consumed it. */
-    public void clearPendingCapturePath() {
-        mPendingCapturePath = null;
-    }
-
     private static void putBoth(Map<String, Binding> four, Map<String, Binding> eight,
                                 int action, int... path) {
         String k = key(path);
@@ -535,12 +521,14 @@ public class ComboDispatcher {
             // Phase 7: A/X was pressed before grip release → FROM_CAPTURE flow.
             if (mPendingAXCapture) {
                 mPendingAXCapture = false;
-                mPendingCapturePath = combo;
-                Log.d(LOGTAG, "FROM_CAPTURE triggered: path=" + Arrays.toString(combo));
+                final int[] capturedPath = combo.clone();
+                Log.d(LOGTAG, "FROM_CAPTURE triggered: path=" + Arrays.toString(capturedPath));
                 mMainHandler.post(() -> {
-                    if (mWidgetManager instanceof VRBrowserActivity) {
-                        ((VRBrowserActivity) mWidgetManager).openCombosSettings();
-                    }
+                    if (!(mWidgetManager instanceof Context)) return;
+                    com.thanford.fingerdance.settings.ActionPickerView picker =
+                            new com.thanford.fingerdance.settings.ActionPickerView(
+                                    (Context) mWidgetManager, this, capturedPath);
+                    picker.show(com.igalia.wolvic.ui.widgets.UIWidget.REQUEST_FOCUS);
                 });
                 return;
             }

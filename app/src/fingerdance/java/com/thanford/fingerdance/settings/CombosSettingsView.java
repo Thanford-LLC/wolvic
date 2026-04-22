@@ -12,6 +12,8 @@ import android.graphics.Point;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.databinding.DataBindingUtil;
 import androidx.preference.PreferenceManager;
@@ -20,7 +22,6 @@ import com.igalia.wolvic.R;
 import com.igalia.wolvic.VRBrowserActivity;
 import com.igalia.wolvic.databinding.OptionsCombosBinding;
 import com.igalia.wolvic.input.ComboDispatcher;
-import com.igalia.wolvic.ui.views.settings.RadioGroupSetting;
 import com.igalia.wolvic.ui.views.settings.SwitchSetting;
 import com.igalia.wolvic.ui.widgets.ComboHUDWidget;
 import com.igalia.wolvic.ui.widgets.UIWidget;
@@ -33,7 +34,7 @@ import com.igalia.wolvic.ui.widgets.settings.SettingsView;
  *
  * <p>Three toggles persisted to the default SharedPreferences file:
  * <ul>
- *   <li>Mode radio → {@link ComboDispatcher#COMBO_MODE_4DIR_KEY}</li>
+ *   <li>Mode switch → {@link ComboDispatcher#COMBO_MODE_4DIR_KEY} (ON = 8-dir)</li>
  *   <li>HUD switch → {@link ComboHUDWidget#PREF_HUD_VISIBLE}</li>
  *   <li>Buzz switch → {@link ComboHUDWidget#PREF_COMBO_HAPTICS}</li>
  * </ul>
@@ -49,14 +50,27 @@ public class CombosSettingsView extends SettingsView
         implements ComboDispatcher.BindingsListener {
 
     private OptionsCombosBinding mBinding;
-    private RadioGroupSetting.OnCheckedChangeListener mModeListener;
+    private SwitchSetting.OnCheckedChangeListener mModeListener;
     private SwitchSetting.OnCheckedChangeListener mHudListener;
     private SwitchSetting.OnCheckedChangeListener mBuzzListener;
     private ComboDispatcher mDispatcher;
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
+    // Phase 7: when opened via long-press joystick (direct open), Back skips the
+    // settings grid and returns straight to browsing. Set before construction via
+    // flagNextAsDirectOpen(); consumed once in the constructor.
+    private static volatile boolean sNextDirectOpen = false;
+    private final boolean mDirectOpen;
+
+    /** Call before showSettingsDialog(COMBOS) to make Back exit the whole panel. */
+    public static void flagNextAsDirectOpen() {
+        sNextDirectOpen = true;
+    }
+
     public CombosSettingsView(Context aContext, WidgetManagerDelegate aWidgetManager) {
         super(aContext, aWidgetManager);
+        mDirectOpen = sNextDirectOpen;
+        sNextDirectOpen = false;
         updateUI();
     }
 
@@ -72,17 +86,31 @@ public class CombosSettingsView extends SettingsView
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 
-        // --- Mode radio (4-dir / 8-dir) ---
+        // --- Advanced section: collapsible header with chevron ---
+        // Starts collapsed (content visibility=GONE in XML, chevron=▶).
+        // Click toggles content + rotates chevron ▶↔▼.
+        TextView chevron = mBinding.combosSectionAdvancedChevron;
+        mBinding.combosSectionAdvancedHeader.setOnClickListener(v -> {
+            boolean expanded = mBinding.combosAdvancedContent.getVisibility() == View.VISIBLE;
+            mBinding.combosAdvancedContent.setVisibility(expanded ? View.GONE : View.VISIBLE);
+            // Rotate same ▼ glyph: −90° = right (collapsed), 0° = down (expanded).
+            chevron.animate().rotation(expanded ? -90f : 0f).setDuration(150).start();
+        });
+
+        // --- 8-dir mode switch ---
+        // Switch ON = 8-dir mode (is4Dir=false), OFF = 4-dir mode (is4Dir=true).
         boolean is4Dir = prefs.getBoolean(ComboDispatcher.COMBO_MODE_4DIR_KEY, true);
-        int modeIndex = mBinding.combosModeRadio.getIdForValue(Boolean.toString(is4Dir));
-        mModeListener = (radioGroup, checkedId, apply) -> {
-            Object value = mBinding.combosModeRadio.getValueForId(checkedId);
-            boolean new4Dir = Boolean.parseBoolean(value.toString());
-            prefs.edit().putBoolean(ComboDispatcher.COMBO_MODE_4DIR_KEY, new4Dir).apply();
+        mModeListener = (button, checked, apply) -> {
+            // checked=true means 8-dir ON → is4Dir=false
+            prefs.edit().putBoolean(ComboDispatcher.COMBO_MODE_4DIR_KEY, !checked).apply();
+            // Rebuild the combo list to reflect the new mode's bindings
+            if (mDispatcher != null && mBinding != null) {
+                mDispatcher.reloadBindings();
+            }
         };
-        mBinding.combosModeRadio.setOnCheckedChangeListener(null);
-        mBinding.combosModeRadio.setChecked(modeIndex, false);
-        mBinding.combosModeRadio.setOnCheckedChangeListener(mModeListener);
+        mBinding.combosModeSwitch.setOnCheckedChangeListener(null);
+        mBinding.combosModeSwitch.setValue(!is4Dir, false); // ON when 8-dir
+        mBinding.combosModeSwitch.setOnCheckedChangeListener(mModeListener);
 
         // --- HUD visibility switch ---
         boolean hudVisible = prefs.getBoolean(ComboHUDWidget.PREF_HUD_VISIBLE, true);
@@ -103,20 +131,11 @@ public class CombosSettingsView extends SettingsView
         mBinding.combosBuzzSwitch.setOnCheckedChangeListener(mBuzzListener);
 
         // --- Reset footer (Phase 5 cherry-pick) ---
-        // Phase 2 wired this footer to call clearAll() directly; Phase 5 adds
-        // a confirm dialog because reset annihilates every user-customised
-        // binding. POSITIVE in ComboResetConfirmDialog calls clearAll() which
-        // wipes the override blob — the dispatcher's pref listener on
-        // ComboBindingStore.KEY_BLOB fires reloadBindings() automatically and
-        // the BindingsListener spine refreshes this list. Toggles above are
-        // deliberately untouched (panel prefs, not combo bindings).
         mBinding.footerLayout.setFooterButtonClickListener(view -> {
             new ComboResetConfirmDialog(getContext()).show(UIWidget.REQUEST_FOCUS);
         });
 
         // --- Phase 3 — read-only categorised combo list ---
-        // Fetch the live dispatcher via the activity accessor, populate the
-        // list container, and subscribe for refresh on mode toggle / reset.
         if (mDispatcher != null) {
             mDispatcher.removeBindingsListener(this);
         }
@@ -143,19 +162,28 @@ public class CombosSettingsView extends SettingsView
         if (mDispatcher != null) {
             mDispatcher.removeBindingsListener(this);
         }
-        super.onDismiss();
+        if (mDirectOpen && mDelegate != null) {
+            // Long-press direct open: Back goes straight to browsing, not the settings grid.
+            mDelegate.exitWholeSettings();
+        } else {
+            super.onDismiss();
+        }
     }
 
     // --- ComboDispatcher.BindingsListener ---
-    // stampBindingChange fires on the caller's thread; post to main so the
-    // list rebuild runs on the UI thread even when future phases trigger
-    // binding changes from the input thread.
     @Override
     public void onBindingsChanged() {
         mMainHandler.post(() -> {
             if (mBinding != null && mDispatcher != null) {
                 CombosListBuilder.populate(getContext(),
                         mBinding.combosListContainer, mDispatcher);
+                // Keep mode switch in sync after reloadBindings()
+                SharedPreferences prefs =
+                        PreferenceManager.getDefaultSharedPreferences(getContext());
+                boolean is4Dir = prefs.getBoolean(ComboDispatcher.COMBO_MODE_4DIR_KEY, true);
+                mBinding.combosModeSwitch.setOnCheckedChangeListener(null);
+                mBinding.combosModeSwitch.setValue(!is4Dir, false);
+                mBinding.combosModeSwitch.setOnCheckedChangeListener(mModeListener);
             }
         });
     }

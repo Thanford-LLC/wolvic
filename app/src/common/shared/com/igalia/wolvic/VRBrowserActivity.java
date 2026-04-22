@@ -1352,8 +1352,8 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleLongPressThumbstick() {
-        android.util.Log.d("FingerDance", "handleLongPressThumbstick → openCombosSettings");
-        runOnUiThread(this::openCombosSettings);
+        android.util.Log.d("FingerDance", "handleLongPressThumbstick → openCombosSettingsDirect");
+        runOnUiThread(this::openCombosSettingsDirect);
     }
 
     // FingerDance (Phase 7): A/X face button pressed while grip held + path
@@ -1389,6 +1389,24 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
             return;
         }
         mLastOpenCombosSettingsMs = now;
+        mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
+    }
+
+    // Phase 7: long-press direct-open variant. Same debounce logic as
+    // openCombosSettings(), but flags CombosSettingsView to exit the whole
+    // settings widget on Back (skip the app settings grid).
+    private void openCombosSettingsDirect() {
+        if (mTray == null) {
+            android.util.Log.w("FingerDance", "openCombosSettingsDirect: mTray null, dropping");
+            return;
+        }
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - mLastOpenCombosSettingsMs < OPEN_COMBOS_SETTINGS_DEBOUNCE_MS) {
+            android.util.Log.d("FingerDance", "openCombosSettingsDirect: debounced");
+            return;
+        }
+        mLastOpenCombosSettingsMs = now;
+        com.thanford.fingerdance.settings.CombosSettingsView.flagNextAsDirectOpen();
         mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
     }
 
