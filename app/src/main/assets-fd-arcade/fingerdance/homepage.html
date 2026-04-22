@@ -4,20 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FingerDance</title>
+  <link rel="stylesheet" href="_design-vars.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:          #0B0A12;
-      --surface:     #1A1424;
-      --surface-hi:  #2A1E3C;
-      --border:      #4D3A6B;
-      --accent:      #FF2E88;
-      --accent-glow: rgba(255, 46, 136, 0.38);
-      --text:        #F5EEFA;
-      --text-muted:  #B8A9C8;
-      --radius:      16px;
-    }
 
     html, body {
       height: 100%;
@@ -179,8 +168,8 @@
     <div class="logo">FingerDance</div>
     <div class="search-wrap">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="8.5" cy="8.5" r="5.5" stroke="#FF2E88" stroke-width="2"/>
-        <path d="M13 13l4 4" stroke="#FF2E88" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="8.5" cy="8.5" r="5.5" stroke="var(--accent)" stroke-width="2"/>
+        <path d="M13 13l4 4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
       </svg>
       <input id="search" type="text" placeholder="Search or enter address" autocomplete="off" spellcheck="false">
     </div>

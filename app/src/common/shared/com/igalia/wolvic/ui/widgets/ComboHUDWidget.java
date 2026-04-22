@@ -368,7 +368,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     protected void initializeWidgetPlacement(WidgetPlacement p) {
         p.width  = WIDGET_W;
         p.height = WIDGET_H;
-        p.worldWidth = 0.795f;  // 0.53 * (720/480); keeps pixels-per-meter identical so the dial's physical size is unchanged.
+        p.worldWidth = 0.795f;  // Tuned pixels-per-meter for WIDGET_W=720 canvas so dial centroid keeps its original head-lock sweet spot.
         // World-space placement. y is measured from the reorient base (floor
         // level in Wolvic — eye level is ~1.6m for a standing adult). Place
         // at adult eye level, 1.5m forward. Add a small upward bump so the
@@ -448,7 +448,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      * overhead outside of capture mode. Plan §E3.
      */
     public void setHudDimmed(boolean dimmed) {
-        float next = dimmed ? 0.3f : 1.0f;
+        float next = dimmed ? 0.9f : 1.0f;
         if (mDimMultiplier == next) return;
         mDimMultiplier = next;
         if (mCanvasView != null) mCanvasView.postInvalidate();
@@ -822,7 +822,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mPillPaint.setColor(mColorLabelPill);
         mPillPaint.setAlpha(alpha);
         canvas.drawRoundRect(mPillRect, 8f, 8f, mPillPaint);
-        Drawable icon = getTintedIcon(iconRes, 0xFFFDDE0A /* fd-yellow full alpha */);
+        Drawable icon = getTintedIcon(iconRes, mColorAccent);
         if (icon == null || alpha <= 0) return;
         // The cached drawable carries a PorterDuff.Mode.SRC_IN color filter
         // baked with full-alpha yellow, which on hardware-accelerated canvas

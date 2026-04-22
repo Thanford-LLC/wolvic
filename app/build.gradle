@@ -102,6 +102,31 @@ def isWebKitAvailable = {
 
 // Version names for Gecko and Chromium releases.
 def GECKO_RELEASE_VERSION_NAME = '1.9'
+
+// ── Design-system staleness check ─────────────────────────────────────────
+// Fails the build if generated color XML / homepage CSS are stale vs DESIGN.md.
+// Requires Node ≥ 20 and `npm ci` to have been run in the fingerdance/ planning repo.
+// Skip by passing -PskipDesignCheck=true to Gradle.
+if (!project.hasProperty('skipDesignCheck')) {
+    task verifyDesignExports(type: Exec) {
+        group = 'FingerDance'
+        description = 'Verify generated colors-fd*.xml and _design-vars.css match DESIGN.md YAML tokens.'
+        def fingerdanceRepo = rootProject.projectDir.parentFile.parentFile
+            .toPath().resolve('fingerdance').toFile()
+        workingDir fingerdanceRepo
+        commandLine 'node', 'tools/design-export.mjs',
+            '--wolvic-root', rootProject.projectDir.parentFile.canonicalPath,
+            '--check'
+        ignoreExitValue false
+        doFirst {
+            if (!fingerdanceRepo.exists()) {
+                logger.lifecycle("WARNING: fingerdance repo not found at $fingerdanceRepo; skipping design check.")
+                enabled = false
+            }
+        }
+    }
+    preBuild.dependsOn verifyDesignExports
+}
 def CHROMIUM_RELEASE_VERSION_NAME = '1.3'
 
 android {
