@@ -1478,11 +1478,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         if (cs == null || cs.length() == 0) return;
         int availWidth = Math.max(0, w - 16);
 
-        // Swap text color based on strip role: yellow when actively signaling
-        // "release to fire", dim otherwise. StaticLayout reads mTipPaint's
-        // color at draw time, so a plain setColor on the shared paint is
-        // enough — no layout rebuild needed for the text portion.
-        int desiredColor = mCurrentStripIsAccent ? mColorGhostYellow : mColorTipText;
+        // Swap text color based on strip role: full accent when signaling
+        // "release to fire", dim tip-text otherwise. mColorGhostYellow (70%)
+        // is reserved for ghost route traces — not the strip CTA.
+        int desiredColor = mCurrentStripIsAccent ? mColorAccent : mColorTipText;
         if (mTipPaint.getColor() != desiredColor) {
             mTipPaint.setColor(desiredColor);
         }
