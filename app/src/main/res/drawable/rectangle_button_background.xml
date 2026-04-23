@@ -15,7 +15,7 @@
     <item android:state_hovered="true" android:state_pressed="false">
         <shape android:shape="rectangle">
             <corners android:radius="5dp" />
-            <solid android:color="@color/dusk" />
+            <solid android:color="@color/azure" />
         </shape>
     </item>
     <item android:state_enabled="true">

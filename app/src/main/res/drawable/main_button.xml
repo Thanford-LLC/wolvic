@@ -14,8 +14,8 @@
     </item>
     <item android:state_hovered="true">
         <shape android:shape="oval">
-            <stroke android:color="@color/fog_blur" android:width="@dimen/blur_radius" />
-            <solid android:color="@color/dusk" />
+            <stroke android:color="@color/azure_blur" android:width="@dimen/blur_radius" />
+            <solid android:color="@color/azure" />
         </shape>
     </item>
     <item>

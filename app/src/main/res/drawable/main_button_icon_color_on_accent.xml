@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icon tint selector for buttons with a primary-yellow (fd_accent) oval background.
+     Default = fd_on_accent (navy) for contrast. Hover/press flip to fd_accent because
+     the oval background switches to a navy surface on those states. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false"
+        android:color="@color/fd_text_disabled"/>
+    <item android:state_pressed="true"
+        android:color="@color/fd_accent"/>
+    <item android:state_hovered="true"
+        android:color="@color/fd_accent"/>
+    <item android:color="@color/fd_on_accent"/>
+</selector>

@@ -35,7 +35,6 @@
             style="?attr/navigationBarButtonStyle"
             android:layout_weight="0"
             android:src="@drawable/ic_icon_back"
-            android:tint="@color/midnight"
             android:tooltipText="@string/back_tooltip"
             android:enabled="@{viewmodel.canGoBack}"
             app:privateMode="@{viewmodel.isPrivateSession}" />

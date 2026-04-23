@@ -18,11 +18,13 @@
 
     <!-- Pointer Options -->
     <string-array name="developer_options_pointer_colors" translatable="false">
+        <item>@string/developer_options_pointer_brand</item>
         <item>@string/developer_options_pointer_white</item>
         <item>@string/developer_options_pointer_purple</item>
     </string-array>
 
     <integer-array name="developer_options_pointer_colors_values" translatable="false">
+        <item>0xFFFDDE0A</item>
         <item>0xFFFFFFFF</item>
         <item>0xC27FFCFF</item>
     </integer-array>

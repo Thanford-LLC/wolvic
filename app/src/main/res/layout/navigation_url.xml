@@ -53,7 +53,6 @@
                     android:src="@{viewmodel.isTrackingEnabled ? @drawable/ic_icon_tracking_enabled : @drawable/ic_icon_tracking_disabled}"
                     tools:src="@drawable/ic_icon_tracking_enabled"
                     app:privateMode="@{viewmodel.isPrivateSession}"
-                    android:tint="@color/fog"
                     app:visibleGone="@{!UrlUtils.isPrivateAboutPage(context, viewmodel.url.toString()) &amp;&amp; settingsViewmodel.isTrackingProtectionEnabled &amp;&amp; !UrlUtils.isContentFeed(context, viewmodel.url.toString())}"
                     android:tooltipText="@{viewmodel.isTrackingEnabled ? @string/tracking_allowed_tooltip : @string/tracking_disabled_tooltip}" />
 
@@ -81,7 +80,6 @@
                         android:paddingEnd="2dp"
                         android:src="@{settingsViewmodel.isDrmEnabled ? @drawable/ic_icon_drm_allowed : @drawable/ic_icon_drm_blocked}"
                         tools:src="@drawable/ic_icon_drm_allowed"
-                        android:tint="@color/fog"
                         android:tooltipText="@{settingsViewmodel.isDrmEnabled ? @string/drm_enabled_tooltip : @string/drm_disabled_tooltip}"
                         app:privateMode="@{viewmodel.isPrivateSession}" />
                 </LinearLayout>
@@ -110,7 +108,6 @@
                         android:paddingEnd="2dp"
                         android:src="@{viewmodel.isPopUpBlocked ? @drawable/ic_icon_popup_blocked : @drawable/ic_icon_popup}"
                         tools:src="@drawable/ic_icon_popup_blocked"
-                        android:tint="@color/fog"
                         android:tooltipText="@{viewmodel.isPopUpBlocked ? @string/popup_blocked_tooltip : @string/popup_tooltip_v1}"
                         app:privateMode="@{viewmodel.isPrivateSession}" />
                 </LinearLayout>
@@ -140,7 +137,6 @@
                         android:src="@{viewmodel.isWebXRBlocked ? @drawable/ic_icon_webxr_blocked : @drawable/ic_icon_webxr_allowed}"
                         tools:src="@drawable/ic_icon_webxr_blocked"
                         app:privateMode="@{viewmodel.isPrivateSession}"
-                        android:tint="@color/fog"
                         android:tooltipText="@{viewmodel.isWebXRBlocked ? @string/webxr_blocked_tooltip : @string/webxr_allowed_tooltip}" />
                 </LinearLayout>
 
@@ -194,8 +190,8 @@
                 android:inputType="textUri"
                 android:requiresFadingEdge="horizontal"
                 android:selectAllOnFocus="true"
-                android:textColor="@color/fog"
-                android:textColorHighlight="@color/azure"
+                android:textColor="@color/fd_accent"
+                android:textColorHighlight="@color/fd_surface_raised"
                 android:textIsSelectable="true"
                 android:textSize="16sp"
                 android:text="@{viewmodel.navigationBarUrl}"
@@ -231,7 +227,6 @@
                     android:layout_width="@{(viewmodel.isNativeContentVisible || viewmodel.isUrlEmpty) ? @dimen/url_bar_last_item_width : @dimen/url_bar_item_width}"
                     android:background="@{(viewmodel.isNativeContentVisible || viewmodel.isUrlEmpty) ? (viewmodel.isPrivateSession ? @drawable/url_button_end_private : @drawable/url_button_end) : (viewmodel.isPrivateSession ? @drawable/url_button_private : @drawable/url_button)}"
                     android:src="@drawable/ic_icon_microphone"
-                    android:tint="@color/fog"
                     android:tooltipText="@string/voice_search_tooltip"
                     app:privateMode="@{viewmodel.isPrivateSession}"
                     app:visibleGone="@{viewmodel.isMicrophoneEnabled &amp;&amp; !viewmodel.isFocused}"/>
@@ -242,7 +237,6 @@
                     android:layout_width="@{(viewmodel.isNativeContentVisible || viewmodel.isUrlEmpty) ? @dimen/url_bar_last_item_width : @dimen/url_bar_item_width}"
                     android:background="@{(viewmodel.isNativeContentVisible || viewmodel.isUrlEmpty) ? (viewmodel.isPrivateSession ? @drawable/url_button_end_private : @drawable/url_button_end) : (viewmodel.isPrivateSession ? @drawable/url_button_private : @drawable/url_button)}"
                     android:src="@drawable/ic_web_app_registration"
-                    android:tint="@color/fog"
                     android:tooltipText="@string/hamburger_menu_save_web_app"
                     app:privateMode="@{viewmodel.isPrivateSession}"
                     app:visibleGone="@{viewmodel.isWebApp &amp;&amp; !(viewmodel.isNativeContentVisible || viewmodel.isUrlEmpty) &amp;&amp; !viewmodel.isFocused}" />
@@ -251,7 +245,6 @@
                     android:id="@+id/bookmarkButton"
                     style="@style/urlBarIconThemeEnd"
                     android:src="@{viewmodel.isBookmarked ? @drawable/ic_icon_bookmarked_active : @drawable/ic_icon_bookmarked}"
-                    android:tint="@color/fog"
                     android:tooltipText="@{viewmodel.isBookmarked ? @string/remove_bookmark_tooltip : @string/bookmark_tooltip}"
                     app:privateMode="@{viewmodel.isPrivateSession}"
                     app:visibleGone="@{!(viewmodel.isNativeContentVisible || viewmodel.isUrlEmpty) &amp;&amp; !viewmodel.isFocused}"
@@ -261,7 +254,6 @@
                     android:id="@+id/clearButton"
                     style="@style/urlBarIconThemeEnd"
                     android:src="@drawable/ic_icon_clear"
-                    android:tint="@color/fog"
                     android:tooltipText="@string/clear_tooltip"
                     app:privateMode="@{viewmodel.isPrivateSession}"
                     app:visibleGone="@{viewmodel.isFocused &amp;&amp; !viewmodel.isUrlEmpty}" />

@@ -51,4 +51,5 @@
     <color name="window_border_click">@color/fd_accent</color>
     <color name="window_blank_clear_color">#5d5d5d</color>
     <color name="window_private_clear_color">#331a50</color>
+
 </resources>

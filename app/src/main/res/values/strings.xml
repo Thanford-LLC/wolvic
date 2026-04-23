@@ -767,6 +767,7 @@
     <!-- This string labels the radio button that sets the pointer color to purple. -->
     <string name="developer_options_pointer_purple">Purple</string>
 
+    <string name="developer_options_pointer_brand">Brand</string>
     <!-- This string labels the radio button that sets the pointer color to white. -->
     <string name="developer_options_pointer_white">White</string>
 
@@ -2688,5 +2689,9 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="fd_action_name_history">History</string>
     <string name="fd_action_name_reader_mode">Reader mode</string>
     <string name="fd_action_name_private_window">Private window</string>
+    <string name="fd_action_name_toggle_hud">Toggle HUD</string>
+    <string name="fd_action_name_toggle_mode">Toggle mode</string>
+    <string name="fd_action_name_toggle_curved_window">Curved window</string>
+    <string name="fd_action_name_goto_bookmark">Go to bookmark</string>
 
 </resources>

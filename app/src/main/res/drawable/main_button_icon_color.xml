@@ -6,6 +6,6 @@
     <item android:state_selected="true"
         android:color="@color/fd_accent"/>
     <item android:state_hovered="true"
-        android:color="@color/fd_text"/>
-    <item android:color="@color/fd_text_muted"/>
+        android:color="@color/fd_on_accent"/>
+    <item android:color="@color/fd_accent"/>
 </selector>

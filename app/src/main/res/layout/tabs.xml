@@ -19,7 +19,7 @@
             style="?attr/headerBarButtonStyle"
             android:padding="8dp"
             app:tintColorList="@drawable/main_button_icon_color_active"
-            android:tint="@color/midnight"
+            android:tint="@color/fd_accent"
             android:src="@drawable/ic_icon_back" />
 
         <TextView
