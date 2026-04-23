@@ -58,6 +58,15 @@ public final class ComboActionRegistry {
 
         // Phase 8a: curved-window toggle — user-bindable, ships unbound.
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_CURVE_WINDOW, ComboActionCategory.WINDOW);
+
+        // Phase 8a (feedback): HUD + mode-toggle + ghost-routes toggle registered
+        // so they appear in the Settings list. A_TOGGLE_HUD and A_TOGGLE_GHOST_ROUTES
+        // ship unbound → appear in Unassigned until user binds them.
+        // A_TOGGLE_MODE ships with the asymmetric escape-path defaults → appears in
+        // Special while bound; moves to Unassigned if user deletes the binding.
+        CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_HUD,          ComboActionCategory.SPECIAL);
+        CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_MODE,         ComboActionCategory.SPECIAL);
+        CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_GHOST_ROUTES, ComboActionCategory.SPECIAL);
     }
 
     @StringRes

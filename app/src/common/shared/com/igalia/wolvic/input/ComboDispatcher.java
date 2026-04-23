@@ -80,8 +80,9 @@ public class ComboDispatcher {
     // Ints 27-31 were reserved per the plan; 29-31 (passthrough/resize) descoped.
     public static final int A_TOGGLE_HUD          = 27;
     public static final int A_TOGGLE_MODE         = 28;
-    public static final int A_TOGGLE_CURVE_WINDOW = 32;
-    public static final int A_GOTO_BOOKMARK       = 33;
+    public static final int A_TOGGLE_CURVE_WINDOW  = 32;
+    public static final int A_GOTO_BOOKMARK        = 33;
+    public static final int A_TOGGLE_GHOST_ROUTES  = 34;
 
     /** Listener for changes to the active binding table. */
     public interface BindingsListener {
@@ -759,6 +760,7 @@ public class ComboDispatcher {
             case A_TOGGLE_CURVE_WINDOW: toggleCurvedWindow();   break;
             case A_TOGGLE_HUD:          toggleHudVisible();     break;
             case A_TOGGLE_MODE:         toggleComboMode();      break;
+            case A_TOGGLE_GHOST_ROUTES: toggleGhostRoutes();    break;
             default:               Log.d(LOGTAG, "No handler for action " + action); break;
         }
     }
@@ -885,6 +887,20 @@ public class ComboDispatcher {
         store.setCylinderDensity(nowCurved ? 0f
                 : com.igalia.wolvic.browser.SettingsStore.CYLINDER_DENSITY_ENABLED_DEFAULT);
         mWindows.updateCurvedMode(true);
+    }
+
+    private void toggleGhostRoutes() {
+        if (mDefaultPrefs == null || mAppContext == null) return;
+        boolean nowVisible = mDefaultPrefs.getBoolean(
+                com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_GHOST_VISIBLE, true);
+        boolean nextVisible = !nowVisible;
+        mDefaultPrefs.edit()
+                .putBoolean(com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_GHOST_VISIBLE,
+                        nextVisible)
+                .apply();
+        Toast.makeText(mAppContext,
+                nextVisible ? "Ghost routes shown" : "Ghost routes hidden",
+                Toast.LENGTH_SHORT).show();
     }
 
     private void toggleHudVisible() {

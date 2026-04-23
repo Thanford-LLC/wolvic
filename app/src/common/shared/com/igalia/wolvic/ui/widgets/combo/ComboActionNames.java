@@ -59,6 +59,7 @@ public final class ComboActionNames {
         NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_MODE,          R.string.fd_action_name_toggle_mode);
         NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_CURVE_WINDOW,  R.string.fd_action_name_toggle_curved_window);
         NAME_FOR_ACTION.put(ComboDispatcher.A_GOTO_BOOKMARK,        R.string.fd_action_name_goto_bookmark);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_GHOST_ROUTES,  R.string.fd_action_name_toggle_ghost_routes);
     }
 
     /**
