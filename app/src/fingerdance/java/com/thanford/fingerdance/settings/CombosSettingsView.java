@@ -53,6 +53,7 @@ public class CombosSettingsView extends SettingsView
     private SwitchSetting.OnCheckedChangeListener mModeListener;
     private SwitchSetting.OnCheckedChangeListener mHudListener;
     private SwitchSetting.OnCheckedChangeListener mBuzzListener;
+    private SwitchSetting.OnCheckedChangeListener mGhostListener;
     private ComboDispatcher mDispatcher;
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
@@ -120,6 +121,15 @@ public class CombosSettingsView extends SettingsView
         mBinding.combosHudSwitch.setOnCheckedChangeListener(null);
         mBinding.combosHudSwitch.setValue(hudVisible, false);
         mBinding.combosHudSwitch.setOnCheckedChangeListener(mHudListener);
+
+        // --- Ghost routes switch ---
+        boolean ghostVisible = prefs.getBoolean(ComboHUDWidget.PREF_GHOST_VISIBLE, true);
+        mGhostListener = (button, checked, apply) -> {
+            prefs.edit().putBoolean(ComboHUDWidget.PREF_GHOST_VISIBLE, checked).apply();
+        };
+        mBinding.combosGhostSwitch.setOnCheckedChangeListener(null);
+        mBinding.combosGhostSwitch.setValue(ghostVisible, false);
+        mBinding.combosGhostSwitch.setOnCheckedChangeListener(mGhostListener);
 
         // --- Buzz-on-combo switch (Phase 2 §D8 / §T2) ---
         boolean buzzOn = prefs.getBoolean(ComboHUDWidget.PREF_COMBO_HAPTICS, true);

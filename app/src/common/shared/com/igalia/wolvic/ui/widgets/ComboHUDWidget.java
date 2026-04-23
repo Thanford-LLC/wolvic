@@ -235,7 +235,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private final Runnable mGhostAnimTickRunnable = new Runnable() {
         @Override
         public void run() {
-            if (!mGripHeld || mDispatcher == null) return;
+            if (!mGripHeld || mDispatcher == null || !mGhostsVisiblePref) return;
             if (mCanvasView != null) mCanvasView.invalidate();
             mMainHandler.postDelayed(this, GHOST_TICK_INTERVAL_MS);
         }
@@ -294,10 +294,12 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // while false so the existing grip-driven show() from
     // VRBrowserActivity.handleGripStateChanged can't resurrect a HUD
     // the user explicitly hid.
-    public static final String PREF_HUD_VISIBLE   = "fingerdance_hud_visible";
-    public static final String PREF_COMBO_HAPTICS = "fingerdance_combo_haptics";
+    public static final String PREF_HUD_VISIBLE    = "fingerdance_hud_visible";
+    public static final String PREF_COMBO_HAPTICS  = "fingerdance_combo_haptics";
+    public static final String PREF_GHOST_VISIBLE  = "fingerdance_hud_ghost_visible";
     private volatile float   mDimMultiplier = 1.0f;
     private volatile boolean mVisiblePref   = true;
+    private volatile boolean mGhostsVisiblePref = true;
 
     // Held as a strong reference — SharedPreferences stores listeners in a
     // WeakHashMap, so a field-held listener is required to keep it alive.
@@ -399,17 +401,22 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // Settings won't see it resurrected on the next grip press.
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
         mVisiblePref = prefs.getBoolean(PREF_HUD_VISIBLE, true);
+        mGhostsVisiblePref = prefs.getBoolean(PREF_GHOST_VISIBLE, true);
 
         // React to pref writes from CombosSettingsView (cross-package).
         mPrefListener = (sharedPrefs, key) -> {
-            if (!PREF_HUD_VISIBLE.equals(key)) return;
-            boolean nowVisible = sharedPrefs.getBoolean(PREF_HUD_VISIBLE, true);
-            if (mVisiblePref == nowVisible) return;
-            mVisiblePref = nowVisible;
-            if (nowVisible) {
-                super.show(UIWidget.KEEP_WIDGET);
-            } else {
-                hide(UIWidget.KEEP_WIDGET);
+            if (PREF_HUD_VISIBLE.equals(key)) {
+                boolean nowVisible = sharedPrefs.getBoolean(PREF_HUD_VISIBLE, true);
+                if (mVisiblePref == nowVisible) return;
+                mVisiblePref = nowVisible;
+                if (nowVisible) {
+                    super.show(UIWidget.KEEP_WIDGET);
+                } else {
+                    hide(UIWidget.KEEP_WIDGET);
+                }
+            } else if (PREF_GHOST_VISIBLE.equals(key)) {
+                mGhostsVisiblePref = sharedPrefs.getBoolean(PREF_GHOST_VISIBLE, true);
+                if (mCanvasView != null) mCanvasView.invalidate();
             }
         };
         prefs.registerOnSharedPreferenceChangeListener(mPrefListener);
@@ -999,7 +1006,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         //  • BUILDING (grip held, path committed): dashed lines bow from the
         //    last committed node to each legal next node.
         // Ghosts hide when grip is released or when the recognizer is disabled.
-        boolean hasGhostAnchor = mGripHeld && mDispatcher != null;
+        boolean hasGhostAnchor = mGripHeld && mDispatcher != null && mGhostsVisiblePref;
         if (hasGhostAnchor) {
             drawGhostLayer(canvas, cx, cy, outerR, dotR, dotBaseR,
                     nodes, count, stepDeg, halfWidth);

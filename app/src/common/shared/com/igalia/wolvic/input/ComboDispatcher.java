@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -334,6 +335,13 @@ public class ComboDispatcher {
             four.put(k, b);
             eight.putIfAbsent(k, b);
         }
+
+        // Phase 8a: asymmetric mode-toggle escape paths (PROJECT.md §4.3).
+        // 4-dir users push up×8 to switch to 8-dir; 8-dir users push up×4 to
+        // switch back. Each path exists only in the mode it exits from, so the
+        // "wrong" path is simply absent from the active table — no accidental flip.
+        four.put(key(2, 2, 2, 2, 2, 2, 2, 2), Binding.of(A_TOGGLE_MODE));
+        eight.put(key(2, 2, 2, 2),             Binding.of(A_TOGGLE_MODE));
 
         // Phase 4: layer user overrides on top of defaults.
         //   override.action == A_REMOVED  → delete the default binding at that path
@@ -749,6 +757,8 @@ public class ComboDispatcher {
             case A_READER_MODE:    toggleReaderMode();         break;
             case A_PRIVATE_WINDOW:      togglePrivateMode();     break;
             case A_TOGGLE_CURVE_WINDOW: toggleCurvedWindow();   break;
+            case A_TOGGLE_HUD:          toggleHudVisible();     break;
+            case A_TOGGLE_MODE:         toggleComboMode();      break;
             default:               Log.d(LOGTAG, "No handler for action " + action); break;
         }
     }
@@ -875,6 +885,33 @@ public class ComboDispatcher {
         store.setCylinderDensity(nowCurved ? 0f
                 : com.igalia.wolvic.browser.SettingsStore.CYLINDER_DENSITY_ENABLED_DEFAULT);
         mWindows.updateCurvedMode(true);
+    }
+
+    private void toggleHudVisible() {
+        if (mDefaultPrefs == null || mAppContext == null) return;
+        boolean nowVisible = mDefaultPrefs.getBoolean(
+                com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_HUD_VISIBLE, true);
+        boolean nextVisible = !nowVisible;
+        mDefaultPrefs.edit()
+                .putBoolean(com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_HUD_VISIBLE,
+                        nextVisible)
+                .apply();
+        Toast.makeText(mAppContext,
+                nextVisible ? "HUD shown" : "HUD hidden",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void toggleComboMode() {
+        if (mDefaultPrefs == null || mAppContext == null) return;
+        boolean was4Dir = mDefaultPrefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
+        boolean now4Dir = !was4Dir;
+        // Writing the pref fires mDefaultPrefListener synchronously on the main
+        // thread, which calls pushModeToNative() + stampBindingChange() — no
+        // explicit call needed here.
+        mDefaultPrefs.edit().putBoolean(COMBO_MODE_4DIR_KEY, now4Dir).apply();
+        Toast.makeText(mAppContext,
+                now4Dir ? "Switched to 4-dir mode" : "Switched to 8-dir mode",
+                Toast.LENGTH_SHORT).show();
     }
 
     private void toggleReaderMode() {
