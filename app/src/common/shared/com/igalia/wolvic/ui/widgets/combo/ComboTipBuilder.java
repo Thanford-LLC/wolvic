@@ -9,6 +9,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
@@ -281,8 +283,20 @@ public final class ComboTipBuilder {
     }
 
     /**
-     * Loads the arrow drawable, tints it, wraps it in a per-node rotation
-     * so the tip reads the stroke direction at a glance. Node layout:
+     * Unicode heavy-up arrow. Same glyph the HUD wedge dial uses — renders
+     * with a full stem, not a chevron. Tips + chips share the wedge asset
+     * so the whole Combos surface reads as one visual family. Drawing one
+     * glyph at eight rotations guarantees identical stroke weight across
+     * all directions, which font-fallback arrows like U+27A1 do not.
+     */
+    private static final String ARROW_GLYPH = "\u2B06";
+
+    /**
+     * Builds a rotated heavy-up arrow matching the HUD wedge dial. Was the
+     * material-triangle vector ({@code ic_baseline_arrow_drop_up_24px}) until
+     * S6 (2026-04-21) — Quest 3 feedback flagged that chips and HUD wedges
+     * rendered different shapes; now both ride the same Unicode glyph.
+     * Node layout:
      * <pre>
      *   1 2 3      0°=up (node 2).
      *   4 5 6      Rotations go CW: 3=45°, 6=90°, 9=135°, 8=180°, 7=225°, 4=270°, 1=315°.
@@ -291,12 +305,7 @@ public final class ComboTipBuilder {
      */
     @Nullable
     private static Drawable createRotatedArrow(Context ctx, int node, int sizePx, int color) {
-        Drawable base = AppCompatResources.getDrawable(ctx,
-                R.drawable.ic_baseline_arrow_drop_up_24px);
-        if (base == null) return null;
-        base = base.mutate();
-        base.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
-        base.setBounds(0, 0, sizePx, sizePx);
+        Drawable base = new GlyphArrowDrawable(sizePx, color);
         float angle = angleForNode(node);
         if (angle == 0f) return base;
         return new RotatingDrawable(base, angle, sizePx);
@@ -355,6 +364,48 @@ public final class ComboTipBuilder {
         @Override public void setAlpha(int alpha) { mChild.setAlpha(alpha); }
         @Override public void setColorFilter(@Nullable ColorFilter cf) { mChild.setColorFilter(cf); }
         @Override public int getOpacity() { return mChild.getOpacity(); }
+        @Override public int getIntrinsicWidth() { return mSize; }
+        @Override public int getIntrinsicHeight() { return mSize; }
+    }
+
+    /**
+     * Drawable that paints {@link #ARROW_GLYPH} centered in a square bound.
+     * Same TextPaint pipeline the HUD wedge dial uses so chips, tip strip,
+     * and dial all render the same shape at the same stroke weight.
+     */
+    private static final class GlyphArrowDrawable extends Drawable {
+        private final int mSize;
+        private final android.text.TextPaint mPaint;
+        private final float mBaselineY;
+
+        GlyphArrowDrawable(int size, int color) {
+            mSize = size;
+            mPaint = new android.text.TextPaint(Paint.ANTI_ALIAS_FLAG);
+            mPaint.setColor(color);
+            mPaint.setTextAlign(Paint.Align.CENTER);
+            mPaint.setTextSize(size * 0.9f);
+            // S6 fix (2026-04-21): U+2B06 (heavy up arrow) has nearly zero
+            // descent in most fonts — the stem does not fill to the descent line.
+            // FontMetrics-based centering (ascent + descent) places the glyph
+            // above the square's midpoint, and at 180° rotation (down arrow) the
+            // clipped stem makes it appear shorter. Use getTextBounds() on the
+            // actual glyph to measure its ink box and center on that instead.
+            android.graphics.Rect bounds = new android.graphics.Rect();
+            mPaint.getTextBounds(ARROW_GLYPH, 0, ARROW_GLYPH.length(), bounds);
+            // bounds.top < 0 (above baseline), bounds.bottom >= 0 (below baseline).
+            // baseline = size/2 - (bounds.top + bounds.bottom)/2 centers ink box.
+            mBaselineY = size * 0.5f - (bounds.top + bounds.bottom) * 0.5f;
+            setBounds(0, 0, size, size);
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas) {
+            canvas.drawText(ARROW_GLYPH, mSize * 0.5f, mBaselineY, mPaint);
+        }
+
+        @Override public void setAlpha(int alpha) { mPaint.setAlpha(alpha); }
+        @Override public void setColorFilter(@Nullable ColorFilter cf) { mPaint.setColorFilter(cf); }
+        @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
         @Override public int getIntrinsicWidth() { return mSize; }
         @Override public int getIntrinsicHeight() { return mSize; }
     }

@@ -28,7 +28,7 @@ public final class ComboActionRegistry {
     private static final SparseArray<ComboActionCategory> CATEGORY_FOR_ACTION;
 
     static {
-        CATEGORY_FOR_ACTION = new SparseArray<>(22);
+        CATEGORY_FOR_ACTION = new SparseArray<>(23);
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_BACK,           ComboActionCategory.NAVIGATION);
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_FORWARD,        ComboActionCategory.NAVIGATION);
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_REFRESH,        ComboActionCategory.NAVIGATION);
@@ -55,6 +55,9 @@ public final class ComboActionRegistry {
 
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_READER_MODE,    ComboActionCategory.SPECIAL);
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_PRIVATE_WINDOW, ComboActionCategory.SPECIAL);
+
+        // Phase 8a: curved-window toggle — user-bindable, ships unbound.
+        CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_CURVE_WINDOW, ComboActionCategory.WINDOW);
     }
 
     @StringRes

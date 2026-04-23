@@ -81,6 +81,16 @@ using namespace vrb;
 
 namespace {
 
+// Android color ints are ARGB (0xAARRGGBB). vrb::Color(int32_t) reads them as
+// RGBA, misplacing alpha→red. Use this helper at every JNI → vrb::Color site.
+static vrb::Color ArgbToVrbColor(int32_t argb) {
+  return vrb::Color(
+      ((argb >> 16) & 0xFF) / 255.0f,
+      ((argb >> 8)  & 0xFF) / 255.0f,
+      ( argb        & 0xFF) / 255.0f,
+      ((argb >> 24) & 0xFF) / 255.0f);
+}
+
 const int GestureSwipeLeft = 0;
 const int GestureSwipeRight = 1;
 
@@ -545,7 +555,7 @@ BrowserWorld::State::UpdateControllers(bool& aRelayoutWidgets) {
         if (controller.selectFactor >= device->GetSelectThreshold(controller.index))
           controller.pointer->SetPointerColor(kPointerColorSelected);
         else
-          controller.pointer->SetPointerColor(VRBrowser::GetPointerColor());
+          controller.pointer->SetPointerColor(ArgbToVrbColor(VRBrowser::GetPointerColor()));
       }
     }
 
@@ -1011,7 +1021,7 @@ BrowserWorld::InitializeJava(JNIEnv* aEnv, jobject& aActivity, jobject& aAssetMa
 
   m.device->OnControllersCreated([this](){
     m.controllers->InitializeBeam();
-    m.controllers->SetPointerColor(vrb::Color(VRBrowser::GetPointerColor()));
+    m.controllers->SetPointerColor(ArgbToVrbColor(VRBrowser::GetPointerColor()));
     m.rootController->AddNode(m.controllers->GetRoot());
   });
 
@@ -1389,7 +1399,7 @@ BrowserWorld::UpdatePointerColor() {
   VRB_LOG("Setting pointer color to: %d:", color);
 
   if (m.controllers) {
-    m.controllers->SetPointerColor(vrb::Color(color));
+    m.controllers->SetPointerColor(ArgbToVrbColor(color));
   }
 }
 

@@ -26,8 +26,8 @@
 
 #include <array>
 
-#define POINTER_COLOR_OUTER vrb::Color(0.239f, 0.239f, 0.239f)
-#define POINTER_COLOR_INNER vrb::Color(1.0f, 1.0f, 1.0f)
+#define POINTER_COLOR_OUTER vrb::Color(0.067f, 0.071f, 0.349f)  // fd_secondary #111259
+#define POINTER_COLOR_INNER vrb::Color(0.992f, 0.871f, 0.039f)  // fd_accent #FDDE0A
 
 using namespace vrb;
 

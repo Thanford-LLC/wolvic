@@ -167,6 +167,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // setPathEffect per-frame on a shared paint (that allocates under the hood).
     private final Paint mDashedGhostPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mSolidGhostPaint  = new Paint(Paint.ANTI_ALIAS_FLAG);
+    // Dark outline drawn under ghost arcs so they're readable on any page background.
     private final Paint mPillPaint  = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final TextPaint mTipPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private final DashPathEffect mDash14x8 = new DashPathEffect(new float[]{14f, 8f}, 0f);
@@ -330,13 +331,13 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
         // Phase 3c: dashed ghost paint (no pathEffect mutation per frame).
         mDashedGhostPaint.setStyle(Paint.Style.STROKE);
-        mDashedGhostPaint.setStrokeWidth(3f);
+        mDashedGhostPaint.setStrokeWidth(4f);
         mDashedGhostPaint.setColor(mColorGhostYellow);
         mDashedGhostPaint.setPathEffect(mDash14x8);
 
         // Phase 3c: solid ghost paint for stick-reactive crossfade target.
         mSolidGhostPaint.setStyle(Paint.Style.STROKE);
-        mSolidGhostPaint.setStrokeWidth(3f);
+        mSolidGhostPaint.setStrokeWidth(4f);
         mSolidGhostPaint.setColor(mColorGhostYellow);
         // No path effect → solid line.
 
@@ -890,7 +891,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         int dialH = h - tipStripPx;
         float cx = w / 2f;
         float cy = dialH / 2f;
-        float outerR = Math.min(cx, cy) * 0.70f;
+        float outerR = Math.min(cx, cy) * 0.65f;
         float innerR = outerR * 0.30f;
         float labelR = (outerR + innerR) / 2f;
 
@@ -954,7 +955,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             float dx = cx + dotR * (float) Math.cos(midAngle);
             float dy = cy + dotR * (float) Math.sin(midAngle);
 
-            float r = dotBaseR + dotBaseR * 0.5f * (Math.min(hits, 5) - 1);
+            float r = dotBaseR + dotBaseR * 0.30f * (Math.min(hits, 5) - 1);
 
             mWedgePaint.setColor(mColorAccent);
             mWedgePaint.setAlpha(255);
@@ -962,7 +963,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
             if (hits > 1) {
                 for (int k = 1; k < Math.min(hits, 4); k++) {
-                    canvas.drawCircle(dx, dy, r + k * dotBaseR * 0.45f, mRingPaint);
+                    canvas.drawCircle(dx, dy, r + k * dotBaseR * 0.28f, mRingPaint);
                 }
             }
 
@@ -1238,18 +1239,16 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
                 ComboGhostAnimation.PERIOD_MS);
         boolean inExtension = localPhaseMs < ComboGhostAnimation.HALF_PERIOD_MS;
 
-        // Route alpha: extension ramps 0→178, fade stays at 178 but alpha decreases.
-        int routeAlpha = Math.round(178f * breathUnit * cancelAlpha);
-        // Arrival ring alpha: same schedule.
-        int ringAlpha  = Math.round(178f * breathUnit * cancelAlpha);
-        // Icon pill alpha: ramps 0→255 extension, 255→0 fade.
+        // Breathe 0→255 (was capped at 178). Routes reach full opacity at peak.
+        int routeAlpha = Math.round(255f * breathUnit * cancelAlpha);
+        int ringAlpha  = Math.round(255f * breathUnit * cancelAlpha);
         int pillAlpha  = Math.round(255f * breathUnit * cancelAlpha);
 
         if (nextNode == lastNode) {
             // Re-strike: always-full dashed circle, alpha breathes.
             if (routeAlpha > 0) {
-                mDashedGhostPaint.setAlpha(routeAlpha);
                 buildDashedCircle(mCircleScratch, fromX, fromY, dotBaseR * 1.8f);
+                mDashedGhostPaint.setAlpha(routeAlpha);
                 canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
         } else {
@@ -1276,15 +1275,15 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
             // Arrival ring (dashed stroke around the toNode dot).
             if (ringAlpha > 0) {
-                mDashedGhostPaint.setAlpha(ringAlpha);
                 buildDashedCircle(mCircleScratch, toX, toY, dotBaseR * 1.2f);
+                mDashedGhostPaint.setAlpha(ringAlpha);
                 canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
         }
 
         // Icon pill.
         if (pillAlpha > 0) {
-            float pillR = dotR + 48f;
+            float pillR = Math.min(dotR + 48f, cy - 22f);
             float pillX = cx + pillR * (float) Math.cos(toMid);
             float pillY = cy + pillR * (float) Math.sin(toMid);
             drawIconPill(canvas, pillX, pillY, ComboActionIcons.iconFor(actionInt), pillAlpha);
@@ -1304,15 +1303,15 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
                                   float dotR,
                                   float nodeProgress, float cancelAlpha) {
         // Crossfade: dashed at (1-progress), solid at progress.
-        int dashedAlpha = Math.round(255f * 0.70f * (1f - nodeProgress) * cancelAlpha);
+        int dashedAlpha = Math.round(255f * (1f - nodeProgress) * cancelAlpha);
         int solidAlpha  = Math.round(255f * nodeProgress * cancelAlpha);
         int pillAlpha   = Math.round(255f * cancelAlpha);
 
         if (nextNode == lastNode) {
             // Re-strike: full dashed circle fading to solid circle.
             if (dashedAlpha > 0) {
-                mDashedGhostPaint.setAlpha(dashedAlpha);
                 buildDashedCircle(mCircleScratch, fromX, fromY, dotBaseR * 1.8f);
+                mDashedGhostPaint.setAlpha(dashedAlpha);
                 canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
             if (solidAlpha > 0) {
@@ -1336,8 +1335,8 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             int dashedRingAlpha = Math.round(255f * 0.70f * (1f - nodeProgress) * cancelAlpha);
             int solidRingAlpha  = Math.round(255f * nodeProgress * cancelAlpha);
             if (dashedRingAlpha > 0) {
-                mDashedGhostPaint.setAlpha(dashedRingAlpha);
                 buildDashedCircle(mCircleScratch, toX, toY, dotBaseR * 1.2f);
+                mDashedGhostPaint.setAlpha(dashedRingAlpha);
                 canvas.drawPath(mCircleScratch, mDashedGhostPaint);
             }
             if (solidRingAlpha > 0) {
@@ -1348,7 +1347,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
         // Icon pill stays full while aimed.
         if (pillAlpha > 0) {
-            float pillR = dotR + 48f;
+            float pillR = Math.min(dotR + 48f, cy - 22f);
             float pillX = cx + pillR * (float) Math.cos(toMid);
             float pillY = cy + pillR * (float) Math.sin(toMid);
             drawIconPill(canvas, pillX, pillY, ComboActionIcons.iconFor(actionInt), pillAlpha);
@@ -1502,6 +1501,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
         // Center the layout vertically inside the 60px strip (dialH .. dialH+tipStripPx).
         float yOffset = dialH + (tipStripPx - mTipStripLayout.getHeight()) * 0.5f;
+        // Pill background ensures tip text is readable on any page color.
+        mPillRect.set(0f, yOffset - 6f, w, yOffset + mTipStripLayout.getHeight() + 6f);
+        mPillPaint.setColor(mColorLabelPill);
+        canvas.drawRoundRect(mPillRect, 12f, 12f, mPillPaint);
         int save = canvas.save();
         canvas.translate(8f, yOffset);
         mTipStripLayout.draw(canvas);

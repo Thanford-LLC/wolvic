@@ -1662,7 +1662,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
                 final float y = canvas.getHeight() * 0.5f;
                 final float radius = canvas.getWidth() * 0.4f;
                 canvas.drawCircle(x, y, radius, paint);
-                paint.setColor(Color.BLACK);
+                paint.setColor(Color.parseColor("#111259"));
                 paint.setStrokeWidth(4);
                 paint.setStyle(Paint.Style.STROKE);
                 canvas.drawCircle(x, y, radius, paint);

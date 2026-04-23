@@ -46,7 +46,9 @@ import java.lang.ref.WeakReference;
 public final class ComboHapticController {
 
     private static final int CONTROLLER_COUNT = 2;
-    private static final long ILLEGAL_GAP_MS = 60L;
+    private static final float BUZZ_DURATION_MS = 30.0f;  // 30ms pulse — felt clearly on Quest controllers
+    private static final float BUZZ_INTENSITY   = 1.0f;
+    private static final long  ILLEGAL_GAP_MS   = 100L;   // 100ms gap — tight double-tap, clearly distinct from single buzz
 
     private final Context mAppContext;
     private final WeakReference<WidgetManagerDelegate> mDelegateRef;
@@ -80,9 +82,6 @@ public final class ComboHapticController {
     private final Runnable mSecondBuzz = new Runnable() {
         @Override
         public void run() {
-            // Re-check pref on the delayed fire — user could have flipped
-            // the toggle between the two buzzes via a gesture. Unlikely
-            // but cheap to respect.
             if (!isCombosHapticsEnabled()) return;
             fireOnce();
         }
@@ -92,7 +91,7 @@ public final class ComboHapticController {
         WidgetManagerDelegate delegate = mDelegateRef.get();
         if (delegate == null) return;
         for (int controllerId = 0; controllerId < CONTROLLER_COUNT; controllerId++) {
-            delegate.triggerHapticFeedback(controllerId);
+            delegate.triggerHapticFeedbackUnconditional(controllerId, BUZZ_DURATION_MS, BUZZ_INTENSITY);
         }
     }
 

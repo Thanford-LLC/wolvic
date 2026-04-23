@@ -152,7 +152,7 @@ ControllerContainer::InitializeBeam() {
   ProgramPtr program = create->GetProgramFactory()->CreateProgram(create, 0);
   RenderStatePtr state = RenderState::Create(create);
   state->SetProgram(program);
-  state->SetMaterial(Color(1.0f, 1.0f, 1.0f), Color(1.0f, 1.0f, 1.0f), Color(0.0f, 0.0f, 0.0f), 0.0f);
+  state->SetMaterial(Color(0.992f, 0.871f, 0.039f), Color(0.992f, 0.871f, 0.039f), Color(0.0f, 0.0f, 0.0f), 0.0f); // fd_accent #FDDE0A
   state->SetLightsEnabled(false);
   GeometryPtr geometry = Geometry::Create(create);
   geometry->SetVertexArray(array);

@@ -46,6 +46,9 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
         mDispatcher = dispatcher;
         mPath = path;
         mActionInt = actionInt;
+        // Matches ClearUserDataDialogWidget / ComboResetConfirmDialog pattern:
+        // super(ctx) fires the first updateUI() (fields not set yet, body skipped).
+        // Fields are now set; initialize(ctx) fires the second updateUI() with them.
         initialize(ctx);
     }
 
@@ -53,12 +56,13 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
     public void updateUI() {
         super.updateUI();
 
+        // Always set buttons/title (safe even when mPath is null on first call).
         setButtons(new int[] {
                 R.string.cancel_button,
                 R.string.combos_delete_confirm_positive
         });
         setButtonsDelegate((index, isChecked) -> {
-            if (index == PromptDialogWidget.POSITIVE) {
+            if (index == PromptDialogWidget.POSITIVE && mDispatcher != null && mPath != null) {
                 mDispatcher.removeBinding(mPath);
             }
             onDismiss();
@@ -67,7 +71,9 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
         setDescriptionVisible(false);
 
         setTitle(getContext().getString(R.string.combos_delete_confirm_title));
-        setBody(buildBody());
+        if (mPath != null) {
+            setBody(buildBody());
+        }
     }
 
     private CharSequence buildBody() {

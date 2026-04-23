@@ -508,10 +508,13 @@ public class ComboDispatcher {
             // Second pass: collapse runs of the same cardinal after expansion.
             // Handles spurious mid-arc activations — e.g. native emits [2,3,6]
             // for an intended 2→6 arc; diagonal 3 expands to 2 or 6, making
-            // a duplicate with its neighbor. Collapsing gives [2,6]. Intended
-            // repeats (6-6-6, 8-8-8) are already matched by the direct/non-
-            // collapsing pass, so this can't hijack them.
-            if (action == null) {
+            // a duplicate with its neighbor. Collapsing gives [2,6].
+            //
+            // Guard: only run this pass when the path contains at least one
+            // diagonal node (1,3,7,9). A pure-cardinal path like [2,2,2,2,2]
+            // has no drift artifacts to fix; collapsing it to [2] would
+            // falsely match a single-node binding and fire 1 buzz instead of 2.
+            if (action == null && hasDiagonalNode(combo)) {
                 action = resolveCardinalInterpretation(combo, table, /*collapseRuns=*/true);
             }
         }
@@ -542,6 +545,13 @@ public class ComboDispatcher {
 
     public boolean isCombo4DirMode() {
         return is4DirMode();
+    }
+
+    private static boolean hasDiagonalNode(int[] combo) {
+        for (int n : combo) {
+            if (n == 1 || n == 3 || n == 7 || n == 9) return true;
+        }
+        return false;
     }
 
     private Integer resolveCardinalInterpretation(int[] combo, Map<String, Binding> table, boolean collapseRuns) {

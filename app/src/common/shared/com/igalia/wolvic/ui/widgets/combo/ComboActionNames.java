@@ -32,7 +32,7 @@ public final class ComboActionNames {
     public static final SparseIntArray NAME_FOR_ACTION;
 
     static {
-        NAME_FOR_ACTION = new SparseIntArray(22);
+        NAME_FOR_ACTION = new SparseIntArray(26);
         NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_UP,      R.string.fd_action_name_scroll_up);
         NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_DOWN,    R.string.fd_action_name_scroll_down);
         NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_LEFT,    R.string.fd_action_name_scroll_left);
@@ -54,7 +54,11 @@ public final class ComboActionNames {
         NAME_FOR_ACTION.put(ComboDispatcher.A_ADD_BOOKMARK,   R.string.fd_action_name_add_bookmark);
         NAME_FOR_ACTION.put(ComboDispatcher.A_HISTORY,        R.string.fd_action_name_history);
         NAME_FOR_ACTION.put(ComboDispatcher.A_READER_MODE,    R.string.fd_action_name_reader_mode);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_PRIVATE_WINDOW, R.string.fd_action_name_private_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_PRIVATE_WINDOW,       R.string.fd_action_name_private_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_HUD,           R.string.fd_action_name_toggle_hud);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_MODE,          R.string.fd_action_name_toggle_mode);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_CURVE_WINDOW,  R.string.fd_action_name_toggle_curved_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_GOTO_BOOKMARK,        R.string.fd_action_name_goto_bookmark);
     }
 
     /**
