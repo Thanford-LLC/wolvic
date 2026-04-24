@@ -906,8 +906,19 @@ public class ComboDispatcher {
         com.igalia.wolvic.browser.SettingsStore store =
                 com.igalia.wolvic.browser.SettingsStore.getInstance(mAppContext);
         boolean nowCurved = store.isCurvedModeEnabled();
+        boolean wantDisable = nowCurved;
         store.setCylinderDensity(nowCurved ? 0f
                 : com.igalia.wolvic.browser.SettingsStore.CYLINDER_DENSITY_ENABLED_DEFAULT);
+        // With 2+ windows open Wolvic forces curved mode on regardless of the stored
+        // preference. The preference write above persists the user's intent so curved
+        // auto-disables when the extra window is closed. Surface the constraint here
+        // so the user is not left wondering why nothing happened.
+        if (wantDisable && mWindows.getWindowsCount() > 1) {
+            android.widget.Toast.makeText(mAppContext,
+                    "Close extra windows to disable curved mode",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
         mWindows.updateCurvedMode(true);
     }
 
