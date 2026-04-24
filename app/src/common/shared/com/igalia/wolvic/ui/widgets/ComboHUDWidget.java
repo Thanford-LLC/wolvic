@@ -271,6 +271,18 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // drawTipStrip() to set paint color.
     private boolean mCurrentStripIsAccent = false;
 
+    // Per-node alpha [0,1] for smooth idle→preview wedge color transitions (~80ms).
+    private final float[] mWedgePreviewAlpha = new float[10];
+
+    // Per-node scale factor for hit-dot pulse: pops to 1.4 on commit, decays to 1.0.
+    private final float[] mHitDotPulseScale  = new float[10];
+
+    // Snapshot of mHitCounts before updatePath rebuilds, used to detect new hits.
+    private final int[]   mPrevHitCounts     = new int[10];
+
+    // Interpolated accent level [0,1] for tip-strip color fade (~96ms at 16ms tick).
+    private float mStripAccentAlpha = 0f;
+
     // Tip-strip StaticLayout cache — avoids per-frame StaticLayout construction
     // on the hot path (§5.2 zero-heap). StaticLayout is the only Canvas-friendly
     // path that actually draws ImageSpan replacement glyphs; canvas.drawText
@@ -326,8 +338,8 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mBgPaint.setColor(mColorBg);
         mTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
-        mLinePaint.setColor(0x40606080);
-        mLinePaint.setStrokeWidth(1.5f);
+        mLinePaint.setColor(0x3032369E); // fd_border-tinted navy, softer than flat grey
+        mLinePaint.setStrokeWidth(1.0f);
         mRingPaint.setStyle(Paint.Style.STROKE);
         mRingPaint.setColor(mColorAccent);
 
@@ -358,6 +370,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // 28sp floor per CLAUDE.md §5.3. Convert sp → px via resource density.
         float sp = aContext.getResources().getDisplayMetrics().scaledDensity;
         mTipPaint.setTextSize(28f * sp);
+        java.util.Arrays.fill(mHitDotPulseScale, 1.0f);
 
         initialize();
     }
@@ -516,6 +529,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     /** Update with confirmed path (nodes that have been activated). */
     public void updatePath(int[] path, int length) {
+        System.arraycopy(mHitCounts, 0, mPrevHitCounts, 0, mHitCounts.length);
         for (int i = 0; i < mHitCounts.length; i++) mHitCounts[i] = 0;
         mLastNode = 0;
         int[] canonical;
@@ -533,6 +547,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
                 mLastNode = node;
             }
             if (i < mCommittedPath.length) mCommittedPath[i] = node;
+        }
+        for (int i = 1; i <= 9; i++) {
+            if (mHitCounts[i] > mPrevHitCounts[i]) mHitDotPulseScale[i] = 1.4f;
         }
         // Path changed → tip strip swaps regimes. Invalidate caches.
         invalidateCommitPreviewCache();
@@ -905,11 +922,15 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mBgPaint.setColor(mColorBg);
         mBgPaint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx, cy, outerR + 4f, mBgPaint);
+        // Luminous outer ring: wide soft halo behind a crisp thin line.
         mBgPaint.setStyle(Paint.Style.STROKE);
-        mBgPaint.setStrokeWidth(4f);
+        mBgPaint.setStrokeWidth(8f);
         mBgPaint.setColor(mColorBgStroke);
-        mBgPaint.setAlpha(255);
+        mBgPaint.setAlpha(45);
         canvas.drawCircle(cx, cy, outerR + 4f, mBgPaint);
+        mBgPaint.setStrokeWidth(2.0f);
+        mBgPaint.setAlpha(255);
+        canvas.drawCircle(cx, cy, outerR + 3f, mBgPaint);
         mBgPaint.setStyle(Paint.Style.FILL);
         mBgPaint.setAlpha(255);
 
@@ -922,6 +943,12 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mOuterRectScratch.set(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
         mInnerRectScratch.set(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
 
+        // Smooth wedge preview transitions: lerp each node toward its target alpha.
+        for (int wi = 1; wi <= 9; wi++) {
+            float wTarget = (wi == mPreviewNode) ? 1.0f : 0.0f;
+            mWedgePreviewAlpha[wi] += (wTarget - mWedgePreviewAlpha[wi]) * 0.4f;
+        }
+
         // Pass 1: wedge fills + separator lines. Arrow glyphs are deferred
         // to Pass 2 below so they render ABOVE the ghost layer (round-8
         // feedback: "arrows should be above ghost routes").
@@ -932,7 +959,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             float startAngle = -(i * stepDeg) - halfWidth;
             float sweep = halfWidth * 2f;
 
-            mWedgePaint.setColor(isPreview ? mColorWedgePreview : mColorWedgeIdle);
+            mWedgePaint.setColor(interpolateColor(mColorWedgeIdle, mColorWedgePreview, mWedgePreviewAlpha[node]));
 
             mWedgePathScratch.reset();
             mWedgePathScratch.arcTo(mOuterRectScratch, startAngle, sweep, true);
@@ -962,7 +989,8 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             float dx = cx + dotR * (float) Math.cos(midAngle);
             float dy = cy + dotR * (float) Math.sin(midAngle);
 
-            float r = dotBaseR + dotBaseR * 0.30f * (Math.min(hits, 5) - 1);
+            mHitDotPulseScale[node] += (1.0f - mHitDotPulseScale[node]) * 0.3f;
+            float r = (dotBaseR + dotBaseR * 0.30f * (Math.min(hits, 5) - 1)) * mHitDotPulseScale[node];
 
             mWedgePaint.setColor(mColorAccent);
             mWedgePaint.setAlpha(255);
@@ -970,7 +998,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
             if (hits > 1) {
                 for (int k = 1; k < Math.min(hits, 4); k++) {
-                    canvas.drawCircle(dx, dy, r + k * dotBaseR * 0.28f, mRingPaint);
+                    canvas.drawCircle(dx, dy, r + k * dotBaseR * 0.28f * mHitDotPulseScale[node], mRingPaint);
                 }
             }
 
@@ -991,8 +1019,11 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             float textY = cy - (mTextPaint.descent() + mTextPaint.ascent()) / 2f;
             canvas.drawText(PATH_LENGTH_LABEL[mPathLength], cx, textY, mTextPaint);
         } else {
+            // Breathe gently at 2500ms period while ARMED (grip held, path empty).
+            double breathAngle = 2.0 * Math.PI * ((double)(mCurrentFrameTimeMs % 2500L) / 2500.0);
+            float breathAlpha = (float)(0.5 + 0.5 * Math.sin(breathAngle));
             mWedgePaint.setColor(mColorAccent);
-            mWedgePaint.setAlpha(150);
+            mWedgePaint.setAlpha(Math.round(80 + 120f * breathAlpha));
             canvas.drawCircle(cx, cy, 6f, mWedgePaint);
         }
 
@@ -1467,6 +1498,16 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         return -1;
     }
 
+    private static int interpolateColor(int from, int to, float t) {
+        if (t <= 0f) return from;
+        if (t >= 1f) return to;
+        float a = ((to >>> 24) - (from >>> 24)) * t + (from >>> 24);
+        float r = (((to >> 16) & 0xFF) - ((from >> 16) & 0xFF)) * t + ((from >> 16) & 0xFF);
+        float g = (((to >> 8) & 0xFF) - ((from >> 8) & 0xFF)) * t + ((from >> 8) & 0xFF);
+        float b = ((to & 0xFF) - (from & 0xFF)) * t + (from & 0xFF);
+        return ((int) a << 24) | ((int) r << 16) | ((int) g << 8) | (int) b;
+    }
+
     /** Small mutable holder for ghost render entries, reused across rebuilds. */
     private static final class GhostEntry {
         int nextNode;
@@ -1484,10 +1525,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         if (cs == null || cs.length() == 0) return;
         int availWidth = Math.max(0, w - 16);
 
-        // Swap text color based on strip role: full accent when signaling
-        // "release to fire", dim tip-text otherwise. mColorGhostYellow (70%)
-        // is reserved for ghost route traces — not the strip CTA.
-        int desiredColor = mCurrentStripIsAccent ? mColorAccent : mColorTipText;
+        // Smooth accent fade: lerp dim→accent over ~6 frames (96ms at 16ms tick).
+        float targetAccent = mCurrentStripIsAccent ? 1.0f : 0.0f;
+        mStripAccentAlpha += (targetAccent - mStripAccentAlpha) * 0.35f;
+        int desiredColor = interpolateColor(mColorTipText, mColorAccent, mStripAccentAlpha);
         if (mTipPaint.getColor() != desiredColor) {
             mTipPaint.setColor(desiredColor);
         }
