@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.preference.PreferenceManager;
 
+import com.igalia.wolvic.R;
 import com.igalia.wolvic.VRBrowserActivity;
 import com.igalia.wolvic.browser.SettingsStore;
 import com.igalia.wolvic.browser.engine.Session;
@@ -42,6 +43,7 @@ public class ComboDispatcher {
 
     private static final String LOGTAG = "ComboDispatcher";
     public  static final String COMBO_MODE_4DIR_KEY = "fingerdance_combo_4dir_mode";
+    private static final int FD_HUD_OFF_HINT_NOTIFICATION_ID = 0xFD0801;
 
     private static final float SCROLL_DELTA = 150.0f;
     private static final float MAX_SCROLL   = 1_000_000.0f;
@@ -352,16 +354,18 @@ public class ComboDispatcher {
         if (mAppContext != null) {
             Map<String, Binding> overrides = new ComboBindingStore(mAppContext).load();
             for (Map.Entry<String, Binding> e : overrides.entrySet()) {
-                int[] p = ComboBindingStore.keyToPath(e.getKey());
+                String rawKey = e.getKey();
+                int[] p = ComboBindingStore.keyToPath(rawKey);
                 if (p.length == 0) continue;
                 String k = key(p);
                 Binding b = e.getValue();
+                int mode = ComboBindingStore.keyMode(rawKey);
                 if (b.action == A_REMOVED) {
-                    four.remove(k);
-                    eight.remove(k);
+                    if (mode != ComboBindingStore.MODE_8DIR) four.remove(k);
+                    if (mode != ComboBindingStore.MODE_4DIR) eight.remove(k);
                 } else {
-                    four.put(k, b);
-                    eight.put(k, b);
+                    if (mode != ComboBindingStore.MODE_8DIR) four.put(k, b);
+                    if (mode != ComboBindingStore.MODE_4DIR) eight.put(k, b);
                 }
             }
         }
@@ -396,7 +400,7 @@ public class ComboDispatcher {
         }
         ComboBindingStore store = new ComboBindingStore(mAppContext);
         Map<String, Binding> overrides = new HashMap<>(store.load());
-        overrides.put(ComboBindingStore.pathToKey(path), Binding.of(A_REMOVED));
+        overrides.put(ComboBindingStore.pathToKeyForMode(path, is4DirMode()), Binding.of(A_REMOVED));
         store.save(overrides);
         // KEY_BLOB listener auto-fires reloadBindings() → BindingsListener → UI refresh.
     }
@@ -415,7 +419,7 @@ public class ComboDispatcher {
         }
         ComboBindingStore store = new ComboBindingStore(mAppContext);
         Map<String, Binding> overrides = new HashMap<>(store.load());
-        overrides.put(ComboBindingStore.pathToKey(path), binding);
+        overrides.put(ComboBindingStore.pathToKeyForMode(path, is4DirMode()), binding);
         store.save(overrides);
     }
 
@@ -545,6 +549,24 @@ public class ComboDispatcher {
                 return;
             }
             if (mHapticController != null) mHapticController.fireIllegalCombo();
+            // When the HUD is off, nudge the user toward the joystick re-enable shortcut.
+            if (mDefaultPrefs != null
+                    && !mDefaultPrefs.getBoolean(
+                            com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_HUD_VISIBLE, true)
+                    && mWidgetManager != null) {
+                com.igalia.wolvic.ui.widgets.TrayWidget tray = mWidgetManager.getTray();
+                if (tray != null) {
+                    com.igalia.wolvic.ui.widgets.NotificationManager.Notification hint =
+                            new com.igalia.wolvic.ui.widgets.NotificationManager.Builder(tray)
+                                    .withString(R.string.fd_hud_off_joystick_hint)
+                                    .withPosition(com.igalia.wolvic.ui.widgets.NotificationManager.Notification.TOP)
+                                    .withMargin(20.0f)
+                                    .withDuration(3000)
+                                    .build();
+                    com.igalia.wolvic.ui.widgets.NotificationManager.show(
+                            FD_HUD_OFF_HINT_NOTIFICATION_ID, hint);
+                }
+            }
             return;
         }
         mPendingAXCapture = false; // Bound path found — discard any pending capture intent.

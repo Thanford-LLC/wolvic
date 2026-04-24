@@ -2694,5 +2694,6 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="fd_action_name_toggle_curved_window">Curved window</string>
     <string name="fd_action_name_goto_bookmark">Go to bookmark</string>
     <string name="fd_action_name_toggle_ghost_routes">Ghost routes</string>
+    <string name="fd_hud_off_joystick_hint">Click joystick to turn on HUD</string>
 
 </resources>

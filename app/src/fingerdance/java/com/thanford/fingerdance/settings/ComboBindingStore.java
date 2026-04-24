@@ -23,13 +23,22 @@ import java.util.Map;
 
 /**
  * Persists user combo overrides to SharedPreferences as a single JSON blob.
- * Keys use CSV path format (e.g. "2,4,6"); values are {action:int, param:string|null}.
+ * Keys use a mode-prefixed CSV format: "4:2,4,6" (4-dir only), "8:2,4,6"
+ * (8-dir only), or bare "2,4,6" (both modes — legacy / shared bindings).
+ * Values are {action:int, param:string|null}.
  *
  * <p>Corrupt blobs are backed up to a timestamped key and defaults are returned
  * so the app always boots. Schema versioning is in place from v1 so future
  * breaking changes land a {@link #migrateIfNeeded} transform, not a silent drop.
  */
 public final class ComboBindingStore {
+
+    /** Binding applies to both 4-dir and 8-dir tables (legacy / default). */
+    public static final int MODE_BOTH  = 0;
+    /** Binding applies to the 4-dir table only. */
+    public static final int MODE_4DIR  = 1;
+    /** Binding applies to the 8-dir table only. */
+    public static final int MODE_8DIR  = 2;
 
     private static final String TAG = "FD/Store";
 
@@ -224,8 +233,8 @@ public final class ComboBindingStore {
     // ---- Path key helpers ---------------------------------------------------
 
     /**
-     * Encode a path int[] to the CSV persistence key (e.g. "2,4,6"). Empty and
-     * null paths return "" — callers must guard.
+     * Encode a path int[] to the bare CSV persistence key (e.g. "2,4,6"). Empty
+     * and null paths return "" — callers must guard. Produces a MODE_BOTH key.
      */
     @NonNull
     public static String pathToKey(@Nullable int[] path) {
@@ -241,13 +250,39 @@ public final class ComboBindingStore {
     }
 
     /**
-     * Decode the CSV persistence key back to an int[]. Returns empty array for
-     * empty/invalid input. Never throws on malformed content.
+     * Encode a path int[] to a mode-scoped key: "4:2,4,6" for 4-dir, "8:2,4,6"
+     * for 8-dir. Falls back to bare CSV when path is null/empty.
+     */
+    @NonNull
+    public static String pathToKeyForMode(@Nullable int[] path, boolean is4Dir) {
+        String base = pathToKey(path);
+        if (base.isEmpty()) return base;
+        return (is4Dir ? "4:" : "8:") + base;
+    }
+
+    /**
+     * Decode the mode prefix from a storage key.
+     * @return {@link #MODE_4DIR}, {@link #MODE_8DIR}, or {@link #MODE_BOTH}.
+     */
+    public static int keyMode(@Nullable String key) {
+        if (key == null) return MODE_BOTH;
+        if (key.startsWith("4:")) return MODE_4DIR;
+        if (key.startsWith("8:")) return MODE_8DIR;
+        return MODE_BOTH;
+    }
+
+    /**
+     * Decode a storage key back to an int[], stripping any mode prefix first.
+     * Returns empty array for empty/invalid input. Never throws on malformed content.
      */
     @NonNull
     public static int[] keyToPath(@Nullable String key) {
         if (key == null || key.isEmpty()) {
             return new int[0];
+        }
+        // Strip "4:" or "8:" mode prefix before CSV parsing.
+        if (key.length() > 2 && (key.startsWith("4:") || key.startsWith("8:"))) {
+            key = key.substring(2);
         }
         String[] parts = key.split(",");
         int[] out = new int[parts.length];
