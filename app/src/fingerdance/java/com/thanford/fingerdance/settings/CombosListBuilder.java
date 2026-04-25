@@ -25,7 +25,6 @@ import com.igalia.wolvic.input.ComboDispatcher;
 import com.igalia.wolvic.ui.widgets.UIWidget;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -198,6 +197,12 @@ public final class CombosListBuilder {
         ((TextView) block.findViewById(R.id.action_label))
                 .setText(labelRes != 0 ? ctx.getString(labelRes) : "");
 
+        // Hover tip: shows the combo path as directional arrows on hover.
+        TextView pathTip = block.findViewById(R.id.path_tip);
+        if (primaryPath != null) {
+            pathTip.setText(pathToArrows(primaryPath));
+        }
+
         // Hover-revealed ✕ or + Create button
         LinearLayout buttonCell = block.findViewById(R.id.button_cell);
         View actionBtn = (primaryPath == null)
@@ -207,11 +212,16 @@ public final class CombosListBuilder {
         actionBtn.setVisibility(View.INVISIBLE);
         buttonCell.addView(actionBtn);
 
-        // Hover reveal with 80 ms grace period to reach the button.
+        // Hover reveal: show tip + button, 80 ms grace period before hiding.
         Handler handler = new Handler(Looper.getMainLooper());
         boolean[] btnHovered = {false};
         Runnable[] hideRunnable = {null};
-        Runnable doHide = () -> { if (!btnHovered[0]) actionBtn.setVisibility(View.INVISIBLE); };
+        Runnable doHide = () -> {
+            if (!btnHovered[0]) {
+                if (primaryPath != null) pathTip.setVisibility(View.GONE);
+                actionBtn.setVisibility(View.INVISIBLE);
+            }
+        };
 
         block.setOnHoverListener((v, event) -> {
             switch (event.getAction()) {
@@ -220,6 +230,7 @@ public final class CombosListBuilder {
                         handler.removeCallbacks(hideRunnable[0]);
                         hideRunnable[0] = null;
                     }
+                    if (primaryPath != null) pathTip.setVisibility(View.VISIBLE);
                     actionBtn.setVisibility(View.VISIBLE);
                     break;
                 case MotionEvent.ACTION_HOVER_EXIT:
@@ -248,6 +259,27 @@ public final class CombosListBuilder {
         });
 
         return block;
+    }
+
+    // ── Tooltip content ───────────────────────────────────────────────────────
+
+    /** Converts an int[] path to a directional arrow string, e.g. [2,4] → "↑←". */
+    @NonNull
+    static String pathToArrows(@NonNull int[] path) {
+        StringBuilder sb = new StringBuilder();
+        for (int n : path) {
+            switch (n) {
+                case 2: sb.append('↑'); break;
+                case 8: sb.append('↓'); break;
+                case 4: sb.append('←'); break;
+                case 6: sb.append('→'); break;
+                case 9: sb.append('↗'); break;
+                case 3: sb.append('↘'); break;
+                case 1: sb.append('↙'); break;
+                case 7: sb.append('↖'); break;
+            }
+        }
+        return sb.toString();
     }
 
     // ── Button factories (unchanged from Phase 4/5) ───────────────────────────

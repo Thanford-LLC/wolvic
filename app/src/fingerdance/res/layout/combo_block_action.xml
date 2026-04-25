@@ -6,19 +6,35 @@
 
   Block view for the Combos Settings action grid.
   Four of these are placed in a horizontal row (layout_width=0, weight=1)
-  by CombosListBuilder. Vertical stack: path disc → label → button cell.
+  by CombosListBuilder. Vertical stack: path tip (hover) → path disc → label → button cell.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:paddingTop="8dp"
+    android:paddingTop="6dp"
     android:paddingBottom="4dp"
     android:paddingStart="4dp"
     android:paddingEnd="4dp"
     android:focusable="true"
     android:clickable="false">
+
+    <!-- Path arrow tip (hidden; shown on hover to reveal the combo sequence) -->
+    <TextView
+        android:id="@+id/path_tip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="4dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:textSize="18sp"
+        android:textColor="@color/fd_on_accent"
+        android:background="@drawable/combo_chip_bg"
+        android:visibility="gone" />
 
     <!-- Path visualization disc (72dp × 72dp square canvas) -->
     <com.thanford.fingerdance.settings.ComboPathView
