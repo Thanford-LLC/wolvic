@@ -9,16 +9,11 @@ package com.thanford.fingerdance.settings;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.Spannable;
-import android.text.style.ImageSpan;
-import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import android.view.Gravity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,9 +23,9 @@ import androidx.core.content.ContextCompat;
 import com.igalia.wolvic.R;
 import com.igalia.wolvic.input.ComboDispatcher;
 import com.igalia.wolvic.ui.widgets.UIWidget;
-import com.igalia.wolvic.ui.widgets.combo.ComboTipBuilder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -39,16 +34,12 @@ import java.util.Map;
  * {@link LinearLayout} container with:
  *
  * <ol>
- *   <li>System Gestures section (info-only rows, current-mode toggle hint
- *       per sealed decision T1)</li>
- *   <li>Action sections in display order (Navigation, Position, Window,
- *       Library, Special) with one row per known action, listing every
- *       bound path as a chip. Unbound actions render a "Not bound" chip.</li>
+ *   <li>System Gestures section (info-only rows, no interactivity).</li>
+ *   <li>Action sections (Navigation, Position, Window, Library, Special) as
+ *       4-column grids. Each block shows a {@link ComboPathView} disc at top,
+ *       the action label in the middle, and a hover-revealed ✕ / + Create
+ *       button at the bottom. Unbound actions show a dim ring.</li>
  * </ol>
- *
- * <p>Phase 4 wires each bound-combo chip's trailing {@code ✕} to a
- * {@link ComboUnbindConfirmDialog} → {@link ComboDispatcher#removeBinding}.
- * {@code + Create} still lands in Phase 5.
  */
 public final class CombosListBuilder {
 
@@ -70,17 +61,14 @@ public final class CombosListBuilder {
             R.string.combos_section_special
     };
 
+    private static final int GRID_COLS = 4;
+
     public static void populate(@NonNull Context ctx,
                                 @NonNull LinearLayout container,
                                 @NonNull ComboDispatcher dispatcher) {
         container.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(ctx);
 
-        // In 8-dir mode we pass the 4-dir table so the builder can exclude
-        // 4-dir-style fallback paths that were mirrored into the 8-dir table
-        // (e.g. [6,6,6] → A_NEW_WINDOW). Paths that appear in BOTH tables at the
-        // same key+action are "shared" and ARE shown; those mirrored exclusively
-        // for the 4-dir fallback are skipped, leaving only the 8-dir-native paths.
         java.util.Map<String, Binding> fourDirTable = dispatcher.get4DirBindings();
         java.util.Map<String, Binding> activeTable  = dispatcher.getAllBindings();
         boolean is4DirMode = (activeTable == fourDirTable
@@ -90,10 +78,8 @@ public final class CombosListBuilder {
         addActionSections(ctx, inflater, container, activeTable, fourDirTable, is4DirMode, dispatcher);
     }
 
-    // S3 fix: mode-escape paths ([2]×8 in 4-dir, [2]×4 in 8-dir) remain wired
-    // in the binding tables but are intentionally NOT surfaced here. Keeping
-    // them out of the System Gestures section preserves the easter-egg
-    // framing called out in CLAUDE.md and the sealed Combos plan.
+    // ── System gestures (info-only rows, unchanged) ───────────────────────────
+
     private static void addSystemGesturesSection(@NonNull LayoutInflater inflater,
                                                  @NonNull LinearLayout container) {
         LinearLayout content = addExpandableSection(inflater, container,
@@ -109,6 +95,8 @@ public final class CombosListBuilder {
                 R.string.combos_gesture_click_midpath_action);
     }
 
+    // ── Action sections (4-column block grid per category) ───────────────────
+
     private static void addActionSections(@NonNull Context ctx,
                                           @NonNull LayoutInflater inflater,
                                           @NonNull LinearLayout container,
@@ -116,116 +104,198 @@ public final class CombosListBuilder {
                                           @NonNull Map<String, Binding> fourDirBindings,
                                           boolean is4DirMode,
                                           @NonNull ComboDispatcher dispatcher) {
-        // Build action → primary path map (one path per action, 8-dir-native preferred).
-        SparseArray<int[]> primaryPathByAction = buildPrimaryPaths(
-                activeBindings, fourDirBindings, is4DirMode);
+        android.util.SparseArray<int[]> primaryPathByAction =
+                buildPrimaryPaths(activeBindings, fourDirBindings, is4DirMode);
         int[] actionIds = ComboActionRegistry.knownActions();
 
-        List<Integer> unassigned = new ArrayList<>();
-
+        // Main sections: show ALL actions for the category (bound and unbound).
         for (int i = 0; i < DISPLAY_ORDER.length; i++) {
             ComboActionCategory cat = DISPLAY_ORDER[i];
-            List<Integer> actionIdsForCat = new ArrayList<>();
-            for (int actionId : actionIds) {
-                if (ComboActionRegistry.categoryFor(actionId) != cat) continue;
-                actionIdsForCat.add(actionId);
+            List<Integer> sectionActions = new ArrayList<>();
+            for (int id : actionIds) {
+                if (ComboActionRegistry.categoryFor(id) == cat) sectionActions.add(id);
             }
-            if (actionIdsForCat.isEmpty()) continue;
+            if (sectionActions.isEmpty()) continue;
             LinearLayout content = addExpandableSection(inflater, container,
                     DISPLAY_HEADERS[i], /* startExpanded= */ true);
-            for (int actionId : actionIdsForCat) {
-                int[] primary = primaryPathByAction.get(actionId);
-                if (primary == null) {
-                    unassigned.add(actionId);
-                    continue;
-                }
-                addActionRow(ctx, inflater, content, actionId, primary, dispatcher);
-            }
+            addActionsAsGrid(ctx, inflater, content, sectionActions,
+                    primaryPathByAction, dispatcher);
         }
 
-        // Unassigned section: collapsed by default.
-        // Also includes actions whose category didn't match DISPLAY_ORDER (edge case).
-        for (int actionId : actionIds) {
-            if (primaryPathByAction.get(actionId) == null) {
-                ComboActionCategory cat = ComboActionRegistry.categoryFor(actionId);
-                boolean alreadyAdded = false;
-                for (int displayCat : new int[]{0, 1, 2, 3, 4}) { // DISPLAY_ORDER indices
-                    if (cat == DISPLAY_ORDER[displayCat]) { alreadyAdded = true; break; }
-                }
-                if (!alreadyAdded && !unassigned.contains(actionId)) {
-                    unassigned.add(actionId);
-                }
+        // Unassigned: actions whose category isn't in DISPLAY_ORDER (edge case).
+        List<Integer> unassigned = new ArrayList<>();
+        for (int id : actionIds) {
+            ComboActionCategory cat = ComboActionRegistry.categoryFor(id);
+            boolean inDisplay = false;
+            for (ComboActionCategory dc : DISPLAY_ORDER) {
+                if (cat == dc) { inDisplay = true; break; }
             }
+            if (!inDisplay) unassigned.add(id);
         }
-
         if (!unassigned.isEmpty()) {
-            LinearLayout unassignedContent = addExpandableSection(inflater, container,
+            LinearLayout content = addExpandableSection(inflater, container,
                     R.string.combos_section_unassigned, /* startExpanded= */ false);
-            for (int actionId : unassigned) {
-                addActionRow(ctx, inflater, unassignedContent, actionId, null, dispatcher);
-            }
+            addActionsAsGrid(ctx, inflater, content, unassigned,
+                    primaryPathByAction, dispatcher);
         }
     }
 
     /**
-     * Builds a map from action id → the single "primary" path to show in the list.
-     *
-     * <p>In 4-dir mode: straightforward — one path per action from the active table.
-     *
-     * <p>In 8-dir mode: the active table contains both 8-dir-native paths (diagonals)
-     * AND 4-dir cardinal fallbacks mirrored via {@code putIfAbsent}. To avoid showing
-     * two chips for one action ("displaying 8-dir and 4-dir at the same time"), we
-     * prefer the 8-dir-native path (not present in the 4-dir table) when one exists;
-     * otherwise fall back to the shared path.
+     * Lays out {@code actionIds} in rows of {@link #GRID_COLS} equal-width blocks.
+     * Empty slots in the last row are filled with invisible spacers to keep column widths.
      */
-    @NonNull
-    private static SparseArray<int[]> buildPrimaryPaths(
-            @NonNull Map<String, Binding> activeBindings,
-            @NonNull Map<String, Binding> fourDirBindings,
-            boolean is4DirMode) {
-        SparseArray<int[]> result = new SparseArray<>();
-        // First pass: collect 8-dir-native paths (in active but NOT in 4-dir table).
-        for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
-            int actionId = e.getValue().action;
-            if (actionId <= 0) continue;
-            int[] path = parsePathKey(e.getKey());
-            if (path.length == 0) continue;
-            if (!is4DirMode && fourDirBindings.containsKey(e.getKey())) {
-                // Shared/mirrored path — only use as fallback; don't overwrite a
-                // native path already stored, but do record for the second pass.
-                if (result.get(actionId) == null) {
-                    result.put(actionId, path); // tentative fallback
+    private static void addActionsAsGrid(@NonNull Context ctx,
+                                         @NonNull LayoutInflater inflater,
+                                         @NonNull LinearLayout content,
+                                         @NonNull List<Integer> actionIds,
+                                         @NonNull android.util.SparseArray<int[]> primaryPaths,
+                                         @NonNull ComboDispatcher dispatcher) {
+        int i = 0;
+        while (i < actionIds.size()) {
+            LinearLayout row = new LinearLayout(ctx);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+
+            for (int col = 0; col < GRID_COLS; col++) {
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                if (i + col < actionIds.size()) {
+                    int id = actionIds.get(i + col);
+                    View block = makeActionBlock(ctx, inflater, id,
+                            primaryPaths.get(id), dispatcher);
+                    block.setLayoutParams(lp);
+                    row.addView(block);
+                } else {
+                    // Invisible spacer to maintain column widths.
+                    View spacer = new View(ctx);
+                    spacer.setLayoutParams(lp);
+                    row.addView(spacer);
                 }
-                continue;
             }
-            // Strictly active-mode path (4-dir mode path, or 8-dir-native path).
-            result.put(actionId, path);
+            content.addView(row);
+            i += GRID_COLS;
         }
-        // Second pass in 8-dir: replace tentative fallbacks with 8-dir-native paths
-        // found later in iteration. (HashMap order is non-deterministic, so iterate
-        // a second time to pick up any native paths that weren't seen first.)
-        if (!is4DirMode) {
-            for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
-                if (fourDirBindings.containsKey(e.getKey())) continue; // skip shared/mirrored
-                int actionId = e.getValue().action;
-                if (actionId <= 0) continue;
-                int[] path = parsePathKey(e.getKey());
-                if (path.length == 0) continue;
-                result.put(actionId, path); // 8-dir-native: always preferred
-            }
-        }
-        return result;
     }
 
     /**
-     * S10 (2026-04-21) — collapsible section header. Inflates
-     * {@code combo_row_section_header} (which now contains a chevron TextView),
-     * creates a sibling {@link LinearLayout} content container, and wires the
-     * header click to toggle content visibility + chevron glyph (▼/▶).
-     *
-     * @param startExpanded whether the section content starts visible
-     * @return the content container into which callers should add rows
+     * Inflates {@code combo_block_action} and wires up the path disc, label,
+     * and hover-revealed action button.
      */
+    private static View makeActionBlock(@NonNull Context ctx,
+                                        @NonNull LayoutInflater inflater,
+                                        int actionId,
+                                        @Nullable int[] primaryPath,
+                                        @NonNull ComboDispatcher dispatcher) {
+        View block = inflater.inflate(R.layout.combo_block_action, null, false);
+
+        // Path disc
+        ((ComboPathView) block.findViewById(R.id.path_disc)).setPath(primaryPath);
+
+        // Action label
+        int labelRes = ComboActionRegistry.labelFor(actionId);
+        ((TextView) block.findViewById(R.id.action_label))
+                .setText(labelRes != 0 ? ctx.getString(labelRes) : "");
+
+        // Hover-revealed ✕ or + Create button
+        LinearLayout buttonCell = block.findViewById(R.id.button_cell);
+        View actionBtn = (primaryPath == null)
+                ? makeCreateButton(ctx, dispatcher, actionId)
+                : makeDeleteButton(ctx, dispatcher, primaryPath, actionId);
+
+        actionBtn.setVisibility(View.INVISIBLE);
+        buttonCell.addView(actionBtn);
+
+        // Hover reveal with 80 ms grace period to reach the button.
+        Handler handler = new Handler(Looper.getMainLooper());
+        boolean[] btnHovered = {false};
+        Runnable[] hideRunnable = {null};
+        Runnable doHide = () -> { if (!btnHovered[0]) actionBtn.setVisibility(View.INVISIBLE); };
+
+        block.setOnHoverListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_HOVER_ENTER:
+                    if (hideRunnable[0] != null) {
+                        handler.removeCallbacks(hideRunnable[0]);
+                        hideRunnable[0] = null;
+                    }
+                    actionBtn.setVisibility(View.VISIBLE);
+                    break;
+                case MotionEvent.ACTION_HOVER_EXIT:
+                    hideRunnable[0] = doHide;
+                    handler.postDelayed(doHide, 80);
+                    break;
+            }
+            return false;
+        });
+        actionBtn.setOnHoverListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_HOVER_ENTER:
+                    btnHovered[0] = true;
+                    if (hideRunnable[0] != null) {
+                        handler.removeCallbacks(hideRunnable[0]);
+                        hideRunnable[0] = null;
+                    }
+                    break;
+                case MotionEvent.ACTION_HOVER_EXIT:
+                    btnHovered[0] = false;
+                    hideRunnable[0] = doHide;
+                    handler.postDelayed(doHide, 80);
+                    break;
+            }
+            return false;
+        });
+
+        return block;
+    }
+
+    // ── Button factories (unchanged from Phase 4/5) ───────────────────────────
+
+    private static View makeDeleteButton(@NonNull Context ctx,
+                                         @NonNull ComboDispatcher dispatcher,
+                                         @NonNull int[] path,
+                                         int actionId) {
+        float density = ctx.getResources().getDisplayMetrics().density;
+        int padH = (int) (10f * density);
+        int padV = (int) (6f * density);
+
+        TextView xView = new TextView(ctx);
+        xView.setText("✕");
+        xView.setTextSize(20f);
+        xView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text_muted));
+        xView.setPadding(padH, padV, padH, padV);
+        xView.setContentDescription(ctx.getString(R.string.combos_chip_delete_content_desc));
+        xView.setClickable(true);
+        xView.setFocusable(true);
+        xView.setOnClickListener(v ->
+                new ComboUnbindConfirmDialog(ctx, dispatcher, path, actionId)
+                        .show(UIWidget.REQUEST_FOCUS));
+        return xView;
+    }
+
+    private static View makeCreateButton(@NonNull Context ctx,
+                                         @NonNull ComboDispatcher dispatcher,
+                                         int actionId) {
+        float density = ctx.getResources().getDisplayMetrics().density;
+        int padH = (int) (10f * density);
+        int padV = (int) (4f * density);
+
+        TextView btn = new TextView(ctx);
+        btn.setBackgroundResource(R.drawable.combo_chip_bg);
+        btn.setPadding(padH, padV, padH, padV);
+        btn.setTextSize(14f);
+        btn.setText(R.string.combos_row_create_button);
+        btn.setTextColor(ContextCompat.getColor(ctx, R.color.fd_accent));
+        btn.setClickable(true);
+        btn.setFocusable(true);
+        btn.setOnClickListener(v -> new BindComboView(ctx, dispatcher, actionId)
+                .show(UIWidget.REQUEST_FOCUS));
+        return btn;
+    }
+
+    // ── Section / row helpers ─────────────────────────────────────────────────
+
     @NonNull
     private static LinearLayout addExpandableSection(@NonNull LayoutInflater inflater,
                                                      @NonNull LinearLayout container,
@@ -242,7 +312,6 @@ public final class CombosListBuilder {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
         content.setVisibility(startExpanded ? View.VISIBLE : View.GONE);
-        // ▼ glyph is fixed in XML; rotate −90° = pointing right (collapsed), 0° = pointing down (expanded).
         chevron.setRotation(startExpanded ? 0f : -90f);
         container.addView(content);
 
@@ -264,177 +333,36 @@ public final class CombosListBuilder {
         container.addView(row);
     }
 
-    private static void addActionRow(@NonNull Context ctx,
-                                     @NonNull LayoutInflater inflater,
-                                     @NonNull LinearLayout container,
-                                     int actionId,
-                                     @Nullable int[] primaryPath,
-                                     @NonNull ComboDispatcher dispatcher) {
-        View row = inflater.inflate(R.layout.combo_row_action, container, false);
-        int labelRes = ComboActionRegistry.labelFor(actionId);
-        ((TextView) row.findViewById(R.id.action_label))
-                .setText(labelRes != 0 ? ctx.getString(labelRes) : "");
+    // ── Path resolution (unchanged) ───────────────────────────────────────────
 
-        LinearLayout comboCell  = row.findViewById(R.id.combo_cell);
-        LinearLayout buttonCell = row.findViewById(R.id.button_cell);
-
-        int chipColor  = ContextCompat.getColor(ctx, R.color.fd_accent);
-        int iconSizePx = (int) (20f * ctx.getResources().getDisplayMetrics().scaledDensity);
-
-        final View actionBtn;
-        if (primaryPath == null) {
-            // Unbound: dim "—" in combo cell; hover-revealed + Create in button cell.
-            TextView naLabel = new TextView(ctx);
-            naLabel.setText("\u2014"); // em dash
-            naLabel.setTextSize(14f);
-            naLabel.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text_dim));
-            comboCell.addView(naLabel);
-            actionBtn = makeCreateButton(ctx, dispatcher, actionId);
-        } else {
-            // Bound: arrow pill in combo cell; hover-revealed ✕ in button cell.
-            comboCell.addView(makeArrowPill(ctx, primaryPath, iconSizePx, chipColor));
-            actionBtn = makeDeleteButton(ctx, dispatcher, primaryPath, actionId);
-        }
-
-        // Force combo_cell to vertically center itself in the row regardless of
-        // whatever gravity the XML inflation produced.
-        LinearLayout.LayoutParams comboCellLp =
-                (LinearLayout.LayoutParams) comboCell.getLayoutParams();
-        if (comboCellLp != null) {
-            comboCellLp.gravity = Gravity.CENTER_VERTICAL;
-            comboCell.setLayoutParams(comboCellLp);
-        }
-
-        // Hover-reveal: button is invisible until the row is activated by the ray cursor.
-        actionBtn.setVisibility(View.INVISIBLE);
-        buttonCell.addView(actionBtn);
-
-        Handler handler = new Handler(Looper.getMainLooper());
-        boolean[] btnHovered = {false};
-        Runnable[] hideRunnable = {null};
-        Runnable doHide = () -> { if (!btnHovered[0]) actionBtn.setVisibility(View.INVISIBLE); };
-
-        row.setOnHoverListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_HOVER_ENTER:
-                    if (hideRunnable[0] != null) { handler.removeCallbacks(hideRunnable[0]); hideRunnable[0] = null; }
-                    actionBtn.setVisibility(View.VISIBLE);
-                    break;
-                case MotionEvent.ACTION_HOVER_EXIT:
-                    hideRunnable[0] = doHide;
-                    handler.postDelayed(doHide, 80);
-                    break;
+    @NonNull
+    private static android.util.SparseArray<int[]> buildPrimaryPaths(
+            @NonNull Map<String, Binding> activeBindings,
+            @NonNull Map<String, Binding> fourDirBindings,
+            boolean is4DirMode) {
+        android.util.SparseArray<int[]> result = new android.util.SparseArray<>();
+        for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
+            int actionId = e.getValue().action;
+            if (actionId <= 0) continue;
+            int[] path = parsePathKey(e.getKey());
+            if (path.length == 0) continue;
+            if (!is4DirMode && fourDirBindings.containsKey(e.getKey())) {
+                if (result.get(actionId) == null) result.put(actionId, path);
+                continue;
             }
-            return false;
-        });
-
-        actionBtn.setOnHoverListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_HOVER_ENTER:
-                    btnHovered[0] = true;
-                    if (hideRunnable[0] != null) { handler.removeCallbacks(hideRunnable[0]); hideRunnable[0] = null; }
-                    break;
-                case MotionEvent.ACTION_HOVER_EXIT:
-                    btnHovered[0] = false;
-                    hideRunnable[0] = doHide;
-                    handler.postDelayed(doHide, 80);
-                    break;
-            }
-            return false;
-        });
-
-        container.addView(row);
-    }
-
-    /**
-     * S11 — Arrow pill for the combo_cell (middle column). Contains only the
-     * path glyph — no X. Separated from the delete button so the button lives
-     * in the rightmost button_cell column.
-     */
-    private static View makeArrowPill(@NonNull Context ctx,
-                                      @NonNull int[] path,
-                                      int iconSizePx,
-                                      int chipColor) {
-        float density = ctx.getResources().getDisplayMetrics().density;
-        int padH = (int) (10f * density);
-        int padV = (int) (4f * density);
-
-        TextView arrowsView = new TextView(ctx);
-        arrowsView.setBackgroundResource(R.drawable.combo_chip_bg);
-        arrowsView.setPadding(padH, padV, padH, padV);
-        // R5c — keep TextView text size ≥ image-span size so VR line metrics
-        // don't clip the arrow drawables.
-        arrowsView.setTextSize(28f);
-        arrowsView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text));
-        Spannable arrows = ComboTipBuilder.renderArrowsOnly(ctx, path, iconSizePx, chipColor);
-        // ComboTipBuilder uses ALIGN_BASELINE which sits images above the baseline,
-        // making them appear at the top of a VR list row. Replace with ALIGN_CENTER
-        // (API 29+; Quest runs Android 10+) so arrows sit in the middle of the line.
-        for (ImageSpan span : arrows.getSpans(0, arrows.length(), ImageSpan.class)) {
-            int start = arrows.getSpanStart(span);
-            int end   = arrows.getSpanEnd(span);
-            int flags = arrows.getSpanFlags(span);
-            arrows.removeSpan(span);
-            arrows.setSpan(new ImageSpan(span.getDrawable(), ImageSpan.ALIGN_CENTER),
-                    start, end, flags);
+            result.put(actionId, path);
         }
-        arrowsView.setText(arrows);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.gravity = Gravity.CENTER_VERTICAL;
-        arrowsView.setLayoutParams(lp);
-        return arrowsView;
-    }
-
-    /**
-     * S11 — Delete button for the button_cell (right column). Hover-revealed;
-     * tapping launches {@link ComboUnbindConfirmDialog}.
-     */
-    private static View makeDeleteButton(@NonNull Context ctx,
-                                         @NonNull ComboDispatcher dispatcher,
-                                         @NonNull int[] path,
-                                         int actionId) {
-        float density = ctx.getResources().getDisplayMetrics().density;
-        int padH = (int) (10f * density);
-        int padV = (int) (6f * density);
-
-        TextView xView = new TextView(ctx);
-        xView.setText("\u2715"); // multiplication X (U+2715)
-        xView.setTextSize(20f);
-        xView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text_muted));
-        xView.setPadding(padH, padV, padH, padV);
-        xView.setContentDescription(ctx.getString(R.string.combos_chip_delete_content_desc));
-        xView.setClickable(true);
-        xView.setFocusable(true);
-        xView.setOnClickListener(v ->
-                new ComboUnbindConfirmDialog(ctx, dispatcher, path, actionId)
-                        .show(UIWidget.REQUEST_FOCUS));
-        return xView;
-    }
-
-    /**
-     * Phase 5 — "+ Create" button for the button_cell (right column).
-     * Hover-revealed; launches {@link BindComboView} in FROM_SETTINGS mode.
-     */
-    private static View makeCreateButton(@NonNull Context ctx,
-                                         @NonNull ComboDispatcher dispatcher,
-                                         int actionId) {
-        float density = ctx.getResources().getDisplayMetrics().density;
-        int padH = (int) (10f * density);
-        int padV = (int) (4f * density);
-
-        TextView btn = new TextView(ctx);
-        btn.setBackgroundResource(R.drawable.combo_chip_bg);
-        btn.setPadding(padH, padV, padH, padV);
-        btn.setTextSize(14f);
-        btn.setText(R.string.combos_row_create_button);
-        btn.setTextColor(ContextCompat.getColor(ctx, R.color.fd_accent));
-        btn.setClickable(true);
-        btn.setFocusable(true);
-        btn.setOnClickListener(v -> new BindComboView(ctx, dispatcher, actionId)
-                .show(UIWidget.REQUEST_FOCUS));
-        return btn;
+        if (!is4DirMode) {
+            for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
+                if (fourDirBindings.containsKey(e.getKey())) continue;
+                int actionId = e.getValue().action;
+                if (actionId <= 0) continue;
+                int[] path = parsePathKey(e.getKey());
+                if (path.length == 0) continue;
+                result.put(actionId, path);
+            }
+        }
+        return result;
     }
 
     /** Parses Arrays.toString format: "[]", "[2]", "[2, 4, 6]" → int[]. */

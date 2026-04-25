@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (c) 2026 Thanford. All rights reserved.
+  Proprietary FingerDance layout. Not licensed under the MPL 2.0 that
+  covers the surrounding Wolvic files.
+
+  Block view for the Combos Settings action grid.
+  Four of these are placed in a horizontal row (layout_width=0, weight=1)
+  by CombosListBuilder. Vertical stack: path disc → label → button cell.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingTop="8dp"
+    android:paddingBottom="4dp"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:focusable="true"
+    android:clickable="false">
+
+    <!-- Path visualization disc (72dp × 72dp square canvas) -->
+    <com.thanford.fingerdance.settings.ComboPathView
+        android:id="@+id/path_disc"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Action name label, centered, up to 2 lines -->
+    <TextView
+        android:id="@+id/action_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/fd_text"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- Hover-revealed ✕ delete or + Create button -->
+    <LinearLayout
+        android:id="@+id/button_cell"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/fd_min_touch_target"
+        android:orientation="horizontal"
+        android:gravity="center" />
+
+</LinearLayout>
