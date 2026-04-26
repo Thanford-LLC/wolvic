@@ -66,6 +66,8 @@ public final class CombosListBuilder {
                                 @NonNull LinearLayout container,
                                 @NonNull ComboDispatcher dispatcher) {
         container.removeAllViews();
+        container.setClipChildren(false);
+        container.setClipToPadding(false);
         LayoutInflater inflater = LayoutInflater.from(ctx);
 
         java.util.Map<String, Binding> fourDirTable = dispatcher.get4DirBindings();
@@ -118,7 +120,7 @@ public final class CombosListBuilder {
             LinearLayout content = addExpandableSection(inflater, container,
                     DISPLAY_HEADERS[i], /* startExpanded= */ true);
             addActionsAsGrid(ctx, inflater, content, sectionActions,
-                    primaryPathByAction, dispatcher);
+                    primaryPathByAction, is4DirMode, dispatcher);
         }
 
         // Unassigned: actions whose category isn't in DISPLAY_ORDER (edge case).
@@ -135,7 +137,7 @@ public final class CombosListBuilder {
             LinearLayout content = addExpandableSection(inflater, container,
                     R.string.combos_section_unassigned, /* startExpanded= */ false);
             addActionsAsGrid(ctx, inflater, content, unassigned,
-                    primaryPathByAction, dispatcher);
+                    primaryPathByAction, is4DirMode, dispatcher);
         }
     }
 
@@ -148,11 +150,16 @@ public final class CombosListBuilder {
                                          @NonNull LinearLayout content,
                                          @NonNull List<Integer> actionIds,
                                          @NonNull android.util.SparseArray<int[]> primaryPaths,
+                                         boolean is4DirMode,
                                          @NonNull ComboDispatcher dispatcher) {
+        content.setClipChildren(false);
+        content.setClipToPadding(false);
         int i = 0;
         while (i < actionIds.size()) {
             LinearLayout row = new LinearLayout(ctx);
             row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setClipChildren(false);
+            row.setClipToPadding(false);
             row.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -163,7 +170,7 @@ public final class CombosListBuilder {
                 if (i + col < actionIds.size()) {
                     int id = actionIds.get(i + col);
                     View block = makeActionBlock(ctx, inflater, id,
-                            primaryPaths.get(id), dispatcher);
+                            primaryPaths.get(id), is4DirMode, dispatcher);
                     block.setLayoutParams(lp);
                     row.addView(block);
                 } else {
@@ -186,18 +193,22 @@ public final class CombosListBuilder {
                                         @NonNull LayoutInflater inflater,
                                         int actionId,
                                         @Nullable int[] primaryPath,
+                                        boolean is4DirMode,
                                         @NonNull ComboDispatcher dispatcher) {
         View block = inflater.inflate(R.layout.combo_block_action, null, false);
+        View blockContent = block.findViewById(R.id.block_content);
 
         // Path disc
-        ((ComboPathView) block.findViewById(R.id.path_disc)).setPath(primaryPath);
+        ComboPathView pathDisc = block.findViewById(R.id.path_disc);
+        pathDisc.set8DirMode(!is4DirMode);
+        pathDisc.setPath(primaryPath);
 
         // Action label
         int labelRes = ComboActionRegistry.labelFor(actionId);
         ((TextView) block.findViewById(R.id.action_label))
                 .setText(labelRes != 0 ? ctx.getString(labelRes) : "");
 
-        // Hover tip: shows the combo path as directional arrows on hover.
+        // Hover tip: combo path as directional arrows on hover.
         TextView pathTip = block.findViewById(R.id.path_tip);
         if (primaryPath != null) {
             pathTip.setText(pathToArrows(primaryPath));
@@ -218,8 +229,9 @@ public final class CombosListBuilder {
         Runnable[] hideRunnable = {null};
         Runnable doHide = () -> {
             if (!btnHovered[0]) {
-                if (primaryPath != null) pathTip.setVisibility(View.GONE);
+                if (primaryPath != null) pathTip.setVisibility(View.INVISIBLE);
                 actionBtn.setVisibility(View.INVISIBLE);
+                blockContent.setBackgroundColor(0xFF0c1140);
             }
         };
 
@@ -232,6 +244,7 @@ public final class CombosListBuilder {
                     }
                     if (primaryPath != null) pathTip.setVisibility(View.VISIBLE);
                     actionBtn.setVisibility(View.VISIBLE);
+                    blockContent.setBackgroundColor(0xFF0e1450);
                     break;
                 case MotionEvent.ACTION_HOVER_EXIT:
                     hideRunnable[0] = doHide;
@@ -273,10 +286,10 @@ public final class CombosListBuilder {
                 case 8: sb.append('↓'); break;
                 case 4: sb.append('←'); break;
                 case 6: sb.append('→'); break;
-                case 9: sb.append('↗'); break;
-                case 3: sb.append('↘'); break;
-                case 1: sb.append('↙'); break;
-                case 7: sb.append('↖'); break;
+                case 3: sb.append('↗'); break;
+                case 9: sb.append('↘'); break;
+                case 1: sb.append('↖'); break;
+                case 7: sb.append('↙'); break;
             }
         }
         return sb.toString();
@@ -290,12 +303,20 @@ public final class CombosListBuilder {
                                          int actionId) {
         float density = ctx.getResources().getDisplayMetrics().density;
         int padH = (int) (10f * density);
-        int padV = (int) (6f * density);
+        int padV = (int) (5f * density);
+
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        bg.setColor(android.graphics.Color.TRANSPARENT);
+        bg.setStroke((int) density, 0x30FDDE0A);
+        bg.setCornerRadius(4f * density);
 
         TextView xView = new TextView(ctx);
-        xView.setText("✕");
-        xView.setTextSize(20f);
-        xView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_text_muted));
+        xView.setBackground(bg);
+        xView.setText("✕  Unbind");
+        xView.setTextSize(11f);
+        xView.setLetterSpacing(0.08f);
+        xView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_accent));
         xView.setPadding(padH, padV, padH, padV);
         xView.setContentDescription(ctx.getString(R.string.combos_chip_delete_content_desc));
         xView.setClickable(true);
@@ -311,14 +332,21 @@ public final class CombosListBuilder {
                                          int actionId) {
         float density = ctx.getResources().getDisplayMetrics().density;
         int padH = (int) (10f * density);
-        int padV = (int) (4f * density);
+        int padV = (int) (5f * density);
+
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        bg.setColor(android.graphics.Color.TRANSPARENT);
+        bg.setStroke((int) density, 0x14FDDE0A);
+        bg.setCornerRadius(4f * density);
 
         TextView btn = new TextView(ctx);
-        btn.setBackgroundResource(R.drawable.combo_chip_bg);
+        btn.setBackground(bg);
         btn.setPadding(padH, padV, padH, padV);
-        btn.setTextSize(14f);
-        btn.setText(R.string.combos_row_create_button);
-        btn.setTextColor(ContextCompat.getColor(ctx, R.color.fd_accent));
+        btn.setTextSize(11f);
+        btn.setLetterSpacing(0.08f);
+        btn.setText("+ Bind");
+        btn.setTextColor(0x44FDDE0A); // dim yellow, matches HTML .combo-btn.assign
         btn.setClickable(true);
         btn.setFocusable(true);
         btn.setOnClickListener(v -> new BindComboView(ctx, dispatcher, actionId)
@@ -373,25 +401,33 @@ public final class CombosListBuilder {
             @NonNull Map<String, Binding> fourDirBindings,
             boolean is4DirMode) {
         android.util.SparseArray<int[]> result = new android.util.SparseArray<>();
-        for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
-            int actionId = e.getValue().action;
-            if (actionId <= 0) continue;
-            int[] path = parsePathKey(e.getKey());
-            if (path.length == 0) continue;
-            if (!is4DirMode && fourDirBindings.containsKey(e.getKey())) {
-                if (result.get(actionId) == null) result.put(actionId, path);
-                continue;
+        if (is4DirMode) {
+            // 4-dir: each action has exactly one path; iterate once.
+            for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
+                int actionId = e.getValue().action;
+                if (actionId <= 0) continue;
+                int[] path = parsePathKey(e.getKey());
+                if (path.length > 0) result.put(actionId, path);
             }
-            result.put(actionId, path);
-        }
-        if (!is4DirMode) {
+        } else {
+            // 8-dir: two explicit passes so the 8-dir-specific path always wins,
+            // regardless of HashMap iteration order.
+            // Pass 1 — 8-dir specific entries (key absent from the 4-dir table): always preferred.
             for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
                 if (fourDirBindings.containsKey(e.getKey())) continue;
                 int actionId = e.getValue().action;
                 if (actionId <= 0) continue;
                 int[] path = parsePathKey(e.getKey());
-                if (path.length == 0) continue;
-                result.put(actionId, path);
+                if (path.length > 0) result.put(actionId, path);
+            }
+            // Pass 2 — 4-dir fallback paths: only fill actions with no 8-dir-specific path yet.
+            for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
+                if (!fourDirBindings.containsKey(e.getKey())) continue;
+                int actionId = e.getValue().action;
+                if (actionId <= 0) continue;
+                if (result.get(actionId) != null) continue;
+                int[] path = parsePathKey(e.getKey());
+                if (path.length > 0) result.put(actionId, path);
             }
         }
         return result;
