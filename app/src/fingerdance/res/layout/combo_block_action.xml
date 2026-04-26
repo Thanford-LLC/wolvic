@@ -5,64 +5,77 @@
   covers the surrounding Wolvic files.
 
   Block view for the Combos Settings action grid.
-  Four of these are placed in a horizontal row (layout_width=0, weight=1)
-  by CombosListBuilder. Vertical stack: path tip (hover) → path disc → label → button cell.
+  Root is FrameLayout with clipChildren=false so the path_tip can float
+  above the block without affecting layout height.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="center_horizontal"
-    android:paddingTop="6dp"
-    android:paddingBottom="4dp"
-    android:paddingStart="4dp"
-    android:paddingEnd="4dp"
-    android:focusable="true"
-    android:clickable="false">
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- Path arrow tip (hidden; shown on hover to reveal the combo sequence) -->
+    <!-- Main block content: disc → label → button cell -->
+    <LinearLayout
+        android:id="@+id/block_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:background="#0c1140"
+        android:paddingTop="18dp"
+        android:paddingBottom="14dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:focusable="true"
+        android:clickable="false">
+
+        <!-- Path visualization disc -->
+        <com.thanford.fingerdance.settings.ComboPathView
+            android:id="@+id/path_disc"
+            android:layout_width="84dp"
+            android:layout_height="84dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="6dp" />
+
+        <!-- Action name label -->
+        <TextView
+            android:id="@+id/action_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/fd_text"
+            android:gravity="center"
+            android:textAlignment="center"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <!-- Hover-revealed ✕ delete or + Create button -->
+        <LinearLayout
+            android:id="@+id/button_cell"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/fd_min_touch_target"
+            android:orientation="horizontal"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- Floating tooltip: absolute-positioned above the block, no layout impact -->
     <TextView
         android:id="@+id/path_tip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="4dp"
+        android:layout_gravity="top|center_horizontal"
+        android:translationY="-28dp"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
-        android:paddingTop="3dp"
-        android:paddingBottom="3dp"
-        android:textSize="18sp"
-        android:textColor="@color/fd_on_accent"
-        android:background="@drawable/combo_chip_bg"
-        android:visibility="gone" />
-
-    <!-- Path visualization disc (72dp × 72dp square canvas) -->
-    <com.thanford.fingerdance.settings.ComboPathView
-        android:id="@+id/path_disc"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="6dp" />
-
-    <!-- Action name label, centered, up to 2 lines -->
-    <TextView
-        android:id="@+id/action_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textColor="@color/fd_text"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:gravity="center"
-        android:textAlignment="center"
-        android:maxLines="2"
-        android:ellipsize="end" />
+        android:includeFontPadding="false"
+        android:textSize="18sp"
+        android:textColor="@color/fd_accent"
+        android:background="@drawable/combo_tip_bg"
+        android:visibility="invisible" />
 
-    <!-- Hover-revealed ✕ delete or + Create button -->
-    <LinearLayout
-        android:id="@+id/button_cell"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="@dimen/fd_min_touch_target"
-        android:orientation="horizontal"
-        android:gravity="center" />
-
-</LinearLayout>
+</FrameLayout>
