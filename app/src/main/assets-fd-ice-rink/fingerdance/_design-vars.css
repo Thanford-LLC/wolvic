@@ -5,8 +5,16 @@
   --surface-hi: #173059;
   --border: #2D4E8E;
   --accent: #8FE7FF;
+  --accent-bright: #B8F0FF;
   --accent-glow: rgba(143, 231, 255, 0.38);
   --text: #EEF6FF;
   --text-muted: #9EB4CC;
+  --text-dim: #5A7390;
+  --hud-bg: rgba(7, 8, 37, 0.941);
+  --hud-stroke: #FDDE0A;
+  --hud-wedge-idle: rgba(28, 31, 126, 0.502);
+  --hud-wedge-preview: #4B4FC7;
+  --hud-label-pill: rgba(17, 18, 89, 0.800);
+  --hud-text: #FDDE0A;
   --radius: 16px;
 }

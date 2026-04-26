@@ -56,8 +56,14 @@ import com.igalia.wolvic.utils.InternalPages;
 import com.igalia.wolvic.utils.SystemUtils;
 import com.igalia.wolvic.utils.UrlUtils;
 
+import com.thanford.fingerdance.home.HomeBridge;
+import com.thanford.fingerdance.home.HomePrefs;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -100,6 +106,8 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     private transient byte[] mPrivatePage;
     private transient boolean mOnHomePage;
     private transient String mHomePageDataUri;
+    private transient HomeBridge mHomeBridge;
+    private transient HomePrefs  mHomePrefs;
     private transient boolean mFirstContentfulPaint;
     private transient long mKeepAlive;
     private transient Media mMedia;
@@ -909,29 +917,78 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
 
     public void loadHomePage() {
         mOnHomePage = true;
+
+        // Lazy-init the bridge and prefs once per Session lifetime.
+        if (mHomePrefs == null) mHomePrefs = new HomePrefs(mContext);
+        if (mHomeBridge == null) mHomeBridge = new HomeBridge(this, mHomePrefs,
+                SessionStore.get().getBrowserIcons());
+
         if (BuildConfig.FLAVOR_backend.equalsIgnoreCase("chromium")) {
-            // Chromium content-shell doesn't resolve `file:///android_asset/...`;
-            // encode the asset as a data: URL (loadUri queues via mInitialUri pre-open).
+            // Chromium doesn't resolve relative asset:// URLs in a data: URI.
+            // We: (1) fix the is.available() truncation bug, (2) inject the skin's
+            // _design-vars.css as an inline <style> block so CSS vars resolve.
             try {
-                java.io.InputStream is = mContext.getAssets().open("fingerdance/homepage.html");
-                byte[] data = new byte[is.available()];
-                is.read(data);
-                is.close();
-                String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+                final String html     = readAssetAsString("fingerdance/homepage.html");
+                final String vars     = readAssetAsString("fingerdance/_design-vars.css");
+                final String homeCss  = readAssetAsString("fingerdance/homepage.css");
+                final String homeJs   = readAssetAsString("fingerdance/homepage.js");
+                // data: URIs have no base URL, so relative <link> and <script> tags
+                // can't load. Inline all three resources instead.
+                final String injected = html
+                    .replace("<link rel=\"stylesheet\" href=\"_design-vars.css\">", "")
+                    .replace("<link rel=\"stylesheet\" href=\"homepage.css\">",
+                        "<style>\n" + vars + "\n" + homeCss + "\n</style>")
+                    .replace("<script src=\"homepage.js\"></script>",
+                        "<script>\n" + homeJs + "\n</script>");
+
+                final byte[] data = injected.getBytes(StandardCharsets.UTF_8);
+                final String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
                 mHomePageDataUri = "data:text/html;base64," + encoded;
+
+                // Install bridge BEFORE loadUri so window.fdHome is available
+                // when the page's scripts first execute (bridge install ordering E12).
                 if (mState.mSession != null) {
+                    mState.mSession.addJavascriptInterface(mHomeBridge, "fdHome");
                     mState.mSession.loadUri(mHomePageDataUri, WSession.LOAD_FLAGS_NONE);
                 }
                 return;
             } catch (java.io.IOException e) {
-                // Fall through
+                Log.e(LOGTAG, "loadHomePage: asset read failed", e);
+                // Fall through to Gecko path as last resort
             }
         }
-        // Gecko path: resource://android/assets/... is resolvable.
-        String geckoHome = "resource://android/assets/fingerdance/homepage.html";
+        // Gecko path: resource:// URL resolves relative assets directly.
         if (mState.mSession != null) {
-            mState.mSession.loadUri(geckoHome, WSession.LOAD_FLAGS_NONE);
+            mState.mSession.addJavascriptInterface(mHomeBridge, "fdHome");
+            mState.mSession.loadUri("resource://android/assets/fingerdance/homepage.html",
+                                    WSession.LOAD_FLAGS_NONE);
         }
+    }
+
+    /** Read an Android asset as a UTF-8 string using a proper read loop (fixes is.available() bug). */
+    private String readAssetAsString(String assetPath) throws java.io.IOException {
+        InputStream is = mContext.getAssets().open(assetPath);
+        try {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            byte[] chunk = new byte[4096];
+            int n;
+            while ((n = is.read(chunk)) != -1) buf.write(chunk, 0, n);
+            return buf.toString(StandardCharsets.UTF_8.name());
+        } finally {
+            is.close();
+        }
+    }
+
+    /** Convenience overload for evaluateJavaScript without a result callback. */
+    public void evaluateJavaScript(String script) {
+        if (mState.mSession != null) {
+            mState.mSession.evaluateJavaScript(script, null);
+        }
+    }
+
+    /** Returns the BookmarksStore for the HomeBridge to query. */
+    public com.igalia.wolvic.browser.BookmarksStore getBookmarksStore() {
+        return SessionStore.get().getBookmarkStore();
     }
 
     public boolean isOnHomePage() {
@@ -1139,13 +1196,26 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         // Also normalize any later re-fire that matches the cached home data: URL, since
         // mOnHomePage may have already flipped false by then.
         boolean isHomeDataMatch = mHomePageDataUri != null && mHomePageDataUri.equals(aUri);
-        if ((mOnHomePage && (UrlUtils.isDataUri(aUri) || UrlUtils.isHomeUrl(aUri))) || isHomeDataMatch) {
+        boolean isNowHome = (mOnHomePage && (UrlUtils.isDataUri(aUri) || UrlUtils.isHomeUrl(aUri))) || isHomeDataMatch;
+        if (isNowHome) {
             mState.mUri = UrlUtils.ABOUT_HOME;
             aUri = UrlUtils.ABOUT_HOME;
+            // Re-attach bridge in case this is a back-navigation or tab-restore (E5).
+            // loadHomePage installs it pre-load; onLocationChange re-installs it here for
+            // any subsequent arrival at the home URL that bypassed loadHomePage.
+            if (mHomeBridge != null && mState.mSession != null) {
+                mState.mSession.addJavascriptInterface(mHomeBridge, "fdHome");
+            }
         } else {
             mState.mUri = aUri;
             if (mOnHomePage) {
                 mOnHomePage = false;
+                // Navigating away from the homepage — tear down the bridge and null the
+                // Session reference inside it so the bridge can be GC'd (E5).
+                if (mHomeBridge != null && mState.mSession != null) {
+                    mState.mSession.removeJavascriptInterface("fdHome");
+                    mHomeBridge.detach();
+                }
             }
         }
 

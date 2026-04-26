@@ -793,6 +793,9 @@ dependencies {
     implementation libs.opentelemetry.android.instrumentation.sessions
     implementation libs.opentelemetry.exporter.logging
     coreLibraryDesugaring libs.desugar.jdk.libs
+
+    // FingerDance: runtime brand-color extraction for user-bookmark favicons (catalog colors are precomputed)
+    implementation "androidx.palette:palette-ktx:1.0.0"
 }
 
 if (findProject(':servo')) {

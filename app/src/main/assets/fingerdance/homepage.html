@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280, height=720">
+  <title>FingerDance</title>
+  <!--
+    _design-vars.css and homepage.css are injected inline by Session.java
+    (data: URI has no base URL; relative <link> tags cannot load).
+  -->
+  <link rel="stylesheet" href="_design-vars.css">
+  <link rel="stylesheet" href="homepage.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- Scroll-snap container: disc compositions built here by homepage.js -->
+  <div id="snap-container" role="navigation" aria-label="Site shortcuts"></div>
+
+  <!-- Vertical navigation chevrons (z-index overlay above snap container) -->
+  <button id="chevron-up"   class="nav-chevron hidden" aria-label="Previous category">&#8679;</button>
+  <button id="chevron-down" class="nav-chevron hidden" aria-label="Next category">&#8681;</button>
+
+  <!-- First-launch hint toast (z-index overlay) -->
+  <div id="hint-toast" class="hint-toast hidden" role="status" aria-live="polite">
+    <span class="hint-icon" aria-hidden="true">
+      <svg width="16" height="24" viewBox="0 0 16 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="5" y="1" width="6" height="14" rx="3" fill="var(--accent)"/>
+        <path d="M3 14 Q1 16 1 19 Q1 23 8 23 Q15 23 15 19 Q15 16 13 14 Z" fill="var(--surface-hi)"/>
+        <rect x="6" y="3" width="4" height="5" rx="2" fill="var(--bg)" opacity="0.6"/>
+      </svg>
+    </span>
+    Hold grip · flick joystick · release.
+  </div>
+
+</div>
+<script src="homepage.js"></script>
+</body>
+</html>

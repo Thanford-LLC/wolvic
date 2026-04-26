@@ -2989,4 +2989,29 @@ public interface WSession {
     @AnyThread
     @Nullable
     WSession.SelectionActionDelegate getSelectionActionDelegate();
+
+    // ── FingerDance JS bridge (MPL diff) ──────────────────────────────────
+
+    /**
+     * Expose a Java object to JavaScript via the named global property.
+     * Methods annotated with {@code @JavascriptInterface} are callable from JS.
+     * Must be called before the page's scripts execute (before loadUri).
+     */
+    @UiThread
+    void addJavascriptInterface(@NonNull Object obj, @NonNull String name);
+
+    /**
+     * Remove a previously-added JavaScript interface binding.
+     * Safe to call even if the name was never registered.
+     */
+    @UiThread
+    void removeJavascriptInterface(@NonNull String name);
+
+    /**
+     * Evaluate a JavaScript snippet in the current page context.
+     * The callback (if non-null) is delivered on the UI thread with the string
+     * result of the last expression, or {@code null} on error.
+     */
+    @UiThread
+    void evaluateJavaScript(@NonNull String script, @Nullable android.webkit.ValueCallback<String> callback);
 }

@@ -425,4 +425,24 @@ public class SessionImpl implements WSession {
         }
         return mUrlUtilsVisitor;
     }
+
+    // ── FingerDance JS bridge (Gecko — TODO, non-gating) ──────────────────
+
+    @Override
+    public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {
+        // TODO: Implement via GeckoSession WebExtension messaging or WebExtension API.
+        // Gecko backend is parity-tracked but non-gating for v1.0.
+        throw new UnsupportedOperationException("addJavascriptInterface not yet implemented for Gecko backend");
+    }
+
+    @Override
+    public void removeJavascriptInterface(@NonNull String name) {
+        throw new UnsupportedOperationException("removeJavascriptInterface not yet implemented for Gecko backend");
+    }
+
+    @Override
+    public void evaluateJavaScript(@NonNull String script,
+                                   @Nullable android.webkit.ValueCallback<String> callback) {
+        throw new UnsupportedOperationException("evaluateJavaScript not yet implemented for Gecko backend");
+    }
 }

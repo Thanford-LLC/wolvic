@@ -527,4 +527,37 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
         }
         return mUrlUtilsVisitor;
     }
+
+    // ── FingerDance JS bridge (MPL diff) ──────────────────────────────────
+
+    @Override
+    public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {
+        if (mWebContents == null) return;
+        try {
+            org.chromium.content_public.browser.JavascriptInjector injector =
+                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(mWebContents, false);
+            injector.addPossiblyUnsafeInterface(obj, name, android.webkit.JavascriptInterface.class);
+        } catch (Exception e) {
+            android.util.Log.e("SessionImpl", "addJavascriptInterface failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void removeJavascriptInterface(@NonNull String name) {
+        if (mWebContents == null) return;
+        try {
+            org.chromium.content_public.browser.JavascriptInjector injector =
+                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(mWebContents, false);
+            injector.removeInterface(name);
+        } catch (Exception e) {
+            android.util.Log.e("SessionImpl", "removeJavascriptInterface failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void evaluateJavaScript(@NonNull String script,
+                                   @Nullable android.webkit.ValueCallback<String> callback) {
+        if (mWebContents == null) return;
+        mWebContents.evaluateJavaScript(script, callback != null ? callback::onReceiveValue : null);
+    }
 }

@@ -1,14 +1,19 @@
 package com.igalia.wolvic.browser.components
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.widget.ImageView
 import com.igalia.wolvic.R
 import com.igalia.wolvic.browser.engine.EngineProvider
 import com.igalia.wolvic.utils.UrlUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
+import java.util.concurrent.CompletableFuture
 
 // Small helper class to simplify getting favicons.
 class BrowserIconsHelper(context: Context, engine: Engine, store: BrowserStore) {
@@ -43,5 +48,19 @@ class BrowserIconsHelper(context: Context, engine: Engine, store: BrowserStore) 
     ) {
         val request = IconRequest(url, size, resources, null, false)
         browserIcons.loadIntoView(view, request, null, null)
+    }
+
+    fun loadIconBitmap(url: String): CompletableFuture<Bitmap?> {
+        val future = CompletableFuture<Bitmap?>()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = IconRequest(url, IconRequest.Size.DEFAULT, emptyList(), null, false)
+                val icon = browserIcons.loadIcon(request).await()
+                future.complete(icon.bitmap)
+            } catch (e: Exception) {
+                future.complete(null)
+            }
+        }
+        return future
     }
 }
