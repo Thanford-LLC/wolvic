@@ -9,7 +9,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'PP Neue Machina', 'Anybody', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -156,8 +156,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
-  font-size: 48px;
+  background: var(--accent-muted);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 36px;
   font-weight: 700;
   line-height: 1;
 }
@@ -227,7 +229,7 @@ html, body {
 }
 
 .hub-slogan {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--accent);
