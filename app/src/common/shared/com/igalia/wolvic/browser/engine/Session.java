@@ -56,9 +56,6 @@ import com.igalia.wolvic.utils.InternalPages;
 import com.igalia.wolvic.utils.SystemUtils;
 import com.igalia.wolvic.utils.UrlUtils;
 
-import com.thanford.fingerdance.home.HomeBridge;
-import com.thanford.fingerdance.home.HomePrefs;
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
@@ -106,8 +103,6 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     private transient byte[] mPrivatePage;
     private transient boolean mOnHomePage;
     private transient String mHomePageDataUri;
-    private transient HomeBridge mHomeBridge;
-    private transient HomePrefs  mHomePrefs;
     private transient boolean mFirstContentfulPaint;
     private transient long mKeepAlive;
     private transient Media mMedia;
@@ -917,49 +912,28 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
 
     public void loadHomePage() {
         mOnHomePage = true;
-
-        // Lazy-init the bridge and prefs once per Session lifetime.
-        if (mHomePrefs == null) mHomePrefs = new HomePrefs(mContext);
-        if (mHomeBridge == null) mHomeBridge = new HomeBridge(this, mHomePrefs,
-                SessionStore.get().getBrowserIcons());
-
         if (BuildConfig.FLAVOR_backend.equalsIgnoreCase("chromium")) {
             // Chromium doesn't resolve relative asset:// URLs in a data: URI.
-            // We: (1) fix the is.available() truncation bug, (2) inject the skin's
-            // _design-vars.css as an inline <style> block so CSS vars resolve.
+            // Inline _design-vars.css so CSS variables resolve correctly.
             try {
-                final String html     = readAssetAsString("fingerdance/homepage.html");
-                final String vars     = readAssetAsString("fingerdance/_design-vars.css");
-                final String homeCss  = readAssetAsString("fingerdance/homepage.css");
-                final String homeJs   = readAssetAsString("fingerdance/homepage.js");
-                // data: URIs have no base URL, so relative <link> and <script> tags
-                // can't load. Inline all three resources instead.
-                final String injected = html
-                    .replace("<link rel=\"stylesheet\" href=\"_design-vars.css\">", "")
-                    .replace("<link rel=\"stylesheet\" href=\"homepage.css\">",
-                        "<style>\n" + vars + "\n" + homeCss + "\n</style>")
-                    .replace("<script src=\"homepage.js\"></script>",
-                        "<script>\n" + homeJs + "\n</script>");
-
+                final String html  = readAssetAsString("fingerdance/homepage.html");
+                final String vars  = readAssetAsString("fingerdance/_design-vars.css");
+                final String injected = html.replace(
+                    "<link rel=\"stylesheet\" href=\"_design-vars.css\">",
+                    "<style>\n" + vars + "\n</style>");
                 final byte[] data = injected.getBytes(StandardCharsets.UTF_8);
                 final String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
                 mHomePageDataUri = "data:text/html;base64," + encoded;
-
-                // Install bridge BEFORE loadUri so window.fdHome is available
-                // when the page's scripts first execute (bridge install ordering E12).
                 if (mState.mSession != null) {
-                    mState.mSession.addJavascriptInterface(mHomeBridge, "fdHome");
                     mState.mSession.loadUri(mHomePageDataUri, WSession.LOAD_FLAGS_NONE);
                 }
                 return;
             } catch (java.io.IOException e) {
                 Log.e(LOGTAG, "loadHomePage: asset read failed", e);
-                // Fall through to Gecko path as last resort
             }
         }
         // Gecko path: resource:// URL resolves relative assets directly.
         if (mState.mSession != null) {
-            mState.mSession.addJavascriptInterface(mHomeBridge, "fdHome");
             mState.mSession.loadUri("resource://android/assets/fingerdance/homepage.html",
                                     WSession.LOAD_FLAGS_NONE);
         }
@@ -1200,22 +1174,10 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         if (isNowHome) {
             mState.mUri = UrlUtils.ABOUT_HOME;
             aUri = UrlUtils.ABOUT_HOME;
-            // Re-attach bridge in case this is a back-navigation or tab-restore (E5).
-            // loadHomePage installs it pre-load; onLocationChange re-installs it here for
-            // any subsequent arrival at the home URL that bypassed loadHomePage.
-            if (mHomeBridge != null && mState.mSession != null) {
-                mState.mSession.addJavascriptInterface(mHomeBridge, "fdHome");
-            }
         } else {
             mState.mUri = aUri;
             if (mOnHomePage) {
                 mOnHomePage = false;
-                // Navigating away from the homepage — tear down the bridge and null the
-                // Session reference inside it so the bridge can be GC'd (E5).
-                if (mHomeBridge != null && mState.mSession != null) {
-                    mState.mSession.removeJavascriptInterface("fdHome");
-                    mHomeBridge.detach();
-                }
             }
         }
 
