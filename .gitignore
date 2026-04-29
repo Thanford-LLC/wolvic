@@ -89,3 +89,6 @@ app/src/chromium/assets/wolvic.pak
 
 # VS Code multi-root workspace (local editor config)
 *.code-workspace
+
+# Git worktrees
+.worktrees
