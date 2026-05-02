@@ -109,7 +109,7 @@ def GECKO_RELEASE_VERSION_NAME = '1.9'
 // Skip by passing -PskipDesignCheck=true to Gradle.
 if (!project.hasProperty('skipDesignCheck')) {
     task verifyDesignExports(type: Exec) {
-        group = 'FingerDance'
+        group = 'Glyphew'
         description = 'Verify generated colors-fd*.xml and _design-vars.css match DESIGN.md YAML tokens.'
         def fingerdanceRepo = rootProject.projectDir.parentFile
             .toPath().resolve('fingerdance').toFile()
@@ -132,7 +132,7 @@ android {
     namespace 'com.igalia.wolvic'
     compileSdkVersion 35
     defaultConfig {
-        applicationId "com.thanford.fingerdance"
+        applicationId "com.thanford.glyphew"
         minSdkVersion 24
         targetSdkVersion 34
         versionCode generatedVersionCode
@@ -154,7 +154,7 @@ android {
         buildConfigField 'String', 'HEYVR_ENDPOINT', '"https://api.heyvr.io/v1/public/global/feed/featured?limit=50"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        resValue 'string', 'app_name', 'FingerDance Browser'
+        resValue 'string', 'app_name', 'Glyphew Browser'
         resValue 'string', 'HOMEPAGE_URL', "about://home"
         externalNativeBuild {
             cmake {
@@ -368,7 +368,7 @@ android {
         noapi {
             dimension "platform"
             applicationIdSuffix ".noapi"
-            resValue "string", "app_name", "FingerDance NoAPI"
+            resValue "string", "app_name", "Glyphew NoAPI"
             externalNativeBuild {
                 cmake {
                     cppFlags " -DNOAPI"
@@ -423,7 +423,7 @@ android {
 
         chromium {
             dimension "backend"
-            resValue "string", "app_name", "FingerDance"
+            resValue "string", "app_name", "Glyphew"
             externalNativeBuild {
                 cmake {
                     cppFlags " -DCHROMIUM"
@@ -514,21 +514,21 @@ android {
                     'app',
                     'src/common/shared',
                     'src/main/cpp/vrb/android/java',
-                    'src/fingerdance/java'
+                    'src/glyphew/java'
             ]
 
-            // FingerDance skin selection.
-            // Override with -PfdSkin=signature|ice-rink|arcade at build time.
+            // Glyphew skin selection.
+            // Override with -PgwSkin=signature|ice-rink|arcade at build time.
             // Each skin dir contains values/colors-fd.xml (12 brand tokens + fd_hud_accent)
             // and fingerdance/homepage.html. Only one is included per build.
-            def fdSkin = project.findProperty('fdSkin') ?: 'signature'
-            def fdSkinAllowed = ['signature', 'ice-rink', 'arcade']
-            if (!fdSkinAllowed.contains(fdSkin)) {
-                throw new GradleException("Invalid fdSkin=${fdSkin}. Allowed: ${fdSkinAllowed}")
+            def gwSkin = project.findProperty('gwSkin') ?: 'signature'
+            def gwSkinAllowed = ['signature', 'ice-rink', 'arcade']
+            if (!gwSkinAllowed.contains(gwSkin)) {
+                throw new GradleException("Invalid gwSkin=${gwSkin}. Allowed: ${gwSkinAllowed}")
             }
-            res.srcDirs += ["src/main/res-fd-${fdSkin}"]
-            res.srcDirs += ["src/fingerdance/res"]
-            assets.srcDirs += ["src/main/assets-fd-${fdSkin}"]
+            res.srcDirs += ["src/main/res-gw-${gwSkin}"]
+            res.srcDirs += ["src/glyphew/res"]
+            assets.srcDirs += ["src/main/assets-gw-${gwSkin}"]
         }
 
         release {
