@@ -42,7 +42,7 @@ import java.util.Map;
 public class ComboDispatcher {
 
     private static final String LOGTAG = "ComboDispatcher";
-    public  static final String COMBO_MODE_4DIR_KEY = "fingerdance_combo_4dir_mode";
+    public  static final String COMBO_MODE_4DIR_KEY = "glyphew_combo_4dir_mode";
     private static final int FD_HUD_OFF_HINT_NOTIFICATION_ID = 0xFD0801;
 
     private static final float SCROLL_DELTA = 150.0f;

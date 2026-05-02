@@ -1,12 +1,12 @@
-const LOGTAG = '[fingerdance:launchimmersive]';
+const LOGTAG = '[glyphew:launchimmersive]';
 const ENABLE_LOGS = true;
 const logDebug = (...args) => ENABLE_LOGS && console.log(LOGTAG, ...args);
 
-const PARENT_ELEMENT_XPATH_PARAMETER = 'fingerdance-launchimmersive-parentElementXPath';
-const TARGET_ELEMENT_XPATH_PARAMETER = 'fingerdance-launchimmersive-targetElementXPath';
+const PARENT_ELEMENT_XPATH_PARAMETER = 'glyphew-launchimmersive-parentElementXPath';
+const TARGET_ELEMENT_XPATH_PARAMETER = 'glyphew-launchimmersive-targetElementXPath';
 
-const IFRAME_READY_MSG = 'fingerdance-launchimmersive-iframeReady';
-const TARGET_ELEMENT_MSG = 'fingerdance-launchimmersive-targetElement';
+const IFRAME_READY_MSG = 'glyphew-launchimmersive-iframeReady';
+const TARGET_ELEMENT_MSG = 'glyphew-launchimmersive-targetElement';
 
 var parentElementXPath;
 var targetElementXPath;

@@ -240,7 +240,7 @@
     <string name="keyboard_nl_NL_popup_i" translatable="false">ìíiïîįī</string>
 
     <!-- Homepage link: bundled asset -->
-    <string name="home_page_url" translatable="false">file:///android_asset/fingerdance/homepage.html</string>
+    <string name="home_page_url" translatable="false">file:///android_asset/glyphew/homepage.html</string>
 
     <!-- Settings Survey link -->
     <!-- TODO: set before store submission -->

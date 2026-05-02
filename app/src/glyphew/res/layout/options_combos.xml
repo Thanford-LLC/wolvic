@@ -111,7 +111,7 @@
                     android:orientation="vertical"
                     android:visibility="gone">
 
-                    <!-- HUD visibility. Persists to fingerdance_hud_visible via ComboHUDWidget.setHudVisible(). -->
+                    <!-- HUD visibility. Persists to glyphew_hud_visible via ComboHUDWidget.setHudVisible(). -->
                     <com.igalia.wolvic.ui.views.settings.SwitchSetting
                         android:id="@+id/combos_hud_switch"
                         android:layout_width="match_parent"
@@ -128,7 +128,7 @@
                         android:text="@string/combos_hud_show_sub"
                         android:textAlignment="textStart" />
 
-                    <!-- Ghost routes. Persists to fingerdance_hud_ghost_visible. -->
+                    <!-- Ghost routes. Persists to glyphew_hud_ghost_visible. -->
                     <com.igalia.wolvic.ui.views.settings.SwitchSetting
                         android:id="@+id/combos_ghost_switch"
                         android:layout_width="match_parent"
@@ -145,7 +145,7 @@
                         android:text="@string/combos_ghost_show_sub"
                         android:textAlignment="textStart" />
 
-                    <!-- Buzz on combo. Persists to fingerdance_combo_haptics.
+                    <!-- Buzz on combo. Persists to glyphew_combo_haptics.
                          Gated AND'd with Wolvic global haptics pref inside WidgetManagerDelegate. -->
                     <com.igalia.wolvic.ui.views.settings.SwitchSetting
                         android:id="@+id/combos_buzz_switch"
@@ -163,7 +163,7 @@
                         android:text="@string/combos_buzz_on_combo_sub"
                         android:textAlignment="textStart" />
 
-                    <!-- 8-dir mode toggle. Persists to fingerdance_combo_4dir_mode pref:
+                    <!-- 8-dir mode toggle. Persists to glyphew_combo_4dir_mode pref:
                          switch ON = 8-dir mode (false for 4dir key), OFF = 4-dir mode. -->
                     <com.igalia.wolvic.ui.views.settings.SwitchSetting
                         android:id="@+id/combos_mode_switch"

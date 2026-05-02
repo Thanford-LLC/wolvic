@@ -113,7 +113,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     // Colours — skin-aware, resolved per instance from resources.
     // fd_hud_* lives in values/colors-fd-hud.xml (skin-neutral) except fd_hud_accent
-    // which lives per-skin in res-fd-<skin>/values/colors-fd.xml.
+    // which lives per-skin in res-gw-<skin>/values/colors-fd.xml.
     private final int mColorBg;
     private final int mColorBgStroke;
     private final int mColorWedgeIdle;
@@ -306,9 +306,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // while false so the existing grip-driven show() from
     // VRBrowserActivity.handleGripStateChanged can't resurrect a HUD
     // the user explicitly hid.
-    public static final String PREF_HUD_VISIBLE    = "fingerdance_hud_visible";
-    public static final String PREF_COMBO_HAPTICS  = "fingerdance_combo_haptics";
-    public static final String PREF_GHOST_VISIBLE  = "fingerdance_hud_ghost_visible";
+    public static final String PREF_HUD_VISIBLE    = "glyphew_hud_visible";
+    public static final String PREF_COMBO_HAPTICS  = "glyphew_combo_haptics";
+    public static final String PREF_GHOST_VISIBLE  = "glyphew_hud_ghost_visible";
     private volatile float   mDimMultiplier = 1.0f;
     private volatile boolean mVisiblePref   = true;
     private volatile boolean mGhostsVisiblePref = true;
@@ -519,7 +519,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      */
     private void refreshModeFlag() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-        boolean nowFourDir = prefs.getBoolean("fingerdance_combo_4dir_mode", true);
+        boolean nowFourDir = prefs.getBoolean("glyphew_combo_4dir_mode", true);
         if (mIs4DirMode != nowFourDir) {
             mIs4DirMode = nowFourDir;
             // Mode flip changes which node is a legal next step → ghost cache stale.

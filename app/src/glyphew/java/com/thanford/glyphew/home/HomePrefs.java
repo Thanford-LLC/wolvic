@@ -13,14 +13,14 @@ import androidx.annotation.NonNull;
 
 /**
  * Persists homepage-specific user state across app restarts.
- * SharedPreferences key: "fingerdance_homepage".
+ * SharedPreferences key: "glyphew_homepage".
  *
  * All methods are safe to call from any thread (SharedPreferences I/O is fast
  * and does not need to be marshalled to the UI thread).
  */
 public class HomePrefs {
 
-    private static final String PREFS_NAME = "fingerdance_homepage";
+    private static final String PREFS_NAME = "glyphew_homepage";
 
     private static final String KEY_CATEGORY_ORDER = "category_order_blob";
     private static final String KEY_FOLDER_ORDER   = "folder_order_blob";

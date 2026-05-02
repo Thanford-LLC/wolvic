@@ -1,11 +1,11 @@
 {
   "manifest_version": 2,
-  "name": "FingerDance Launch Immersive",
+  "name": "Glyphew Launch Immersive",
   "version": "1.0",
   "description": "Launch Immersive Experiences Automatically",
   "browser_specific_settings": {
     "gecko": {
-      "id": "fingerdance-launchimmersive@thanford.com"
+      "id": "glyphew-launchimmersive@thanford.com"
     }
   },
   "content_scripts": [

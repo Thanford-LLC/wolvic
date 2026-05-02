@@ -916,8 +916,8 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             // Chromium doesn't resolve relative asset:// URLs in a data: URI.
             // Inline _design-vars.css so CSS variables resolve correctly.
             try {
-                final String html  = readAssetAsString("fingerdance/homepage.html");
-                final String vars  = readAssetAsString("fingerdance/_design-vars.css");
+                final String html  = readAssetAsString("glyphew/homepage.html");
+                final String vars  = readAssetAsString("glyphew/_design-vars.css");
                 final String injected = html.replace(
                     "<link rel=\"stylesheet\" href=\"_design-vars.css\">",
                     "<style>\n" + vars + "\n</style>");
@@ -934,7 +934,7 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         }
         // Gecko path: resource:// URL resolves relative assets directly.
         if (mState.mSession != null) {
-            mState.mSession.loadUri("resource://android/assets/fingerdance/homepage.html",
+            mState.mSession.loadUri("resource://android/assets/glyphew/homepage.html",
                                     WSession.LOAD_FLAGS_NONE);
         }
     }

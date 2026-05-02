@@ -42,7 +42,7 @@ public final class ComboBindingStore {
 
     private static final String TAG = "FD/Store";
 
-    public static final String PREFS_FILE = "fingerdance_combos";
+    public static final String PREFS_FILE = "glyphew_combos";
     public static final String KEY_BLOB = "bindings_blob";
     public static final String CORRUPT_PREFIX = "bindings_blob_corrupt_";
 

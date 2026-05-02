@@ -27,7 +27,7 @@
          the button label survives now (options_combos.xml drops app:description). -->
     <string name="combos_reset_button">Reset to defaults</string>
 
-    <!-- Mode radio options. "true" = 4-dir (matches existing fingerdance_combo_4dir_mode pref). -->
+    <!-- Mode radio options. "true" = 4-dir (matches existing glyphew_combo_4dir_mode pref). -->
     <string-array name="combos_mode_options">
         <item>@string/combos_mode_4dir</item>
         <item>@string/combos_mode_8dir</item>
