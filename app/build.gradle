@@ -209,7 +209,7 @@ android {
 
     signingConfigs {
         release {
-            // Populated from Gradle properties set by the CI workflow (fingerdance-release.yml).
+            // Populated from Gradle properties set by the CI workflow (glyphew-release.yml).
             // Locally, leave these unset to fall back to debug signing via getUseDebugSigningOnRelease().
             if (project.hasProperty('signingStoreFile')) {
                 storeFile     file(project.signingStoreFile)

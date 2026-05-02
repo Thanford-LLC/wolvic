@@ -1,4 +1,4 @@
-name: FingerDance Release
+name: Glyphew Release
 
 # Triggers:
 #   - Push a tag like v1.0.0 → full signed release APK + GitHub Release
@@ -113,7 +113,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fingerdance-quest-release
+          name: glyphew-quest-release
           path: ${{ steps.apk.outputs.path }}
           retention-days: 30
 
@@ -122,9 +122,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/') && steps.keystore.outputs.available == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          name: FingerDance ${{ github.ref_name }}
+          name: Glyphew ${{ github.ref_name }}
           body: |
-            ## FingerDance ${{ github.ref_name }}
+            ## Glyphew ${{ github.ref_name }}
 
             Quest APK built from tag `${{ github.ref_name }}`.
 
@@ -153,9 +153,9 @@ jobs:
         run: sudo apt-get install -y cmake
 
       - name: Configure
-        working-directory: app/src/fingerdance/tests
+        working-directory: app/src/glyphew/tests
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build & Run
-        working-directory: app/src/fingerdance/tests
-        run: cmake --build build && ./build/fingerdance_tests --gtest_color=yes
+        working-directory: app/src/glyphew/tests
+        run: cmake --build build && ./build/glyphew_tests --gtest_color=yes
