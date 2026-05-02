@@ -1406,7 +1406,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
             return;
         }
         mLastOpenCombosSettingsMs = now;
-        com.thanford.fingerdance.settings.CombosSettingsView.flagNextAsDirectOpen();
+        com.thanford.glyphew.settings.CombosSettingsView.flagNextAsDirectOpen();
         mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
     }
 
@@ -1418,8 +1418,8 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     // kill during the 5s window doesn't double-show on next launch.
     private void maybeShowLongPressOnboardingHint() {
         if (mTray == null) return;
-        com.thanford.fingerdance.settings.ComboBindingStore store =
-                new com.thanford.fingerdance.settings.ComboBindingStore(this);
+        com.thanford.glyphew.settings.ComboBindingStore store =
+                new com.thanford.glyphew.settings.ComboBindingStore(this);
         if (store.hasSeenLongPressHint()) return;
         com.igalia.wolvic.ui.widgets.NotificationManager.Notification hint =
                 new com.igalia.wolvic.ui.widgets.NotificationManager.Builder(mTray)

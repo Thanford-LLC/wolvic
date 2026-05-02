@@ -494,7 +494,7 @@ public class SettingsWidget extends UIDialog implements SettingsView.Delegate {
                 showView(new ControllerOptionsView(getContext(), mWidgetManager));
                 break;
             case COMBOS:
-                showView(new com.thanford.fingerdance.settings.CombosSettingsView(getContext(), mWidgetManager));
+                showView(new com.thanford.glyphew.settings.CombosSettingsView(getContext(), mWidgetManager));
                 break;
             case TRACKING_EXCEPTION:
                 showView(new TrackingPermissionsOptionsView(getContext(), mWidgetManager));

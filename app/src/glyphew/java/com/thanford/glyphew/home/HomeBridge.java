@@ -4,7 +4,7 @@
  * Proprietary FingerDance component. Not licensed under the MPL 2.0 that
  * covers the surrounding Wolvic files.
  */
-package com.thanford.fingerdance.home;
+package com.thanford.glyphew.home;
 
 import android.graphics.Bitmap;
 import android.net.Uri;

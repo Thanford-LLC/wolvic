@@ -21,9 +21,9 @@ import com.igalia.wolvic.ui.widgets.Windows;
 import com.igalia.wolvic.ui.widgets.WindowWidget;
 import com.igalia.wolvic.ui.widgets.WidgetManagerDelegate;
 import com.igalia.wolvic.utils.UrlUtils;
-import com.thanford.fingerdance.settings.Binding;
-import com.thanford.fingerdance.settings.ComboBindingStore;
-import com.thanford.fingerdance.settings.ComboHapticController;
+import com.thanford.glyphew.settings.Binding;
+import com.thanford.glyphew.settings.ComboBindingStore;
+import com.thanford.glyphew.settings.ComboHapticController;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -541,8 +541,8 @@ public class ComboDispatcher {
                 Log.d(LOGTAG, "FROM_CAPTURE triggered: path=" + Arrays.toString(capturedPath));
                 mMainHandler.post(() -> {
                     if (!(mWidgetManager instanceof Context)) return;
-                    com.thanford.fingerdance.settings.ActionPickerView picker =
-                            new com.thanford.fingerdance.settings.ActionPickerView(
+                    com.thanford.glyphew.settings.ActionPickerView picker =
+                            new com.thanford.glyphew.settings.ActionPickerView(
                                     (Context) mWidgetManager, this, capturedPath);
                     picker.show(com.igalia.wolvic.ui.widgets.UIWidget.REQUEST_FOCUS);
                 });
@@ -646,7 +646,7 @@ public class ComboDispatcher {
 
     /**
      * Returns the 4-dir table regardless of current mode. Used by
-     * {@link com.thanford.fingerdance.settings.CombosListBuilder} to filter
+     * {@link com.thanford.glyphew.settings.CombosListBuilder} to filter
      * out 4-dir cardinal fallback paths when displaying the 8-dir list — if a
      * path key appears in BOTH tables for the same action it was mirrored from
      * the 4-dir defaults and should not clutter the 8-dir view.

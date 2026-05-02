@@ -30,7 +30,7 @@
         android:clickable="false">
 
         <!-- Path visualization disc -->
-        <com.thanford.fingerdance.settings.ComboPathView
+        <com.thanford.glyphew.settings.ComboPathView
             android:id="@+id/path_disc"
             android:layout_width="84dp"
             android:layout_height="84dp"

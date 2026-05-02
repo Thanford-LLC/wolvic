@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.igalia.wolvic.TestApplication;
-import com.thanford.fingerdance.settings.Binding;
+import com.thanford.glyphew.settings.Binding;
 
 import org.junit.Before;
 import org.junit.Test;

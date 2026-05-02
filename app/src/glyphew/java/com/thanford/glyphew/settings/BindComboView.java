@@ -4,7 +4,7 @@
  * Proprietary FingerDance component. Not licensed under the MPL 2.0 that
  * covers the surrounding Wolvic files.
  */
-package com.thanford.fingerdance.settings;
+package com.thanford.glyphew.settings;
 
 import android.content.Context;
 import android.text.Spannable;
