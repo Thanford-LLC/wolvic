@@ -1649,11 +1649,11 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="settings_language_portuguese">ポルトガル語</string>
     <string name="security_options_permission_fine_location_warning">Glyphewはおおよその位置情報のアクセスに限られています。この設定はシステム設定で変更できます。</string>
     <string name="deprecated_version_dialog_title">サポート期間終了間近</string>
-    <string name="deprecated_version_dialog_body">現在「App Lab」開発版のWolvicをご利用されています。2023年10月の終わりまでに廃止される予定です。
+    <string name="deprecated_version_dialog_body">現在「App Lab」開発版のGlyphewをご利用されています。2023年10月の終わりまでに廃止される予定です。
 \n
-\nMeta Quest Storeから最新版のWolvicをインストールしてください。
+\nMeta Quest Storeから最新版のGlyphewをインストールしてください。
 \n
-\n重要：Mozilla Syncを利用していない場合、最新版のWolvicにブックマークとタブは同期されません。</string>
+\n重要：Mozilla Syncを利用していない場合、最新版のGlyphewにブックマークとタブは同期されません。</string>
     <string name="voice_service_huawei_asr">Huawei Automatic Speech Recognition</string>
     <string name="deprecated_version_dialog_info_button">詳細情報…</string>
     <string name="deprecated_version_dialog_store_button">インストール…</string>
@@ -1670,18 +1670,18 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \n
 \nユーザー契約とプライバシーポリシーの全文を読めます。</string>
     <string name="privacy_policy_section_3">当プライバシーポリシーはスペイン法の対象となっています。当アプリケーションのプライバシーポリシーの原語はスペイン語です。もしスペイン語の原書と他の原語への翻訳が異なった場合、スペイン語の原書が重点されます。スペイン語のプライバシーポリシーは下記のURLにあります：https://wolvic.com/es/legal/privacy/ 。</string>
-    <string name="terms_service_section_1">Wolvicは自由かつオープンソースなソフトウェアで世界中から集まった数千ものコミュニティが開発しています。利用する際は以下の要項を参照してください：
+    <string name="terms_service_section_1">Glyphewは自由かつオープンソースなソフトウェアで世界中から集まった数千ものコミュニティが開発しています。利用する際は以下の要項を参照してください：
 \n
-\n\t• WolvicはMozilla Public Licenseの下で提供しています。つまりWolvicを自由に使用、複製、または他者への伝達することが可能です。Wolvicのソースコードもニーズに応じて変更できます。Mozilla Public License は変更したバージョンを伝達する権利も与えています。
+\n\t• GlyphewはMozilla Public Licenseの下で提供しています。つまりGlyphewを自由に使用、複製、または他者への伝達することが可能です。Glyphewのソースコードもニーズに応じて変更できます。Mozilla Public License は変更したバージョンを伝達する権利も与えています。
 \n
-\n\t•当利用規約はIgaliaや他者の商標（Wolvicの商品名やロゴを制限無く含め）の権利やライセンスを付与するものではありません。
+\n\t•当利用規約はIgaliaや他者の商標（Glyphewの商品名やロゴを制限無く含め）の権利やライセンスを付与するものではありません。
 \n
-\n\t•Wolvicの一部の機能（Crash Reporterなど）はIgaliaへフィードバックを送る可能性を含めています。フィードバックを提出する場合Igaliaにそのフィードバックを商品の改善に利用または匿名化してホームページにて公開や匿名化して他者に伝達する権利を付与するものだとします。
+\n\t•Glyphewの一部の機能（Crash Reporterなど）はIgaliaへフィードバックを送る可能性を含めています。フィードバックを提出する場合Igaliaにそのフィードバックを商品の改善に利用または匿名化してホームページにて公開や匿名化して他者に伝達する権利を付与するものだとします。
 \n
-\n\t•お客様の個人情報やWolvicを通してIgaliaへ提出したフィードバックの管理はWolvicプライバシーポリシーに記述されています。
+\n\t•お客様の個人情報やGlyphewを通してIgaliaへ提出したフィードバックの管理はGlyphewプライバシーポリシーに記述されています。
 \n
-\n\t•Wolvicの一部の機能はウェブ情報サービスを利用しています。そのサービスの信憑性やエラーの有無は保証できません。この機能に関する詳細（ウェブ情報サービスを利用する機能を不有効にする方法なども含み）は以下の利用規約に記述されています。</string>
-    <string name="terms_service_subtitle_2">Wolvicウェブ情報サービス</string>
+\n\t•Glyphewの一部の機能はウェブ情報サービスを利用しています。そのサービスの信憑性やエラーの有無は保証できません。この機能に関する詳細（ウェブ情報サービスを利用する機能を不有効にする方法なども含み）は以下の利用規約に記述されています。</string>
+    <string name="terms_service_subtitle_2">Glyphewウェブ情報サービス</string>
     <string name="developer_options_center_windows">ウィンドウを上下中央揃えにする</string>
     <string name="display_options_sound_effect">効果音を使う</string>
     <string name="display_options_latin_auto_complete">ラテン文字キーボード入力の自動補完</string>
@@ -1711,17 +1711,17 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="rCN_first_launch_disagree">不同意</string>
     <string name="rCN_first_launch_confirmation_agree">同意して続ける</string>
     <string name="rCN_first_launch_confirmation_disagree">不同意して終了する</string>
-    <string name="terms_service_section_2">Wolvicは当バイナリーの一部の機能を提供するためにウェブ情報サービス（以下「サービス」）の下記の規約下で使用しています。
+    <string name="terms_service_section_2">Glyphewは当バイナリーの一部の機能を提供するためにウェブ情報サービス（以下「サービス」）の下記の規約下で使用しています。
 \n
 \n\t•Igaliaとその貢献者、ライセンサー、またはパートナーは可能な限り正確かつ最新のサービスを提供することを心がけています。ですがその情報が完全かつエラーの無いものだと保証はできません。例としてSafe Browsing Serviceは全ての危ないサイトを特定できないまたは安全なサイトを誤って特定する可能性があります。またLocation Aware Serviceではサービス提供者が申告する全ての位置は推計であり、当社やサービス提供者はその位置の正確性の保証はできません。
 \n
 \n\t• Igaliaは任意にサービスを廃止または変更する場合があります。
 \n
-\n\t• お客様は付属のWolvicバーションでサービスを自由に利用できます、そしてIgaliaもその権利を付与します。サービスに関する他の権利はIgaliaとそのライセンサーが全て保護しています。当規約はWolvicや該当するソースコード版のWolvicに該当するオープンソースライセンスの権利を制限するものではありません。
+\n\t• お客様は付属のGlyphewバーションでサービスを自由に利用できます、そしてIgaliaもその権利を付与します。サービスに関する他の権利はIgaliaとそのライセンサーが全て保護しています。当規約はGlyphewや該当するソースコード版のGlyphewに該当するオープンソースライセンスの権利を制限するものではありません。
 \n
 \n\t• サービスは「あるがまま」で提供しています。Igaliaとその貢献者、ライセンサー、配布者はいかなる種類（明示的や暗示的を問わず、そして制限無くサービスの商品性またはお客様の用途に適切かの保証も含め）の保証も無く提供します。サービスを用途に適するための選択またはサービスのクオリティや性能の全てのリスクはお客様に帰属します。
 \n
-\n\t•法に義務付けられない限りIgaliaとその貢献者、ライセンサー、配布者はWolvicやサービスの利用に基づいたまたは関連する一切の傷害賠償責任（間接的、特殊的、偶然的、必然的、懲罰的、模範的な損害を含む）を有する事は無い。この規約による連帯責任の賠償は５００ドルを超える事は無い。特定の法的管轄では特定の損害の除外や制限を認めていないので上記の除外や制限が適用されない場合もあります。
+\n\t•法に義務付けられない限りIgaliaとその貢献者、ライセンサー、配布者はGlyphewやサービスの利用に基づいたまたは関連する一切の傷害賠償責任（間接的、特殊的、偶然的、必然的、懲罰的、模範的な損害を含む）を有する事は無い。この規約による連帯責任の賠償は５００ドルを超える事は無い。特定の法的管轄では特定の損害の除外や制限を認めていないので上記の除外や制限が適用されない場合もあります。
 \n
 \n\t• Igaliaは必要があれば当規約を更新する可能性があります。Igaliaの書面による同意がない場合この規約の更新や解除は不可能です。
 \n
@@ -1753,7 +1753,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \n
 \n\t\t\t⁃ Location-Aware Browsingは不有効になりました
 \n
-\n\t\t◦ WolvicのEnhanced Tracking Protectionはブラウズする際に自動的にプライバシーを保護します。サイトの機能を妨害しないで個人情報やブラウジングの習慣を集めるためにネットで追跡するトラッカーを制限するものです。危ないスクリプト、例えばバッテリーを消費するマルウェアーなど、を制限する機能もあります。トラッキング保護のモードは三つあります： Standard、Strict と Off。もし不有効にする場合は下記の通りに設定してください：
+\n\t\t◦ GlyphewのEnhanced Tracking Protectionはブラウズする際に自動的にプライバシーを保護します。サイトの機能を妨害しないで個人情報やブラウジングの習慣を集めるためにネットで追跡するトラッカーを制限するものです。危ないスクリプト、例えばバッテリーを消費するマルウェアーなど、を制限する機能もあります。トラッキング保護のモードは三つあります： Standard、Strict と Off。もし不有効にする場合は下記の通りに設定してください：
 \n
 \n\t\t\t⁃ 「プライバシーとセキュリティー」の設定に移動。
 \n
@@ -1773,7 +1773,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="privacy_policy_section_2">IGALIAは個人情報の保護に関する法的規定に準拠することに徹しています：個人データの取扱いと関連する自然人の保護に関する、及び、そのデータの自由な移転に関する、並びに、指令 95/46/EC を廃止する欧州議会及び理事会の 2016 年 4 月 27 日の規則(EU) 2016/679及びデータ保護と
 \nデジタル権の保証(LOPDGDD)に関する12月5日の有機法3/2018。
 \n
-\nIGALIAはユーザーを特定できる様に個人情報を保管しません。直接的または間接的にIGALIAに個人情報を提供または素性を明かす事なく当アプリケーションを利用でき及びバーチャルリアリティ環境も使えます。したがってIGALIAはWolvicに入力されたデータに対して法的責任を持たないとする。
+\nIGALIAはユーザーを特定できる様に個人情報を保管しません。直接的または間接的にIGALIAに個人情報を提供または素性を明かす事なく当アプリケーションを利用でき及びバーチャルリアリティ環境も使えます。したがってIGALIAはGlyphewに入力されたデータに対して法的責任を持たないとする。
 \n
 \n当アプリケーションの利用の為にIGALIAが確保するデータと情報（常時ユーザーに個人的な連結を避けながら）は下記の通りです：
 \n

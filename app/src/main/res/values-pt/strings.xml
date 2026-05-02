@@ -194,17 +194,17 @@
     <string name="privacy_dialog_message">A sua privacidade é importante para nós. Para executar o navegador, aceite os nossos termos de serviço e política de privacidade. Obrigado por usar o Glyphew!</string>
     <string name="privacy_dialog_disagree">Fechar Glyphew</string>
     <string name="terms_service_title">Termos de serviço</string>
-    <string name="terms_service_section_1">Wolvic é um software gratuito e de código aberto, construído por uma comunidade de milhares de pessoas de todo o mundo. Existem algumas coisas que deve saber:
+    <string name="terms_service_section_1">Glyphew é um software gratuito e de código aberto, construído por uma comunidade de milhares de pessoas de todo o mundo. Existem algumas coisas que deve saber:
 \n
-\n• Wolvic é disponibilizado para sob os termos da Mozilla Public License. Isso significa que pode usar, copiar e distribuir Wolvic para outras pessoas. Também pode modificar o código-fonte do Wolvic conforme desejar. A Mozilla Public License também lhe dá o direito de distribuir assuas versões modificadas.
+\n• Glyphew é disponibilizado para sob os termos da Mozilla Public License. Isso significa que pode usar, copiar e distribuir Glyphew para outras pessoas. Também pode modificar o código-fonte do Glyphew conforme desejar. A Mozilla Public License também lhe dá o direito de distribuir assuas versões modificadas.
 \n
-\n• Não lhe são concedidos quaisquer direitos de marca comercial ou licenças às marcas comerciais da Igalia ou de qualquer parte, incluindo, sem limitação, o nome ou logotipo Wolvic.
+\n• Não lhe são concedidos quaisquer direitos de marca comercial ou licenças às marcas comerciais da Igalia ou de qualquer parte, incluindo, sem limitação, o nome ou logotipo Glyphew.
 \n
-\n• Alguns recursos do Wolvic, como o Crash Reporter, oferecem a opção de fornecer feedback ao Igalia. Ao optar por enviar comentários, concede à Igalia permissão para usar os comentários para melhorar os seus produtos, publicar comentários anônimos nos seus sites e distribuir os comentários anônimos.
+\n• Alguns recursos do Glyphew, como o Crash Reporter, oferecem a opção de fornecer feedback ao Igalia. Ao optar por enviar comentários, concede à Igalia permissão para usar os comentários para melhorar os seus produtos, publicar comentários anônimos nos seus sites e distribuir os comentários anônimos.
 \n
-\n• A forma como usamos as suas informações pessoais e comentários enviados à Igalia por meio da Wolvic está descrito na Política de Privacidade da Wolvic.
+\n• A forma como usamos as suas informações pessoais e comentários enviados à Igalia por meio da Glyphew está descrito na Política de Privacidade da Glyphew.
 \n
-\n• Alguns recursos do Wolvic fazem uso de serviços de informação baseados na web; no entanto, não podemos garantir que sejam 100% precisos ou isentos de erros. Mais detalhes, incluindo informações sobre como desativar os recursos que usam esses serviços, encontram-se nos termos de serviço (abaixo).</string>
+\n• Alguns recursos do Glyphew fazem uso de serviços de informação baseados na web; no entanto, não podemos garantir que sejam 100% precisos ou isentos de erros. Mais detalhes, incluindo informações sobre como desativar os recursos que usam esses serviços, encontram-se nos termos de serviço (abaixo).</string>
     <string name="privacy_policy_title">Política geral de privacidade</string>
     <string name="privacy_policy_section_1">Esta aplicação foi desenvolvida por Igalia, SL (doravante IGALIA), com sede em Bugallal Marchesi, 22 – 1º, 15008, A Coruña, Galicia (Espanha), cujos contatos são:
 \n
@@ -278,18 +278,18 @@
     <string name="popup_permission_dialog_message">O bloqueio de pop-ups é %1$s para este site.</string>
     <string name="tracking_dialog_button_on">Ligado</string>
     <string name="download_delete_file_confirm_title">Apagar o ficheiro</string>
-    <string name="terms_service_subtitle_2">Serviços Web de informação do Wolvic</string>
-    <string name="terms_service_section_2">Wolvic usa serviços de informação baseados na web (“Serviços”) para fornecer alguns dos recursos fornecidos para o seu uso com esta versão binária do Wolvic sob os termos descritos abaixo.
+    <string name="terms_service_subtitle_2">Serviços Web de informação do Glyphew</string>
+    <string name="terms_service_section_2">Glyphew usa serviços de informação baseados na web (“Serviços”) para fornecer alguns dos recursos fornecidos para o seu uso com esta versão binária do Glyphew sob os termos descritos abaixo.
 \n
 \n• A Igalia e os colaboradores dela, licenciadores e parceiros trabalham para fornecer os Serviços mais precisos e atualizados. No entanto, não podemos garantir que essas informações sejam abrangentes e livres de erros. Por exemplo, o Safe Browsing Service pode não identificar alguns sites arriscados e pode identificar alguns sites seguros por engano e no Location Aware Service todos os locais retornados por nossos provedores de serviços são apenas estimativas e nem nós, nem nossos provedores de serviços garantimos a precisão do locais fornecidos.
 \n
 \n• A Igalia pode descontinuar ou alterar os Serviços a seu critério.
 \n
-\n• Pode usar esses Serviços com a versão do Wolvic que o acompanha e a Igalia concede a o direito de fazê-lo. A Igalia e os licenciadores dela se reservam todos os outros direitos sobre os Serviços. Estes termos não se destinam a limitar quaisquer direitos concedidos sob licenças de código aberto aplicáveis ao Wolvic e às versões de código-fonte correspondentes do Wolvic.
+\n• Pode usar esses Serviços com a versão do Glyphew que o acompanha e a Igalia concede a o direito de fazê-lo. A Igalia e os licenciadores dela se reservam todos os outros direitos sobre os Serviços. Estes termos não se destinam a limitar quaisquer direitos concedidos sob licenças de código aberto aplicáveis ao Glyphew e às versões de código-fonte correspondentes do Glyphew.
 \n
 \n• Os Serviços são fornecidos “no estado em que se encontram”. A Igalia, os colaboradores dela, licenciadores e distribuidores renunciam a todas as garantias, expressas ou implícitas, incluindo, sem limitação, garantias de que os Serviços são comercializáveis e adequados aos seus propósitos específicos. Assume todo o risco de selecionar os Serviços para os seus propósitos e quanto à qualidade e desempenho dos Serviços.
 \n
-\n• Exceto conforme exigido por lei, a Igalia, os colaboradores dela, licenciadores e distribuidores não serão responsáveis por quaisquer danos indiretos, especiais, incidentais, consequenciais, punitivos ou exemplares decorrentes ou de qualquer forma relacionados ao uso de Wolvic e o Serviços. A responsabilidade coletiva sob estes termos não excederá $ 500 (quinhentos dólares). Algumas jurisdições não permitem a exclusão ou limitação de certos danos, portanto, essa exclusão e limitação podem não se aplicar a si.
+\n• Exceto conforme exigido por lei, a Igalia, os colaboradores dela, licenciadores e distribuidores não serão responsáveis por quaisquer danos indiretos, especiais, incidentais, consequenciais, punitivos ou exemplares decorrentes ou de qualquer forma relacionados ao uso de Glyphew e o Serviços. A responsabilidade coletiva sob estes termos não excederá $ 500 (quinhentos dólares). Algumas jurisdições não permitem a exclusão ou limitação de certos danos, portanto, essa exclusão e limitação podem não se aplicar a si.
 \n
 \n• A Igalia pode atualizar estes termos conforme necessário de tempos em tempos. Estes termos não podem ser modificados ou cancelados sem o acordo por escrito da Igalia.
 \n
@@ -321,7 +321,7 @@
 \n
 \n⁃ A navegação com reconhecimento de local agora está desativada
 \n
-\n◦ A proteção aprimorada contra rastreamento no Wolvic protege automaticamente a sua privacidade enquanto navega. Ele bloqueia rastreadores que o seguem on-line para coletar informações sobre os seus hábitos e interesses de navegação sem interromper a funcionalidade do site. Também inclui proteções contra scripts nocivos, como malware que esgota sua bateria. Existem três modos de proteção de rastreamento: Standard, Strict e Off. Se deseja desativá-lo, siga estas etapas:
+\n◦ A proteção aprimorada contra rastreamento no Glyphew protege automaticamente a sua privacidade enquanto navega. Ele bloqueia rastreadores que o seguem on-line para coletar informações sobre os seus hábitos e interesses de navegação sem interromper a funcionalidade do site. Também inclui proteções contra scripts nocivos, como malware que esgota sua bateria. Existem três modos de proteção de rastreamento: Standard, Strict e Off. Se deseja desativá-lo, siga estas etapas:
 \n
 \n⁃ Vá às configurações de “Privacidade e segurança”.
 \n
@@ -743,11 +743,11 @@
     <string name="voice_input_start">O que gostaria de introduzir?</string>
     <string name="video_mode_3d_top_bottom">3D Top Bottom</string>
     <string name="hamburger_menu_toggle_passthrough">Passthrough</string>
-    <string name="deprecated_version_dialog_body">Esta versão do “App Lab” de Wolvic será removida no final de Outubro de 2023.
+    <string name="deprecated_version_dialog_body">Esta versão do “App Lab” de Glyphew será removida no final de Outubro de 2023.
 \n
-\nPor favor, instale a última versão de Wolvic da Meta Store.
+\nPor favor, instale a última versão de Glyphew da Meta Store.
 \n
-\nIMPORTANTE: a menos que você use o Sync, o novo aplicativo Wolvic não terá seus favoritos e abas.</string>
+\nIMPORTANTE: a menos que você use o Sync, o novo aplicativo Glyphew não terá seus favoritos e abas.</string>
     <string name="deprecated_version_dialog_info_button">Saiba mais…</string>
     <string name="deprecated_version_dialog_store_button">Instalar…</string>
     <string name="rCN_first_launch_clickable_privacy_text">Política de Privacidade</string>

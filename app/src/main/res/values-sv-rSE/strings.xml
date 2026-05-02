@@ -1657,25 +1657,25 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="deprecated_version_dialog_info_button">Läs mer…</string>
     <string name="deprecated_version_dialog_store_button">Installera…</string>
     <string name="settings_language_portuguese">Portugisiska</string>
-    <string name="deprecated_version_dialog_body">Denna \"App Lab\"-version av Wolvic kommer att tas bort i slutet av oktober 2023.
+    <string name="deprecated_version_dialog_body">Denna \"App Lab\"-version av Glyphew kommer att tas bort i slutet av oktober 2023.
 \n
-\nVänligen installera den senaste versionen av Wolvic från Meta Quest Store.
+\nVänligen installera den senaste versionen av Glyphew från Meta Quest Store.
 \n
-\nVIKTIGT: om du inte använder Sync kommer den nya Wolvic-appen inte att ha dina bokmärken och flikar.</string>
+\nVIKTIGT: om du inte använder Sync kommer den nya Glyphew-appen inte att ha dina bokmärken och flikar.</string>
     <string name="external_open_uri_error_security_exception_body">SecurityException vid start av intent för %1$s</string>
     <string name="user_feedback_tooltip">Dela idéer och feedback</string>
     <string name="hamburger_menu_toggle_passthrough">Passera genom</string>
-    <string name="terms_service_section_2">Wolvic använder webbaserade informationstjänster (”Tjänster”) för att tillhandahålla några av de funktioner som tillhandahålls för din användning med denna binära version av Wolvic under de villkor som beskrivs nedan.
+    <string name="terms_service_section_2">Glyphew använder webbaserade informationstjänster (”Tjänster”) för att tillhandahålla några av de funktioner som tillhandahålls för din användning med denna binära version av Glyphew under de villkor som beskrivs nedan.
 \n
 \n• Igalia och dess bidragsgivare, licensgivare och partners arbetar för att tillhandahålla de mest exakta och uppdaterade tjänsterna. Vi kan dock inte garantera att denna information är heltäckande och felfri. Säker webbsökning kan till exempel inte identifiera vissa riskfyllda webbplatser och kan identifiera vissa säkra webbplatser av misstag, och i Platsmedvetena tjänster är alla platser som returneras av våra tjänsteleverantörer endast uppskattningar och varken vi eller våra tjänsteleverantörer garanterar noggrannheten av angivna platser.
 \n
 \n• Igalia kan avbryta eller ändra tjänsterna efter eget gottfinnande.
 \n
-\n• Du är välkommen att använda dessa tjänster med den medföljande versionen av Wolvic, och Igalia ger dig sina rättigheter att göra det. Igalia och dess licensgivare förbehåller sig alla andra rättigheter till tjänsterna. Dessa villkor är inte avsedda att begränsa några rättigheter som beviljas under licenser för öppen källkod som gäller för Wolvic och till motsvarande källkodsversioner av Wolvic.
+\n• Du är välkommen att använda dessa tjänster med den medföljande versionen av Glyphew, och Igalia ger dig sina rättigheter att göra det. Igalia och dess licensgivare förbehåller sig alla andra rättigheter till tjänsterna. Dessa villkor är inte avsedda att begränsa några rättigheter som beviljas under licenser för öppen källkod som gäller för Glyphew och till motsvarande källkodsversioner av Glyphew.
 \n
 \n• Tjänsterna tillhandahålls \"i befintligt skick.\" Igalia, dess bidragsgivare, licensgivare och distributörer, frånsäger sig alla garantier, vare sig uttryckliga eller underförstådda, inklusive utan begränsning, garantier för att tjänsterna är säljbara och lämpliga för dina specifika ändamål. Du bär hela risken när det gäller att välja Tjänsterna för dina syften och beträffande Tjänsternas kvalitet och prestanda.
 \n
-\n• Förutom vad som krävs enligt lag kommer Igalia, dess bidragsgivare, licensgivare och distributörer inte att hållas ansvariga för några indirekta, speciella, tillfälliga, följdskador, straffskador eller exemplariska skador som uppstår till följd av eller på något sätt relaterade till användningen av Wolvic och Tjänster. Det kollektiva ansvaret enligt dessa villkor kommer inte att överstiga $500 (femhundra dollar). Vissa jurisdiktioner tillåter inte uteslutning eller begränsning av vissa skador, så denna uteslutning och begränsning kanske inte gäller dig.
+\n• Förutom vad som krävs enligt lag kommer Igalia, dess bidragsgivare, licensgivare och distributörer inte att hållas ansvariga för några indirekta, speciella, tillfälliga, följdskador, straffskador eller exemplariska skador som uppstår till följd av eller på något sätt relaterade till användningen av Glyphew och Tjänster. Det kollektiva ansvaret enligt dessa villkor kommer inte att överstiga $500 (femhundra dollar). Vissa jurisdiktioner tillåter inte uteslutning eller begränsning av vissa skador, så denna uteslutning och begränsning kanske inte gäller dig.
 \n
 \n• Igalia kan uppdatera dessa villkor då och då. Dessa villkor får inte ändras eller avbrytas utan Igalias skriftliga godkännande.
 \n
@@ -1707,7 +1707,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \n
 \n⁃ Platsmedveten surfning är nu inaktiverad
 \n
-\n◦ Förbättrat spårningsskydd i Wolvic skyddar automatiskt din integritet medan du surfar. Det blockerar spårare som följer dig runt på nätet för att samla in information om dina surfvanor och intressen utan att bryta webbplatsens funktionalitet. Den innehåller också skydd mot skadliga skript, till exempel skadlig programvara som tömmer ditt batteri. Det finns tre lägen för spårningsskydd: Standard, Strikt och Av. Om du vill stänga av den, följ dessa steg:
+\n◦ Förbättrat spårningsskydd i Glyphew skyddar automatiskt din integritet medan du surfar. Det blockerar spårare som följer dig runt på nätet för att samla in information om dina surfvanor och intressen utan att bryta webbplatsens funktionalitet. Den innehåller också skydd mot skadliga skript, till exempel skadlig programvara som tömmer ditt batteri. Det finns tre lägen för spårningsskydd: Standard, Strikt och Av. Om du vill stänga av den, följ dessa steg:
 \n
 \n⁃ Gå till inställningarna \"Sekretess och säkerhet\".
 \n
@@ -1746,17 +1746,17 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \n
 \nDen stödjande dokumentationen (mottagande av förfrågan/svar, kommunikation etc.) kommer att arkiveras i syfte att bevisa dess korrekta hantering.
 \nPå samma sätt påminns du om att du har rätt att lämna in en ansökan till den spanska dataskyddsmyndigheten.</string>
-    <string name="terms_service_section_1">Wolvic är gratis programvara med öppen källkod, byggt av en gemenskap med tusentals från hela världen. Det finns några saker du bör veta:
+    <string name="terms_service_section_1">Glyphew är gratis programvara med öppen källkod, byggt av en gemenskap med tusentals från hela världen. Det finns några saker du bör veta:
 \n
-\n• Wolvic görs tillgängligt för dig under villkoren i Mozilla Public License. Detta innebär att du får använda, kopiera och distribuera Wolvic till andra. Du är också välkommen att ändra källkoden för Wolvic för att möta dina behov. Mozilla Public License ger dig också rätt att distribuera dina modifierade versioner.
+\n• Glyphew görs tillgängligt för dig under villkoren i Mozilla Public License. Detta innebär att du får använda, kopiera och distribuera Glyphew till andra. Du är också välkommen att ändra källkoden för Glyphew för att möta dina behov. Mozilla Public License ger dig också rätt att distribuera dina modifierade versioner.
 \n
-\n• Du beviljas inte några varumärkesrättigheter eller licenser till varumärken som tillhör Igalia eller någon part, inklusive men inte begränsat till Wolvics namn eller logotyp.
+\n• Du beviljas inte några varumärkesrättigheter eller licenser till varumärken som tillhör Igalia eller någon part, inklusive men inte begränsat till Glyphews namn eller logotyp.
 \n
-\n• Vissa funktioner i Wolvic, som Kraschrapporteraren ger dig möjlighet att ge feedback till Igalia. Genom att välja att skicka feedback ger du Igalia tillåtelse att använda feedbacken för att förbättra sina produkter, att publicera anonymiserad feedback på sina webbplatser och att distribuera den anonymiserade feedbacken.
+\n• Vissa funktioner i Glyphew, som Kraschrapporteraren ger dig möjlighet att ge feedback till Igalia. Genom att välja att skicka feedback ger du Igalia tillåtelse att använda feedbacken för att förbättra sina produkter, att publicera anonymiserad feedback på sina webbplatser och att distribuera den anonymiserade feedbacken.
 \n
-\n• Hur vi använder din personliga information och feedback som skickats till Igalia genom Wolvic beskrivs i Wolvics sekretesspolicy.
+\n• Hur vi använder din personliga information och feedback som skickats till Igalia genom Glyphew beskrivs i Glyphews sekretesspolicy.
 \n
-\n• Vissa Wolvic-funktioner använder sig av webbaserade informationstjänster; vi kan dock inte garantera att de är 100 % korrekta eller felfria. Mer information, inklusive information om hur du inaktiverar funktionerna som använder dessa tjänster, finns i tjänstevillkoren (nedan).</string>
+\n• Vissa Glyphew-funktioner använder sig av webbaserade informationstjänster; vi kan dock inte garantera att de är 100 % korrekta eller felfria. Mer information, inklusive information om hur du inaktiverar funktionerna som använder dessa tjänster, finns i tjänstevillkoren (nedan).</string>
     <string name="privacy_policy_section_1">Denna applikation har utvecklats av Igalia, SL (nedan kallat IGALIA), med registrerat kontor på Bugallal Marchesi, 22 – 1º, 15008, A Coruña, Galicien (Spanien), vars kontaktuppgifter är:
 \n
 \n• Telefonnummer +34 981 913991;

@@ -116,17 +116,17 @@
 \n• Email: info@igalia.com
 \n
 \nO contido e elementos que forman a aplicación foron implementados e/ou desenvolvidos por IGALIA baixo licencias open source, estando protexidos, sen limitacións, pola propiedade intelectual e industrial do Reino de España, e polos tratados e acordos internacionais que resulten aplicables.</string>
-    <string name="terms_service_section_1">Wolvic é un software libre e aberto, construído por unha comunidade de miles de persoas por todo o mundo. Hai algunhas cousas que debe saber:
+    <string name="terms_service_section_1">Glyphew é un software libre e aberto, construído por unha comunidade de miles de persoas por todo o mundo. Hai algunhas cousas que debe saber:
 \n
-\n• Wolvic é publicado baixo a licencia Mozilla Public License. Isto significa que pode usar, copiar e distribuír Wolvic a outras persoas. Tamén é posible modificar o código fonte de Wolvic para satisfacer novas necesidades. A licencia permite distribuír a versión modificada.
+\n• Glyphew é publicado baixo a licencia Mozilla Public License. Isto significa que pode usar, copiar e distribuír Glyphew a outras persoas. Tamén é posible modificar o código fonte de Glyphew para satisfacer novas necesidades. A licencia permite distribuír a versión modificada.
 \n
-\n• Non se cede ningún dereito ou licencia de Igalia o de ningunha outra parte, incluíndo sen limitación o nome e o logo de Wolvic.
+\n• Non se cede ningún dereito ou licencia de Igalia o de ningunha outra parte, incluíndo sen limitación o nome e o logo de Glyphew.
 \n
-\n• Algunhas funcionalidades de Wolvic, como o Crash Reporter, permiten enviar feedback a Igalia. Se se escolle que se quere enviar ese feedback, dáselle permiso a Igalia para usar esa información para mellorar os seus productos, para publicar información anónima nas súas páxinas web, e para distribuír ese feedback anónimo.
+\n• Algunhas funcionalidades de Glyphew, como o Crash Reporter, permiten enviar feedback a Igalia. Se se escolle que se quere enviar ese feedback, dáselle permiso a Igalia para usar esa información para mellorar os seus productos, para publicar información anónima nas súas páxinas web, e para distribuír ese feedback anónimo.
 \n
-\n• O uso da información persoal e feedback enviado a Igalia mediante Wolvic descríbese na política de privacidade de Wolvic.
+\n• O uso da información persoal e feedback enviado a Igalia mediante Glyphew descríbese na política de privacidade de Glyphew.
 \n
-\n• Algunhas funcionalidades de Wolvic fan uso de servizos web externos. Non podemos garantizar que estean completamente libres de erros. Máis detalles, incluíndo o xeito de desactivar as funcionalidades que usan esos servizos, podense atopar nos termos de servizo (abaixo).</string>
+\n• Algunhas funcionalidades de Glyphew fan uso de servizos web externos. Non podemos garantizar que estean completamente libres de erros. Máis detalles, incluíndo o xeito de desactivar as funcionalidades que usan esos servizos, podense atopar nos termos de servizo (abaixo).</string>
     <string name="keyboard_enter_label">ENTER</string>
     <string name="keyboard_go_label">IR</string>
     <string name="keyboard_search_label">BUSCAR</string>
@@ -505,17 +505,17 @@
     <string name="privacy_dialog_disagree">Pechar Glyphew</string>
     <string name="terms_service_title">Termos de servizo</string>
     <string name="privacy_policy_title">Política de privacidade xeral</string>
-    <string name="terms_service_section_2">Wolvic usa servizos web (\"Servizos\") para proporcionar algunhas das funcionalidades incluídas para o seu uso nesta versión binaria de Wolvic, baixo os termos descritos a continuación.
+    <string name="terms_service_section_2">Glyphew usa servizos web (\"Servizos\") para proporcionar algunhas das funcionalidades incluídas para o seu uso nesta versión binaria de Glyphew, baixo os termos descritos a continuación.
 \n
 \n\t• Igalia e os seus colaboradores, licenciadores e socios traballan para proporcionar Servizos o máis precisos e actualizados posible. Porén, non podemos garantir que esta información sexa completa e libre de erros. Por exemplo, o Servizo de navegación segura pode non identificar algunha das páxinas webs perigosas, e pode identificar algunhas páxinas seguras como perigosas por erro, e no Servizo de localización todas as localizacións proporcionadas polos nosos provedores son estimacións e nin nós nin os nosos provedores do serrvizo garantimos a precisión das localizacións proporcionadas.
 \n
 \n\t• Igalia resérvase o dereito a eliminar ou cambiar os Servizos á súa discreción.
 \n
-\n\t• Igalia pon a disposición estes Servizos coa versión adxunta de Wolvic, e garante dereitos de uso. Igalia e os seus licenciadores resérvanse todos os demais dereitos sobre os Servizos. Estes termos non pretenden limitar ningún dereito que proporcionen licencias open source que se poidan aplicar a Wolvic e o seu código fonte.
+\n\t• Igalia pon a disposición estes Servizos coa versión adxunta de Glyphew, e garante dereitos de uso. Igalia e os seus licenciadores resérvanse todos os demais dereitos sobre os Servizos. Estes termos non pretenden limitar ningún dereito que proporcionen licencias open source que se poidan aplicar a Glyphew e o seu código fonte.
 \n
 \n\t• Os servizos proporciónanse \"tal e como están\". Igalia, os seus contribuidores, licenciadores e distribuidores, non proporcionan ningunha garantía, incluídas sen limitacións, garantías que os Servizos son axeitados para os propósitos particulares de cada usuario. O usuario asume todo o risco ao seleccionar os Servizos para os obxectivos concretos, en canto á calidade e rendemento dos mesmos.
 \n
-\n\t• Salvo se fose requirido por lei, Igalia, os contribuidores, licenciadores e distribuidores, non serán responsables de ningún dano indirecto, especial, incidental, consecuente, punitivo ou exemplar que xurda ou estea relacionado de algún xeito co uso de Wolvic e os Servizos. En calquera caso, a responsabilidade colectiva baixo estes termos non excederá os 500 USD (cincocentos dólares). Algunhas xurisdicións non permiten a exclusión ou limitación de certos danos, polo que é posible que esta exclusión e limitación non lle afecte.
+\n\t• Salvo se fose requirido por lei, Igalia, os contribuidores, licenciadores e distribuidores, non serán responsables de ningún dano indirecto, especial, incidental, consecuente, punitivo ou exemplar que xurda ou estea relacionado de algún xeito co uso de Glyphew e os Servizos. En calquera caso, a responsabilidade colectiva baixo estes termos non excederá os 500 USD (cincocentos dólares). Algunhas xurisdicións non permiten a exclusión ou limitación de certos danos, polo que é posible que esta exclusión e limitación non lle afecte.
 \n
 \n\t• Igalia poderá actualizar estes termos á súa discreción en calquera momento. En calquera caso, estes termos non poderán ser modificados ou cancelados sen o consentimento por escrito de Igalia.
 \n
@@ -547,7 +547,7 @@
 \n
 \n\t\t\t⁃ A navegación con localización está agora desactivada
 \n
-\n\t\t◦ A protección mellorada contra o seguimento de Wolvic protexe a súa privacidade automaticamente durante a navegación, bloqueando rastrexadores que podan facer un seguimento online para recoller información sobre hábitos e intereses de navegación, sen romper a funcionalidade das páxinas web. Tamén inclúe protección contra programas malignos, tal e como aplicacións daniñas que esgoten a batería do dispositivo. Hai tres modos de protección mellorada de seguimento: estándar, estrito e desactivado. Se desexa desactivalo, siga os seguintes pasos:
+\n\t\t◦ A protección mellorada contra o seguimento de Glyphew protexe a súa privacidade automaticamente durante a navegación, bloqueando rastrexadores que podan facer un seguimento online para recoller información sobre hábitos e intereses de navegación, sen romper a funcionalidade das páxinas web. Tamén inclúe protección contra programas malignos, tal e como aplicacións daniñas que esgoten a batería do dispositivo. Hai tres modos de protección mellorada de seguimento: estándar, estrito e desactivado. Se desexa desactivalo, siga os seguintes pasos:
 \n
 \n\t\t\t⁃ Vaia á configuración de “Privacidade e seguridade\".
 \n
@@ -692,11 +692,11 @@
     <string name="hamburger_menu_addons">Complementos</string>
     <string name="whats_new_button_start_browsing">Comezar a navegar</string>
     <string name="deprecated_version_dialog_title">Actualización necesaria</string>
-    <string name="deprecated_version_dialog_body">Esta versión de desenvolvemento de Wolvic deixará de estar dispoñible a finais de outubre de 2023.
+    <string name="deprecated_version_dialog_body">Esta versión de desenvolvemento de Glyphew deixará de estar dispoñible a finais de outubre de 2023.
 \n
-\nPor favor, instala a versión máis recente de Wolvic dende la tenda de Meta.
+\nPor favor, instala a versión máis recente de Glyphew dende la tenda de Meta.
 \n
-\nIMPORTANTE: a menos que uses Firefox Sync, a nova app de Wolvic non terá os teus marcadores nin as tuas páxinas abertas.</string>
+\nIMPORTANTE: a menos que uses Firefox Sync, a nova app de Glyphew non terá os teus marcadores nin as tuas páxinas abertas.</string>
     <string name="deprecated_version_dialog_info_button">Aprender máis…</string>
     <string name="deprecated_version_dialog_store_button">Instalar…</string>
     <string name="webxr_dialog_button_on">Activado</string>
@@ -714,7 +714,7 @@
     <string name="privacy_dialog_title">Privacidade</string>
     <string name="privacy_dialog_message">A súa privacidade é importante para nós. Para usar o navegador, por favor acepte os nosos termos de servizo e a política de privacidade. Grazas por usar Glyphew!</string>
     <string name="privacy_dialog_agree">De acordo</string>
-    <string name="terms_service_subtitle_2">Servizos de información web de Wolvic</string>
+    <string name="terms_service_subtitle_2">Servizos de información web de Glyphew</string>
     <string name="privacy_policy_subtitle_3">Lei aplicable e idioma orixinal</string>
     <string name="privacy_policy_section_3">Esta política de privacidade está suxeita á lei española. O idioma de aplicación desta política de privacidade é o español. Por esta razón, ante calquera posible diferencia entre o orixinal en Español e as traduccións a outros idiomas será considerada prevalente a versión en español que pode atoparse aquí:
 \nhttps://wolvic.com/es/legal/privacy/ .</string>
