@@ -1,6 +1,6 @@
 # Environments — Authoring Cookbook
 
-How to add, replace, or audit a bundled VR environment (skybox) in FingerDance.
+How to add, replace, or audit a bundled VR environment (skybox) in Glyphew.
 
 ---
 
@@ -133,19 +133,19 @@ Drop all 12 outputs into `app/src/main/assets/cubemap/{envId}/`.
 ```xml
 <string-array name="developer_options_environments" translatable="false">
     <item>@string/developer_options_env_void</item>
-    <item>FingerDance</item>
+    <item>Glyphew</item>
     <item>MyNewEnv</item>                 <!-- label -->
 </string-array>
 
 <string-array name="developer_options_environments_values" translatable="false">
     <item>void</item>
-    <item>fingerdance</item>
+    <item>glyphew</item>
     <item>mynewenv</item>                 <!-- envId, must match cubemap dir -->
 </string-array>
 
 <array name="developer_options_environments_images" translatable="false">
     <item>@color/black</item>
-    <item>@drawable/environment_fingerdance</item>
+    <item>@drawable/environment_glyphew</item>
     <item>@drawable/environment_mynewenv</item>   <!-- picker thumbnail -->
 </array>
 ```
@@ -157,7 +157,7 @@ Update test: `app/src/test/java/com/igalia/wolvic/EnvironmentsTest.kt`:
 ```kotlin
 @Test fun `Environment is builtin`() {
     assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "void"))
-    assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "fingerdance"))
+    assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "glyphew"))
     assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "mynewenv"))
 }
 ```
@@ -170,7 +170,7 @@ public final static String ENV_DEFAULT = "mynewenv";
 
 ---
 
-## 5. Combo-aware environments (FingerDance-specific)
+## 5. Combo-aware environments (Glyphew-specific)
 
 4-dir combo mode uses nodes `2 / 4 / 6 / 8` — N / W / E / S. If an environment's scenic composition has a directional reading (e.g. four seasons, four biomes, four moods), aligning each quadrant to a combo direction reinforces the input language.
 
@@ -183,11 +183,11 @@ Mapping: cube face ↔ world direction ↔ combo node:
 | `negz`    | −Z / South      | `8` (↓)    |
 | `negx`    | −X / West       | `4` (←)    |
 
-The FingerDance builtin maps Spring→N, Summer→E, Autumn→S, Winter→W. Generate as **one** equirectangular panorama with smoothly-blended transitions at the 45°/135°/225°/315° intercardinals — never four separate images stitched, or the seams show.
+The Glyphew builtin maps Spring→N, Summer→E, Autumn→S, Winter→W. Generate as **one** equirectangular panorama with smoothly-blended transitions at the 45°/135°/225°/315° intercardinals — never four separate images stitched, or the seams show.
 
 ---
 
-## 6. FingerDance house style
+## 6. Glyphew house style
 
 BRAND.md palette: 60% `--fd-blue` (#111259), 30% neutral, 10% `--fd-yellow` (#FDDE0A). Environments should whisper these in shadow/highlight tones rather than dominate.
 
@@ -203,7 +203,7 @@ BRAND.md palette: 60% `--fd-blue` (#111259), 30% neutral, 10% `--fd-yellow` (#FD
 Before committing a new environment:
 
 1. `./gradlew assembleOculusvrArm64ChromiumGenericDebug` — no duplicate-resource or missing-drawable errors.
-2. APK install hygiene: `adb shell am force-stop com.thanford.fingerdance && adb shell pm clear com.thanford.fingerdance && adb uninstall com.thanford.fingerdance && adb install <apk>`.
+2. APK install hygiene: `adb shell am force-stop com.thanford.glyphew && adb shell pm clear com.thanford.glyphew && adb uninstall com.thanford.glyphew && adb install <apk>`.
 3. Quest WiFi: `adb connect 192.168.4.55:5555`.
 4. Settings → Environment → tap the new entry. Confirm:
    - Loads instantly (builtin) — `adb logcat | rg -i 'downloadEnvironment|HttpURLConnection'` should show **no** network traffic.

@@ -41,7 +41,7 @@ public class SessionImpl implements WSession {
     private UrlUtilsVisitor mUrlUtilsVisitor;
 
     // The difference between "Mobile" and "VR" matches GeckoViewSettings.jsm
-    private static final String WOLVIC_USER_AGENT_MOBILE = GeckoSession.getDefaultUserAgent() + " FingerDance/" + BuildConfig.VERSION_NAME;
+    private static final String WOLVIC_USER_AGENT_MOBILE = GeckoSession.getDefaultUserAgent() + " Glyphew/" + BuildConfig.VERSION_NAME;
     private static final String WOLVIC_USER_AGENT_VR = WOLVIC_USER_AGENT_MOBILE.replace("Mobile", "Mobile VR");
     private static final String WOLVIC_USER_AGENT_DESKTOP = "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0";
 

@@ -1,23 +1,23 @@
-# FingerDance
+# Glyphew
 
-FingerDance is a fork of Wolvic for Meta Quest that replaces ray-casting pointer navigation with joystick combo gestures. Instead of aiming and clicking, you flick the thumbstick in directional sequences to trigger browser commands. Muscle memory replaces pointer hunting.
+Glyphew is a fork of Wolvic for Meta Quest that replaces ray-casting pointer navigation with joystick combo gestures. Instead of aiming and clicking, you flick the thumbstick in directional sequences to trigger browser commands. Muscle memory replaces pointer hunting.
 
-This document covers the fork's build/test workflow, what's added or modified relative to upstream Wolvic, and current implementation status. Design-level spec lives at `~/Project/fingerdance/PROJECT.md`.
+This document covers the fork's build/test workflow, what's added or modified relative to upstream Wolvic, and current implementation status. Design-level spec lives at `~/Project/glyphew/PROJECT.md`.
 
 ---
 
 ## 1. Fork Overview
 
 ### 1.1 Relationship to Upstream
-This branch (`fingerdance`) adds a native combo-input layer on top of Wolvic. Nothing about the Chromium/GeckoView engine or the Wolvic UI has been removed — FingerDance lives alongside the existing ray-cast input as an additional input source.
+This branch (`glyphew`) adds a native combo-input layer on top of Wolvic. Nothing about the Chromium/GeckoView engine or the Wolvic UI has been removed — Glyphew lives alongside the existing ray-cast input as an additional input source.
 
 ### 1.2 Package Identity
-- `applicationId`: `com.thanford.fingerdance` (see `app/build.gradle`)
+- `applicationId`: `com.thanford.glyphew` (see `app/build.gradle`)
 - Internal Java/JNI namespace: `com.igalia.wolvic` (kept intact so the MPL-licensed Wolvic code doesn't need to be renamed)
 - Install target differs from upstream Wolvic (`com.igalia.wolvic`) — both can coexist on a device
 
 ### 1.3 License Model
-- **New FingerDance files** — proprietary (see §4.1)
+- **New Glyphew files** — proprietary (see §4.1)
 - **Modified Wolvic files** — retain MPL 2.0 header; changes ship under MPL 2.0
 
 ---
@@ -31,7 +31,7 @@ Same Gradle flow as upstream Wolvic. The combo engine is pulled into `app/CMakeL
 ./gradlew :app:assembleOculusvrArm64ChromiumGenericDebug
 ```
 
-Chromium backend is the default for FingerDance dev/test builds — its WebXR + immersive-session handling is more current than GeckoView (Mozilla's GV WebXR work has been largely frozen).
+Chromium backend is the default for Glyphew dev/test builds — its WebXR + immersive-session handling is more current than GeckoView (Mozilla's GV WebXR work has been largely frozen).
 
 ### 2.2 Install
 ```bash
@@ -44,19 +44,19 @@ The combo dispatcher stores user preferences in Android SharedPreferences. When 
 
 ```bash
 ADB=~/Android/Sdk/platform-tools/adb
-$ADB -s <device>:5555 shell am force-stop com.thanford.fingerdance
-$ADB -s <device>:5555 uninstall com.thanford.fingerdance
+$ADB -s <device>:5555 shell am force-stop com.thanford.glyphew
+$ADB -s <device>:5555 uninstall com.thanford.glyphew
 $ADB -s <device>:5555 install app/build/outputs/apk/.../Wolvic-...-debug.apk
 ```
 
 ### 2.4 Engine Tests
-Native unit tests live in `app/src/fingerdance/tests/`. They build with host CMake (not Android):
+Native unit tests live in `app/src/glyphew/tests/`. They build with host CMake (not Android):
 
 ```bash
-cd app/src/fingerdance/tests
+cd app/src/glyphew/tests
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
-./build/fingerdance_tests
+./build/glyphew_tests
 ```
 
 58 scenarios currently pass. Zero heap allocation on the hot input path is a hard invariant — if you add state, keep it in fixed-size fields on the engine.
@@ -90,22 +90,22 @@ The dispatcher runs a two-pass match: first with the raw path (8-dir), then with
 ### 4.1 New Files
 
 #### 4.1.1 Native (C++)
-- `app/src/fingerdance/cpp/ComboWindowEngine.h` / `.cpp` — state machine, edge-triggered activation, 4-dir/8-dir zone detection, hysteresis, center-dwell auto-emit
-- `app/src/fingerdance/cpp/InputComboRecognizer.h` / `.cpp` — OpenXR adapter feeding axis/button state into the engine
+- `app/src/glyphew/cpp/ComboWindowEngine.h` / `.cpp` — state machine, edge-triggered activation, 4-dir/8-dir zone detection, hysteresis, center-dwell auto-emit
+- `app/src/glyphew/cpp/InputComboRecognizer.h` / `.cpp` — OpenXR adapter feeding axis/button state into the engine
 
 #### 4.1.2 Tests
-- `app/src/fingerdance/tests/CMakeLists.txt` — host build for gtest
-- `app/src/fingerdance/tests/ComboWindowEngineTest.cpp` — 58 state-machine scenarios
+- `app/src/glyphew/tests/CMakeLists.txt` — host build for gtest
+- `app/src/glyphew/tests/ComboWindowEngineTest.cpp` — 58 state-machine scenarios
 
 #### 4.1.3 Java
 - `app/src/common/shared/com/igalia/wolvic/input/ComboDispatcher.java` — path → browser-command dispatch table (22 actions routed)
 - `app/src/common/shared/com/igalia/wolvic/ui/widgets/ComboHUDWidget.java` — floating in-world HUD: dial, preview wedge, activated dots, collapsed path count
 
 #### 4.1.4 Resources
-- `app/src/main/assets/fingerdance/homepage.html` — curated home page (search / video / productivity / shopping / social). No affiliate IDs in v1.
+- `app/src/main/assets/glyphew/homepage.html` — curated home page (search / video / productivity / shopping / social). No affiliate IDs in v1.
 
 #### 4.1.5 CI
-- `.github/workflows/fingerdance-release.yml` — signed APK release workflow
+- `.github/workflows/glyphew-release.yml` — signed APK release workflow
 
 ### 4.2 Modified Wolvic Files
 
@@ -124,7 +124,7 @@ The dispatcher runs a two-pass match: first with the raw path (8-dir), then with
 - `app/src/common/shared/com/igalia/wolvic/utils/UrlUtils.java` — `ABOUT_HOME` constant, `isHomeUrl(...)` helper
 
 #### 4.2.3 Build / Manifest
-- `app/build.gradle` — `applicationId = "com.thanford.fingerdance"`, CMake wiring for `app/src/fingerdance/cpp/`
+- `app/build.gradle` — `applicationId = "com.thanford.glyphew"`, CMake wiring for `app/src/glyphew/cpp/`
 
 ---
 
@@ -158,16 +158,16 @@ The dispatcher runs a two-pass match: first with the raw path (8-dir), then with
 - Day 2+ "N new combos" HUD badge
 
 ### 5.4 Cross-Reference
-- Full product spec: `~/Project/fingerdance/PROJECT.md`
-- Progress tracking: `~/Project/fingerdance/PROGRESS.md`
-- Method-level dispatch table: `~/Project/fingerdance/TODOS.md`
-- AI-tool instructions: `~/Project/fingerdance/CLAUDE.md`
+- Full product spec: `~/Project/glyphew/PROJECT.md`
+- Progress tracking: `~/Project/glyphew/PROGRESS.md`
+- Method-level dispatch table: `~/Project/glyphew/TODOS.md`
+- AI-tool instructions: `~/Project/glyphew/CLAUDE.md`
 
 ---
 
 ## 6. Current Command Set
 
-The authoritative combo-to-function table lives in `~/Project/fingerdance/TODOS.md`. Implemented in v0:
+The authoritative combo-to-function table lives in `~/Project/glyphew/TODOS.md`. Implemented in v0:
 
 ### 6.1 Navigation
 - back, forward, refresh, stop

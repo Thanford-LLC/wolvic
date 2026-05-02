@@ -1,5 +1,5 @@
-FingerDance — third-party asset attribution
-===========================================
+Glyphew — third-party asset attribution
+=======================================
 
 Material Symbols Rounded filled 24dp
 ------------------------------------
@@ -7,7 +7,7 @@ Copyright 2024 Google LLC.
 Licensed under the Apache License, Version 2.0.
 Full text: https://www.apache.org/licenses/LICENSE-2.0
 
-Derived icons (modified for FingerDance brand tinting):
+Derived icons (modified for Glyphew brand tinting):
   - app/src/main/res/drawable/fd_action_scroll_top_24dp.xml      (from vertical_align_top)
   - app/src/main/res/drawable/fd_action_scroll_bottom_24dp.xml   (from vertical_align_bottom)
   - app/src/main/res/drawable/fd_action_scroll_left_24dp.xml     (from keyboard_double_arrow_left)

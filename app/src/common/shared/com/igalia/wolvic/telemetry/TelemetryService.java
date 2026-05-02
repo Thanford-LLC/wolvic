@@ -15,7 +15,7 @@ import mozilla.components.concept.sync.FxAEntryPoint;
 
 public class TelemetryService {
 
-    private final static String APP_NAME = "wolvic";
+    private final static String APP_NAME = "glyphew";
     private final static String LOGTAG = SystemUtils.createLogtag(TelemetryService.class);
     private static boolean initialized = false;
     private static Context context = null;

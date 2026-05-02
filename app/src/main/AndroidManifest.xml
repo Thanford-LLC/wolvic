@@ -29,7 +29,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/FingerDance.Dark">
+        android:theme="@style/Glyphew.Dark">
         <activity
             android:name="com.igalia.wolvic.VRBrowserActivity"
             android:launchMode="singleInstance"
