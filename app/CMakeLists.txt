@@ -101,10 +101,10 @@ if(OPENXR)
     find_package(OpenXR REQUIRED CONFIG)
     target_link_libraries(native-lib PRIVATE OpenXR::headers)
     include_directories(${CMAKE_SOURCE_DIR}/../app/src/openxr/cpp)
-    # FingerDance: fingerdance/cpp/ reachable as "fingerdance/cpp/<header>.h" and
-    # also as "<header>.h" (for intra-fingerdance includes).
+    # Glyphew: glyphew/cpp/ reachable as "glyphew/cpp/<header>.h" and
+    # also as "<header>.h" (for intra-glyphew includes).
     include_directories(${CMAKE_SOURCE_DIR}/src)
-    include_directories(${CMAKE_SOURCE_DIR}/src/fingerdance/cpp)
+    include_directories(${CMAKE_SOURCE_DIR}/src/glyphew/cpp)
     if (HVR)
         add_custom_command(TARGET native-lib POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
@@ -132,9 +132,9 @@ if(OPENXR)
             ${CMAKE_SOURCE_DIR}/src/openxr/cpp/OpenXRActionSet.cpp
             ${CMAKE_SOURCE_DIR}/src/openxr/cpp/OpenXRExtensions.cpp
             ${CMAKE_SOURCE_DIR}/src/openxr/cpp/OpenXRPassthroughStrategy.cpp
-            # FingerDance combo engine
-            ${CMAKE_SOURCE_DIR}/src/fingerdance/cpp/ComboWindowEngine.cpp
-            ${CMAKE_SOURCE_DIR}/src/fingerdance/cpp/InputComboRecognizer.cpp
+            # Glyphew combo engine
+            ${CMAKE_SOURCE_DIR}/src/glyphew/cpp/ComboWindowEngine.cpp
+            ${CMAKE_SOURCE_DIR}/src/glyphew/cpp/InputComboRecognizer.cpp
     )
 endif()
 

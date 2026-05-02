@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace fingerdance {
+namespace glyphew {
 
 // Tunable constants — validate on Quest hardware before shipping.
 static constexpr float   ACTIVATION_MAGNITUDE       = 0.70f;  // threshold to consider joystick "at max" (edge-triggered activation)
@@ -144,4 +144,4 @@ private:
     static std::atomic<bool> sFourDirMode;
 };
 
-} // namespace fingerdance
+} // namespace glyphew

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "ComboWindowEngine.h"
 
-using namespace fingerdance;
+using namespace glyphew;
 
 // ---------------------------------------------------------------------------
 // Test harness helpers

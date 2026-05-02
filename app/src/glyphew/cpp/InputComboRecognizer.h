@@ -2,7 +2,7 @@
 
 #include "ComboWindowEngine.h"
 
-namespace fingerdance {
+namespace glyphew {
 
 // OpenXR adapter for ComboWindowEngine.
 //
@@ -62,4 +62,4 @@ private:
     ComboWindowEngine mEngine;
 };
 
-} // namespace fingerdance
+} // namespace glyphew

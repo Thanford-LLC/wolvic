@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-namespace fingerdance {
+namespace glyphew {
 
 namespace {
 // Phase 3b: local helper (no dependency on <algorithm>) so the hot path stays
@@ -298,4 +298,4 @@ void ComboWindowEngine::AppendNode(int node) {
     }
 }
 
-} // namespace fingerdance
+} // namespace glyphew

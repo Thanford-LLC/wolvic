@@ -8,7 +8,7 @@
 #include "HandMeshRenderer.h"
 #include "OpenXRGestureManager.h"
 #include "DeviceDelegate.h"
-#include "fingerdance/cpp/InputComboRecognizer.h"
+#include "glyphew/cpp/InputComboRecognizer.h"
 #include <optional>
 #include <unordered_map>
 
@@ -75,7 +75,7 @@ private:
     OpenXRInputMapping* mActiveMapping { XR_NULL_HANDLE };
     bool selectActionStarted { false };
     bool squeezeActionStarted { false };
-    bool mFingerDanceGripHeld { false };  // FingerDance: tracks grip for combo mode + laser suppression
+    bool mGlyphewGripHeld { false };  // Glyphew: tracks grip for combo mode + laser suppression
     bool mPrevThumbstickForHUD { false }; // FingerDance: edge detect thumbstick press for HUD toggle
     bool mPrevFaceABtnClicked { false };  // FingerDance: edge detect A/X face-button for FROM_CAPTURE entry
     bool mPathEmptyAtHUDPressStart { false }; // FingerDance: snapshot of recognizer idle-state at press-edge, read at release-edge
@@ -95,7 +95,7 @@ private:
     vrb::Matrix mEyeGazeTransformOnPinchStart;
     XrTime mEyeTrackingPinchStartTime { 0 };
     float mClickThreshold { 1.0f };
-    fingerdance::InputComboRecognizer mComboRecognizer;
+    glyphew::InputComboRecognizer mComboRecognizer;
 
     struct HandMeshMSFT {
         XrSpace space = XR_NULL_HANDLE;

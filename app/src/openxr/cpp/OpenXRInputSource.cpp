@@ -39,11 +39,11 @@ OpenXRInputSource::OpenXRInputSource(XrInstance instance, XrSession session, Ope
     , mIndex(index)
     , mComboRecognizer(
         // Combo complete → dispatch browser action.
-        [](const fingerdance::ComboEvent& event) {
+        [](const glyphew::ComboEvent& event) {
             crow::VRBrowser::HandleComboEvent(event.path.data(), event.length);
         },
         // Node activated → update HUD with confirmed path.
-        [](const fingerdance::ComboEvent& progress) {
+        [](const glyphew::ComboEvent& progress) {
             crow::VRBrowser::HandleComboProgress(progress.path.data(), progress.length);
         },
         // Preview wedge → highlight current zone on HUD.
@@ -871,7 +871,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     // Don't enable aim for eye tracking as we don't want to paint the beam. Note that we'd still
     // have an aim, meaning that we can point, focus, click... UI elements.
     // FingerDance: hide laser pointer when grip is held (combo mode active).
-    delegate.SetAimEnabled(mIndex, hasAim && usingTrackedPointer && !mFingerDanceGripHeld);
+    delegate.SetAimEnabled(mIndex, hasAim && usingTrackedPointer && !mGlyphewGripHeld);
 
     // Disable the controller if there is no aim unless:
     // a) we're using hand interaction profile and we have hand tracking info. In that case the user
@@ -898,7 +898,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     // disable pointer targeting, trigger clicks, and hover on the page so
     // the joystick drives the HUD instead. Axis/button processing below
     // still runs so the combo recognizer keeps receiving thumbstick input.
-    delegate.SetEnabled(mIndex, !mFingerDanceGripHeld);
+    delegate.SetEnabled(mIndex, !mGlyphewGripHeld);
 
     bool isHandActionEnabled = !hasAim && mUsingHandInteractionProfile && handFacesHead;
     delegate.SetHandActionEnabled(mIndex, isHandActionEnabled);
@@ -1000,7 +1000,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
 
         // FingerDance: log squeeze value every 100 frames for debugging
         if (button.type == OpenXRButtonType::Squeeze && (fdLogCounter++ % 100 == 0)) {
-            VRB_LOG("FingerDance: Squeeze val=%.3f clicked=%d mGripHeld=%d hand=%d", state->value, (int)state->clicked, (int)mFingerDanceGripHeld, mIndex);
+            VRB_LOG("FingerDance: Squeeze val=%.3f clicked=%d mGripHeld=%d hand=%d", state->value, (int)state->clicked, (int)mGlyphewGripHeld, mIndex);
         }
 
         placeholders.erase(button.type);
@@ -1043,13 +1043,13 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         }
 
         // FingerDance: grip shows/hides HUD and suppresses laser in ALL render modes, both hands.
-        if (button.type == OpenXRButtonType::Squeeze && state->clicked != mFingerDanceGripHeld) {
-          mFingerDanceGripHeld = state->clicked;
-          VRB_LOG("FingerDance: Grip %s (hand=%d)", mFingerDanceGripHeld ? "PRESSED" : "RELEASED", mIndex);
+        if (button.type == OpenXRButtonType::Squeeze && state->clicked != mGlyphewGripHeld) {
+          mGlyphewGripHeld = state->clicked;
+          VRB_LOG("FingerDance: Grip %s (hand=%d)", mGlyphewGripHeld ? "PRESSED" : "RELEASED", mIndex);
           // Hand ordinal matches com.igalia.wolvic.VRBrowserActivity.ComboHand:
           // 0 = LEFT, 1 = RIGHT.
           const int hand = (mHandeness == OpenXRHandFlags::Left) ? 0 : 1;
-          crow::VRBrowser::HandleGripStateChanged(mFingerDanceGripHeld, hand);
+          crow::VRBrowser::HandleGripStateChanged(mGlyphewGripHeld, hand);
         }
 
         // Squeeze action (WebXR immersive only)
@@ -1131,7 +1131,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         }
         if (!heldNow && wasHeld && mPathEmptyAtHUDPressStart) {
           const int64_t pressDurMs = timestampMs - mThumbstickPressStartMsForHUD;
-          if (pressDurMs < fingerdance::LONG_PRESS_MS) {
+          if (pressDurMs < glyphew::LONG_PRESS_MS) {
             crow::VRBrowser::HandleComboThumbstickPress();
           }
         }

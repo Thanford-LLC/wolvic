@@ -2238,7 +2238,7 @@ JNI_METHOD(void, togglePassthroughNative)
 
 JNI_METHOD(void, setComboFourDirModeNative)
 (JNIEnv*, jobject, jboolean enabled) {
-  fingerdance::ComboWindowEngine::SetFourDirMode(enabled);
+  glyphew::ComboWindowEngine::SetFourDirMode(enabled);
 }
 
 JNI_METHOD(void, setLockEnabledNative)

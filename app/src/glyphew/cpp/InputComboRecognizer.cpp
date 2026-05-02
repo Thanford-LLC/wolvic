@@ -1,6 +1,6 @@
 #include "InputComboRecognizer.h"
 
-namespace fingerdance {
+namespace glyphew {
 
 InputComboRecognizer::InputComboRecognizer(ComboCallback callback,
                                            ProgressCallback onProgress,
@@ -32,4 +32,4 @@ void InputComboRecognizer::SetLongPressCallback(LongPressCb cb) {
     mEngine.SetLongPressCallback(std::move(cb));
 }
 
-} // namespace fingerdance
+} // namespace glyphew

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(fingerdance_tests)
+project(glyphew_tests)
 set(CMAKE_CXX_STANDARD 17)
 
 # Fetch GoogleTest — requires internet access on first build.
@@ -13,13 +13,13 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(fingerdance_tests
+add_executable(glyphew_tests
     ComboWindowEngineTest.cpp
     ../cpp/ComboWindowEngine.cpp
 )
 
-target_include_directories(fingerdance_tests PRIVATE ../cpp)
-target_link_libraries(fingerdance_tests PRIVATE GTest::gtest_main)
+target_include_directories(glyphew_tests PRIVATE ../cpp)
+target_link_libraries(glyphew_tests PRIVATE GTest::gtest_main)
 
 include(GoogleTest)
-gtest_discover_tests(fingerdance_tests)
+gtest_discover_tests(glyphew_tests)
