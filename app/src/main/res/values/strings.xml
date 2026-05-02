@@ -629,7 +629,7 @@
     <string name="window_size_preset">%1$d×%2$d</string>
 
     <!-- This string is used to label the homepage radio button that sets the homepage to be Wolvic homepage. -->
-    <string name="developer_options_homepage_wolvic">FingerDance home</string>
+    <string name="developer_options_homepage_wolvic">Glyphew home</string>
 
     <!-- This string is used to label the homepage radio button that sets the homepage to be the New Tab page. -->
     <string name="developer_options_homepage_new_tab">New Tab</string>
@@ -637,8 +637,8 @@
     <!-- This string is used to label the homepage radio button that allows users to set the homepage they want. -->
     <string name="developer_options_homepage_other">Other</string>
 
-    <!-- Settings footer: FingerDance / Wolvic / MPL 2.0 attribution block. Canonical text per WOLVIC-COMPLIANCE.md §5.2 — do not paraphrase. -->
-    <string name="fingerdance_attribution">FingerDance is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/TODO/wolvic-fork\nOpen Source Licenses: coming before release.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
+    <!-- Settings footer: Glyphew / Wolvic / MPL 2.0 attribution block. Canonical text per WOLVIC-COMPLIANCE.md §5.2 — do not paraphrase. -->
+    <string name="glyphew_attribution">Glyphew is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/TODO/wolvic-fork\nOpen Source Licenses: coming before release.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
 
     <!-- This string is used to label a set of radio buttons that allow the user to change the
          User-Agent (UA) string of the browser. -->
@@ -907,7 +907,7 @@
 
     <!-- This string describes the situation when the coarse location permission has been granted,
          but the fine location permission has not. -->
-    <string name="security_options_permission_fine_location_warning">FingerDance can only get your approximate location. This can be changed in the system settings.</string>
+    <string name="security_options_permission_fine_location_warning">Glyphew can only get your approximate location. This can be changed in the system settings.</string>
 
     <!-- This string labels the button that displays or enables the application to post system-wide
          notifications. -->
@@ -2161,12 +2161,12 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="whats_new_button_start_browsing">Start Browsing</string>
 
     <string name="deprecated_version_dialog_title">Support ending soon</string>
-    <string name="deprecated_version_dialog_body">This version of FingerDance is no longer supported.
+    <string name="deprecated_version_dialog_body">This version of Glyphew is no longer supported.
         \n\nPlease install the latest version from the Meta Horizon Store.
         \n\nIMPORTANT: unless you use Sync, the new app will not have your bookmarks and tabs.</string>
     <string name="deprecated_version_dialog_info_button">Learn more…</string>
     <!-- TODO: set before store submission -->
-    <string name="deprecated_version_dialog_info_url" translatable="false">https://fingerdance.app/TODO-support</string>
+    <string name="deprecated_version_dialog_info_url" translatable="false">https://glyphew.app/legal/TODO-support</string>
     <string name="deprecated_version_dialog_store_button">Install…</string>
 
     <!-- This string is displayed in the title of the slow script dialog. -->
@@ -2379,7 +2379,7 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="third_party_credits_title">Third-Party Credits</string>
 
     <!-- Header shown above the list of credited third-party environments on the Third-Party Credits screen. -->
-    <string name="third_party_credits_header">FingerDance uses the following third-party environments, licensed under Creative Commons licenses:</string>
+    <string name="third_party_credits_header">Glyphew uses the following third-party environments, licensed under Creative Commons licenses:</string>
 
     <!-- Prefix shown before a source URL hyperlink on the Third-Party Credits screen, e.g. "Source: https://polyhaven.com/...". -->
     <string name="third_party_credits_source_prefix">Source: </string>
@@ -2480,9 +2480,9 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- These strings are used in the first-run flow on the phone UI in mainland China. -->
     <string name="rCN_first_launch_title">User Agreement &amp; Privacy Policy Notification</string>
     <string name="rCN_first_launch_body">
-        Welcome to “FingerDance”!
+        Welcome to “Glyphew”!
         \n
-        \nRegistering and using “FingerDance” requires you to agree to the User Agreement and Privacy Policy, or else we cannot provide services to you. Please carefully read the documents and click on “Agree” to continue. If you click “Disagree”, you will not be able to continue using “FingerDance”.
+        \nRegistering and using “Glyphew” requires you to agree to the User Agreement and Privacy Policy, or else we cannot provide services to you. Please carefully read the documents and click on “Agree” to continue. If you click “Disagree”, you will not be able to continue using “Glyphew”.
         \n
         \nYou can read the complete User Agreement and Privacy Policy.</string>
     <string name="rCN_first_launch_clickable_terms_text">User Agreement</string>
@@ -2503,9 +2503,9 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
 
     <!-- These strings are displayed in the privacy dialog on first launch. -->
     <string name="privacy_dialog_title">Privacy</string>
-    <string name="privacy_dialog_message">Your privacy is important to us. In order to run the browser, please accept our terms of service and privacy policy. Thanks for using FingerDance! </string>
+    <string name="privacy_dialog_message">Your privacy is important to us. In order to run the browser, please accept our terms of service and privacy policy. Thanks for using Glyphew! </string>
     <string name="privacy_dialog_agree">Agree</string>
-    <string name="privacy_dialog_disagree">Close FingerDance</string>
+    <string name="privacy_dialog_disagree">Close Glyphew</string>
 
     <!-- These strings are the content of the Terms of Service. -->
     <string name="terms_service_title">Terms of Service</string>
@@ -2622,9 +2622,9 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- Vision Glass: title of an alert dialog in the Phone UI -->
     <string name="phone_ui_alert_dialog_title">Error</string>
     <!-- Vision Glass: error message when it was not possible to switch to 3D mode -->
-    <string name="phone_ui_set3dmode_alert_dialog_description">Failed to switch to 3D mode. Try unplugging the glasses and plugging them back and restart FingerDance.</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">Failed to switch to 3D mode. Try unplugging the glasses and plugging them back and restart Glyphew.</string>
     <!-- Vision Glass: error message when it was not possible to get USO permissions -->
-    <string name="phone_ui_usb_alert_dialog_description">Failed to get USB permissions. Try unplugging the glasses and plugging them back and restart FingerDance.</string>
+    <string name="phone_ui_usb_alert_dialog_description">Failed to get USB permissions. Try unplugging the glasses and plugging them back and restart Glyphew.</string>
     <!-- Vision Glass: instruct the user to connect the device to the phone -->
     <string name="vision_glass_disconnected_message">Please connect Vision Glass</string>
     <!-- Vision Glass: instruct the user to unplug the device and try again -->

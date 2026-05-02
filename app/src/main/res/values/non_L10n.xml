@@ -1,5 +1,5 @@
 <resources>
-    <string name="bug_report_url" translatable="false">github.com/Igalia/wolvic/issues</string>
+    <string name="bug_report_url" translatable="false">https://github.com/thanford/glyphew/issues</string>
     <!-- You can test a local file using: "resource://android/assets/webvr/index.html" -->
     <string name="settings_key_homepage" translatable="false">settings_homepage</string>
     <string name="settings_key_crash" translatable="false">settings_crash</string>
@@ -51,7 +51,7 @@
     <string name="settings_key_keyboard_move" translatable="false">settings_key_keyboard_move</string>
     <string name="settings_key_pointer_mode" translatable="false">settings_key_pointer_mode</string>
     <!-- TODO: set before store submission -->
-    <string name="private_browsing_support_url" translatable="false">https://fingerdance.app/TODO-private-browsing</string>
+    <string name="private_browsing_support_url" translatable="false">https://glyphew.app/legal/TODO-private-browsing</string>
     <string name="settings_key_browser_world_width" translatable="false">settings_browser_world_width</string>
     <string name="settings_key_browser_world_height" translatable="false">settings_browser_world_height</string>
     <string name="settings_key_notifications" translatable="false">settings_key_notifications</string>
@@ -93,15 +93,17 @@
     <string name="settings_key_search_engine_id" translatable="false">settings_key_search_engine_id</string>
     <string name="settings_key_eye_tracking_supported" translatable="false">settings_key_eye_tracking_supported</string>
     <string name="settings_key_tabs_location" translatable="false">settings_key_tabs_location</string>
-    <string name="environment_override_help_url" translatable="false">https://github.com/igalia/wolvic/wiki/Environments</string>
+    <string name="environment_override_help_url" translatable="false">https://glyphew.app/help/environments</string>
     <!-- TODO: set before store submission -->
-    <string name="private_policy_url" translatable="false">https://fingerdance.app/TODO-privacy</string>
+    <string name="private_policy_url" translatable="false">https://glyphew.app/legal/TODO-privacy</string>
     <!-- TODO: set before store submission -->
-    <string name="private_report_url" translatable="false">https://fingerdance.app/TODO-private-report?url=%1$s</string>
+    <string name="private_report_url" translatable="false">https://glyphew.app/legal/TODO-private-report?url=%1$s</string>
     <!-- TODO: set before store submission -->
-    <string name="terms_service_url" translatable="false">https://fingerdance.app/TODO-terms</string>
+    <string name="terms_service_url" translatable="false">https://glyphew.app/legal/TODO-terms</string>
     <!-- TODO: set before store submission -->
-    <string name="help_url" translatable="false">https://fingerdance.app/TODO-help</string>
+    <string name="help_url" translatable="false">https://glyphew.app/legal/TODO-help</string>
+    <!-- TODO: replace with Glyphew help docs -->
+
     <string name="sumo_language_voice_url" translatable="false">https://support.mozilla.org/kb/using-voice-search-firefox-reality</string>
     <string name="sumo_language_display_url" translatable="false">https://support.mozilla.org/kb/use-firefox-another-language?as=u&amp;utm_source=inproduct</string>
     <string name="sumo_language_content_url" translatable="false">https://support.mozilla.org/kb/choose-display-languages-multilingual-web-pages?as=u&amp;utm_source=inproduct</string>
@@ -115,7 +117,7 @@
     <string name="up_id_tag" translatable="false">up_id</string>
     <string name="down_id_tag" translatable="false">down_id</string>
     <!-- TODO: set before store submission -->
-    <string name="crash_dialog_learn_more_url" translatable="false">https://fingerdance.app/TODO-crash-reporting</string>
+    <string name="crash_dialog_learn_more_url" translatable="false">https://glyphew.app/legal/TODO-crash-reporting</string>
     <string name="app_permission_name" translatable="false">CRASH_RECEIVER_PERMISSION</string>
     <string name="developer_options_by" translatable="false">x</string>
     <string name="crash_app_name" translatable="false">Glyphew</string>
@@ -129,7 +131,7 @@
     <string name="keyboard_symbol" translatable="false">%&amp;=</string>
     <string name="ellipsis" translatable="false">…</string>
     <!-- TODO: set before store submission -->
-    <string name="release_notes_url" translatable="false">https://fingerdance.app/TODO-release-notes?v=%1$s</string>
+    <string name="release_notes_url" translatable="false">https://glyphew.app/legal/TODO-release-notes?v=%1$s</string>
 
     <string name="pinyin_spacebar_selection" translatable="false">选定</string>
     <string name="pinyin_spacebar_space" translatable="false">空格</string>
@@ -244,12 +246,12 @@
 
     <!-- Settings Survey link -->
     <!-- TODO: set before store submission -->
-    <string name="feedback_link" translatable="false">https://fingerdance.app/TODO-feedback?version=%1$s&amp;device=%2$d</string>
+    <string name="feedback_link" translatable="false">https://glyphew.app/legal/TODO-feedback?version=%1$s&amp;device=%2$d</string>
 
     <!-- Phone UI links -->
     <string name="hvr_learn_more_url" translatable="false">https://consumer.huawei.com/cn/wearables/vr-glass/</string>
     <!-- TODO: set before store submission -->
-    <string name="landing_page_url" translatable="false">https://fingerdance.app/TODO-landing</string>
+    <string name="landing_page_url" translatable="false">https://glyphew.app/legal/TODO-landing</string>
 
     <!-- Shared preferences key to store the list of installed Web apps (JSON string) -->
     <string name="settings_key_web_apps_data" translatable="false">settings_key_web_apps_data</string>

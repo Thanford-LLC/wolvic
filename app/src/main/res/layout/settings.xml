@@ -112,7 +112,7 @@
             android:paddingStart="32dp"
             android:paddingEnd="32dp"
             android:paddingTop="8dp"
-            android:text="@string/fingerdance_attribution"
+            android:text="@string/glyphew_attribution"
             android:textColor="@color/concrete"
             android:textColorLink="@color/azure"
             android:textSize="@dimen/text_smaller_size"
