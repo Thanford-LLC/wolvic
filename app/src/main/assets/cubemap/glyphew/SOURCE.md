@@ -1,4 +1,4 @@
-# fingerdance — source provenance
+# glyphew — source provenance
 
 Generated: 2026-04-18 (v3 — seam-free + feather-blend)
 Tool: AI image generator (details withheld pre-launch — business confidential). Wrap-aware output: raw wrap ΔRGB 8.70 vs interior baseline 6.73 (ratio 1.29x). Residual seam visible on-device motivated a post-process 64-col feather-blend (col 0 ≡ col W-1 enforced at seam, original detail recovered over 64 cols on each side).

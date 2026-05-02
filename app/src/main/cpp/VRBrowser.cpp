@@ -570,7 +570,7 @@ VRBrowser::OnMaxCompositionLayersAvailable(jint aNumLayers) {
 
 void
 VRBrowser::HandleComboProgress(const int* path, int length) {
-    VRB_LOG("FingerDance: HandleComboProgress length=%d", length);
+    VRB_LOG("Glyphew: HandleComboProgress length=%d", length);
     if (!ValidateMethodID(sEnv, sActivity, sHandleComboProgress, __FUNCTION__)) { return; }
     jintArray jpath = sEnv->NewIntArray(length);
     if (!jpath) { return; }
@@ -582,7 +582,7 @@ VRBrowser::HandleComboProgress(const int* path, int length) {
 
 void
 VRBrowser::HandleGripStateChanged(bool held, int hand) {
-    VRB_LOG("FingerDance: HandleGripStateChanged held=%d hand=%d", (int)held, hand);
+    VRB_LOG("Glyphew: HandleGripStateChanged held=%d hand=%d", (int)held, hand);
     if (!ValidateMethodID(sEnv, sActivity, sHandleGripStateChanged, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sHandleGripStateChanged, (jboolean)held, (jint)hand);
     CheckJNIException(sEnv, __FUNCTION__);
@@ -604,7 +604,7 @@ VRBrowser::HandleComboPreviewProgress(int zoneId, float progress) {
 
 void
 VRBrowser::HandleComboThumbstickPress() {
-    VRB_LOG("FingerDance: HandleComboThumbstickPress");
+    VRB_LOG("Glyphew: HandleComboThumbstickPress");
     if (!ValidateMethodID(sEnv, sActivity, sHandleComboThumbstickPress, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sHandleComboThumbstickPress);
     CheckJNIException(sEnv, __FUNCTION__);
@@ -612,7 +612,7 @@ VRBrowser::HandleComboThumbstickPress() {
 
 void
 VRBrowser::HandleLongPressThumbstick() {
-    VRB_LOG("FingerDance: HandleLongPressThumbstick");
+    VRB_LOG("Glyphew: HandleLongPressThumbstick");
     if (!ValidateMethodID(sEnv, sActivity, sHandleLongPressThumbstick, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sHandleLongPressThumbstick);
     CheckJNIException(sEnv, __FUNCTION__);
@@ -620,7 +620,7 @@ VRBrowser::HandleLongPressThumbstick() {
 
 void
 VRBrowser::HandleComboAXPressed(int hand) {
-    VRB_LOG("FingerDance: HandleComboAXPressed hand=%d", hand);
+    VRB_LOG("Glyphew: HandleComboAXPressed hand=%d", hand);
     if (!ValidateMethodID(sEnv, sActivity, sHandleComboAXPressed, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sHandleComboAXPressed, (jint)hand);
     CheckJNIException(sEnv, __FUNCTION__);
@@ -628,7 +628,7 @@ VRBrowser::HandleComboAXPressed(int hand) {
 
 void
 VRBrowser::HandleComboEvent(const int* path, int length) {
-    VRB_LOG("FingerDance: HandleComboEvent length=%d", length);
+    VRB_LOG("Glyphew: HandleComboEvent length=%d", length);
     if (!ValidateMethodID(sEnv, sActivity, sHandleComboEvent, __FUNCTION__)) { return; }
     jintArray jpath = sEnv->NewIntArray(length);
     if (!jpath) { return; }

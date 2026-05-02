@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 Thanford. All rights reserved.
  *
- * Proprietary FingerDance component. Not licensed under the MPL 2.0 that
+ * Proprietary Glyphew component. Not licensed under the MPL 2.0 that
  * covers the surrounding Wolvic files.
  */
 package com.thanford.glyphew.settings;
@@ -28,7 +28,7 @@ import java.lang.ref.WeakReference;
  * </ul>
  *
  * Effective state = Wolvic global haptics pref (handled inside
- * {@link WidgetManagerDelegate#triggerHapticFeedback(int)}) AND the FingerDance
+ * {@link WidgetManagerDelegate#triggerHapticFeedback(int)}) AND the Glyphew
  * per-combo haptics pref ({@link ComboHUDWidget#PREF_COMBO_HAPTICS}). Either
  * off → skip entirely.
  *
@@ -98,7 +98,7 @@ public final class ComboHapticController {
     /**
      * Per-combo haptics pref. The global Wolvic haptics gate is applied
      * inside {@link WidgetManagerDelegate#triggerHapticFeedback(int)} so we
-     * only check the FingerDance-specific key here.
+     * only check the Glyphew-specific key here.
      */
     private boolean isCombosHapticsEnabled() {
         SharedPreferences prefs =

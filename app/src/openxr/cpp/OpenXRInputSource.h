@@ -76,10 +76,10 @@ private:
     bool selectActionStarted { false };
     bool squeezeActionStarted { false };
     bool mGlyphewGripHeld { false };  // Glyphew: tracks grip for combo mode + laser suppression
-    bool mPrevThumbstickForHUD { false }; // FingerDance: edge detect thumbstick press for HUD toggle
-    bool mPrevFaceABtnClicked { false };  // FingerDance: edge detect A/X face-button for FROM_CAPTURE entry
-    bool mPathEmptyAtHUDPressStart { false }; // FingerDance: snapshot of recognizer idle-state at press-edge, read at release-edge
-    int64_t mThumbstickPressStartMsForHUD { 0 }; // FingerDance: press-start timestamp so long-press (>=LONG_PRESS_MS) does NOT also toggle HUD
+    bool mPrevThumbstickForHUD { false }; // Glyphew: edge detect thumbstick press for HUD toggle
+    bool mPrevFaceABtnClicked { false };  // Glyphew: edge detect A/X face-button for FROM_CAPTURE entry
+    bool mPathEmptyAtHUDPressStart { false }; // Glyphew: snapshot of recognizer idle-state at press-edge, read at release-edge
+    int64_t mThumbstickPressStartMsForHUD { 0 }; // Glyphew: press-start timestamp so long-press (>=LONG_PRESS_MS) does NOT also toggle HUD
     std::vector<float> axesContainer;
     crow::ElbowModelPtr elbow;
     XrHandTrackerEXT mHandTracker { XR_NULL_HANDLE };

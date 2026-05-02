@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 Thanford. All rights reserved.
  *
- * FingerDance proprietary — not part of the Wolvic MPL 2.0 codebase.
+ * Glyphew proprietary — not part of the Wolvic MPL 2.0 codebase.
  */
 package com.igalia.wolvic.ui.widgets.combo;
 
@@ -33,33 +33,33 @@ public final class ComboActionNames {
 
     static {
         NAME_FOR_ACTION = new SparseIntArray(26);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_UP,      R.string.fd_action_name_scroll_up);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_DOWN,    R.string.fd_action_name_scroll_down);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_LEFT,    R.string.fd_action_name_scroll_left);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_RIGHT,   R.string.fd_action_name_scroll_right);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_TOP,     R.string.fd_action_name_scroll_top);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_BOTTOM,  R.string.fd_action_name_scroll_bottom);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_BACK,           R.string.fd_action_name_back);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_FORWARD,        R.string.fd_action_name_forward);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_REFRESH,        R.string.fd_action_name_refresh);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_FIND_IN_PAGE,   R.string.fd_action_name_find_in_page);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_STOP,           R.string.fd_action_name_stop);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_NEW_WINDOW,     R.string.fd_action_name_new_window);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_CLOSE_WINDOW,   R.string.fd_action_name_close_window);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_DUPLICATE,      R.string.fd_action_name_duplicate);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_NEXT_WINDOW,    R.string.fd_action_name_next_window);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_PREV_WINDOW,    R.string.fd_action_name_prev_window);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_URL_BAR,        R.string.fd_action_name_url_bar);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_OPEN_BOOKMARKS, R.string.fd_action_name_open_bookmarks);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_ADD_BOOKMARK,   R.string.fd_action_name_add_bookmark);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_HISTORY,        R.string.fd_action_name_history);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_READER_MODE,    R.string.fd_action_name_reader_mode);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_PRIVATE_WINDOW,       R.string.fd_action_name_private_window);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_HUD,           R.string.fd_action_name_toggle_hud);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_MODE,          R.string.fd_action_name_toggle_mode);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_CURVE_WINDOW,  R.string.fd_action_name_toggle_curved_window);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_GOTO_BOOKMARK,        R.string.fd_action_name_goto_bookmark);
-        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_GHOST_ROUTES,  R.string.fd_action_name_toggle_ghost_routes);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_UP,      R.string.gw_action_name_scroll_up);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_DOWN,    R.string.gw_action_name_scroll_down);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_LEFT,    R.string.gw_action_name_scroll_left);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_RIGHT,   R.string.gw_action_name_scroll_right);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_TOP,     R.string.gw_action_name_scroll_top);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_SCROLL_BOTTOM,  R.string.gw_action_name_scroll_bottom);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_BACK,           R.string.gw_action_name_back);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_FORWARD,        R.string.gw_action_name_forward);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_REFRESH,        R.string.gw_action_name_refresh);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_FIND_IN_PAGE,   R.string.gw_action_name_find_in_page);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_STOP,           R.string.gw_action_name_stop);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_NEW_WINDOW,     R.string.gw_action_name_new_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_CLOSE_WINDOW,   R.string.gw_action_name_close_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_DUPLICATE,      R.string.gw_action_name_duplicate);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_NEXT_WINDOW,    R.string.gw_action_name_next_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_PREV_WINDOW,    R.string.gw_action_name_prev_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_URL_BAR,        R.string.gw_action_name_url_bar);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_OPEN_BOOKMARKS, R.string.gw_action_name_open_bookmarks);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_ADD_BOOKMARK,   R.string.gw_action_name_add_bookmark);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_HISTORY,        R.string.gw_action_name_history);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_READER_MODE,    R.string.gw_action_name_reader_mode);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_PRIVATE_WINDOW,       R.string.gw_action_name_private_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_HUD,           R.string.gw_action_name_toggle_hud);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_MODE,          R.string.gw_action_name_toggle_mode);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_CURVE_WINDOW,  R.string.gw_action_name_toggle_curved_window);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_GOTO_BOOKMARK,        R.string.gw_action_name_goto_bookmark);
+        NAME_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_GHOST_ROUTES,  R.string.gw_action_name_toggle_ghost_routes);
     }
 
     /**

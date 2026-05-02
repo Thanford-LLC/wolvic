@@ -2605,56 +2605,56 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- Shown in the controller options view when disabling the hand tracking switch -->
     <string name="disable_hand_tracking_dialog_body">Hand tracking is disabled temporarily. It will be automatically re-enabled on next launch. This option is not persistent on purpose to avoid issues when controllers are unavailable.</string>
 
-    <!-- FingerDance meta-tips shown on the combo HUD's idle rotation strip. -->
-    <string name="fd_meta_tip_release">Release joystick to fire</string>
-    <string name="fd_meta_tip_cancel">Click joystick to cancel</string>
-    <string name="fd_meta_tip_origin">Push joystick to start</string>
-    <string name="fd_meta_tip_long_press_settings">Long press joystick for setting.</string>
+    <!-- Glyphew meta-tips shown on the combo HUD's idle rotation strip. -->
+    <string name="gw_meta_tip_release">Release joystick to fire</string>
+    <string name="gw_meta_tip_cancel">Click joystick to cancel</string>
+    <string name="gw_meta_tip_origin">Push joystick to start</string>
+    <string name="gw_meta_tip_long_press_settings">Long press joystick for setting.</string>
     <!-- Dead-end stub CTA shown in the bottom strip when the committed path
          has no legal nexts and is not itself a binding. Phase 3c replaces
          this with the handedness-reactive "Press A/X to create a new combo"
          variant; the stub keeps the cancel affordance visible until then. -->
-    <string name="fd_meta_tip_dead_end_stub">Click joystick to cancel</string>
+    <string name="gw_meta_tip_dead_end_stub">Click joystick to cancel</string>
     <!-- Phase 3c R4: handedness-reactive dead-end CTA. %1$s = "A" (right hand)
          or "X" (left hand). English-only for v1.0. -->
-    <string name="fd_meta_tip_create_combo">Press %1$s to create combo</string>
+    <string name="gw_meta_tip_create_combo">Press %1$s to create combo</string>
 
     <!-- Phase 3c R1 (post-review): preview-fire label shown in the bottom strip
          while the user is actively leaning toward a legal bound combo.
          %1$s = action-icon placeholder (replaced by ImageSpan at runtime).
-         %2$s = localized action name (see fd_action_name_* below). -->
+         %2$s = localized action name (see gw_action_name_* below). -->
     <string name="fd_tip_release_to_fire">Release joystick: %1$s</string>
 
-    <!-- FingerDance action names shown on the HUD tip strip when the user is
+    <!-- Glyphew action names shown on the HUD tip strip when the user is
          leaning toward a legal combo. English-only for v1.0 (translatable as a
          v1.0.1 patch; 22 strings × ~23 locales ≈ 506 translations). -->
-    <string name="fd_action_name_scroll_up">Scroll up</string>
-    <string name="fd_action_name_scroll_down">Scroll down</string>
-    <string name="fd_action_name_scroll_left">Scroll left</string>
-    <string name="fd_action_name_scroll_right">Scroll right</string>
-    <string name="fd_action_name_scroll_top">Scroll to top</string>
-    <string name="fd_action_name_scroll_bottom">Scroll to bottom</string>
-    <string name="fd_action_name_back">Back</string>
-    <string name="fd_action_name_forward">Forward</string>
-    <string name="fd_action_name_refresh">Reload</string>
-    <string name="fd_action_name_find_in_page">Find in page</string>
-    <string name="fd_action_name_stop">Stop loading</string>
-    <string name="fd_action_name_new_window">New window</string>
-    <string name="fd_action_name_close_window">Close window</string>
-    <string name="fd_action_name_duplicate">Duplicate window</string>
-    <string name="fd_action_name_next_window">Next window</string>
-    <string name="fd_action_name_prev_window">Previous window</string>
-    <string name="fd_action_name_url_bar">URL bar</string>
-    <string name="fd_action_name_open_bookmarks">Bookmarks</string>
-    <string name="fd_action_name_add_bookmark">Add bookmark</string>
-    <string name="fd_action_name_history">History</string>
-    <string name="fd_action_name_reader_mode">Reader mode</string>
-    <string name="fd_action_name_private_window">Private window</string>
-    <string name="fd_action_name_toggle_hud">Toggle HUD</string>
-    <string name="fd_action_name_toggle_mode">Toggle mode</string>
-    <string name="fd_action_name_toggle_curved_window">Curved window</string>
-    <string name="fd_action_name_goto_bookmark">Go to bookmark</string>
-    <string name="fd_action_name_toggle_ghost_routes">Ghost routes</string>
-    <string name="fd_hud_off_joystick_hint">Click joystick to turn on HUD</string>
+    <string name="gw_action_name_scroll_up">Scroll up</string>
+    <string name="gw_action_name_scroll_down">Scroll down</string>
+    <string name="gw_action_name_scroll_left">Scroll left</string>
+    <string name="gw_action_name_scroll_right">Scroll right</string>
+    <string name="gw_action_name_scroll_top">Scroll to top</string>
+    <string name="gw_action_name_scroll_bottom">Scroll to bottom</string>
+    <string name="gw_action_name_back">Back</string>
+    <string name="gw_action_name_forward">Forward</string>
+    <string name="gw_action_name_refresh">Reload</string>
+    <string name="gw_action_name_find_in_page">Find in page</string>
+    <string name="gw_action_name_stop">Stop loading</string>
+    <string name="gw_action_name_new_window">New window</string>
+    <string name="gw_action_name_close_window">Close window</string>
+    <string name="gw_action_name_duplicate">Duplicate window</string>
+    <string name="gw_action_name_next_window">Next window</string>
+    <string name="gw_action_name_prev_window">Previous window</string>
+    <string name="gw_action_name_url_bar">URL bar</string>
+    <string name="gw_action_name_open_bookmarks">Bookmarks</string>
+    <string name="gw_action_name_add_bookmark">Add bookmark</string>
+    <string name="gw_action_name_history">History</string>
+    <string name="gw_action_name_reader_mode">Reader mode</string>
+    <string name="gw_action_name_private_window">Private window</string>
+    <string name="gw_action_name_toggle_hud">Toggle HUD</string>
+    <string name="gw_action_name_toggle_mode">Toggle mode</string>
+    <string name="gw_action_name_toggle_curved_window">Curved window</string>
+    <string name="gw_action_name_goto_bookmark">Go to bookmark</string>
+    <string name="gw_action_name_toggle_ghost_routes">Ghost routes</string>
+    <string name="gw_hud_off_joystick_hint">Click joystick to turn on HUD</string>
 
 </resources>

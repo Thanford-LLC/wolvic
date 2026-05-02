@@ -528,7 +528,7 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
         return mUrlUtilsVisitor;
     }
 
-    // ── FingerDance JS bridge (MPL diff) ──────────────────────────────────
+    // ── Glyphew JS bridge (MPL diff) ──────────────────────────────────
 
     @Override
     public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {

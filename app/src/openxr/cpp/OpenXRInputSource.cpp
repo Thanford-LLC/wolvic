@@ -779,13 +779,13 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
 {
     static int fdUpdateCount = 0;
     if (fdUpdateCount++ % 500 == 0) {
-        VRB_LOG("FingerDance: Update() called #%d mapping=%p hand=%d handTrack=%d", fdUpdateCount, (void*)mActiveMapping, (int)mHandeness, (int)handTrackingEnabled);
+        VRB_LOG("Glyphew: Update() called #%d mapping=%p hand=%d handTrack=%d", fdUpdateCount, (void*)mActiveMapping, (int)mHandeness, (int)handTrackingEnabled);
     }
     if (mActiveMapping &&
         ((mHandeness == OpenXRHandFlags::Left && !mActiveMapping->leftControllerModel) ||
          (mHandeness == OpenXRHandFlags::Right && !mActiveMapping->rightControllerModel))) {
       delegate.SetEnabled(mIndex, false);
-      VRB_LOG("FingerDance: Update early return - no controller model");
+      VRB_LOG("Glyphew: Update early return - no controller model");
       return;
     }
 
@@ -870,7 +870,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
 
     // Don't enable aim for eye tracking as we don't want to paint the beam. Note that we'd still
     // have an aim, meaning that we can point, focus, click... UI elements.
-    // FingerDance: hide laser pointer when grip is held (combo mode active).
+    // Glyphew: hide laser pointer when grip is held (combo mode active).
     delegate.SetAimEnabled(mIndex, hasAim && usingTrackedPointer && !mGlyphewGripHeld);
 
     // Disable the controller if there is no aim unless:
@@ -894,7 +894,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     // Hand interaction profiles do not really require the hand joints data, but if we
     // set ControllerMode::Hand then Wolvic code assumes that it does.
     delegate.SetMode(mIndex, mUsingHandInteractionProfile && gotHandTrackingInfo ? ControllerMode::Hand : ControllerMode::Device);
-    // FingerDance: while grip is held the controller is in combo mode —
+    // Glyphew: while grip is held the controller is in combo mode —
     // disable pointer targeting, trigger clicks, and hover on the page so
     // the joystick drives the HUD instead. Axis/button processing below
     // still runs so the combo recognizer keeps receiving thumbstick input.
@@ -998,15 +998,15 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
             continue;
         }
 
-        // FingerDance: log squeeze value every 100 frames for debugging
+        // Glyphew: log squeeze value every 100 frames for debugging
         if (button.type == OpenXRButtonType::Squeeze && (fdLogCounter++ % 100 == 0)) {
-            VRB_LOG("FingerDance: Squeeze val=%.3f clicked=%d mGripHeld=%d hand=%d", state->value, (int)state->clicked, (int)mGlyphewGripHeld, mIndex);
+            VRB_LOG("Glyphew: Squeeze val=%.3f clicked=%d mGripHeld=%d hand=%d", state->value, (int)state->clicked, (int)mGlyphewGripHeld, mIndex);
         }
 
         placeholders.erase(button.type);
         buttonCount++;
 
-        // Capture grip/thumbstick/face states for FingerDance combo recognizer.
+        // Capture grip/thumbstick/face states for Glyphew combo recognizer.
         if (button.type == OpenXRButtonType::Squeeze)    squeezeClicked      = state->clicked;
         if (button.type == OpenXRButtonType::Thumbstick) thumbstickBtnClicked = state->clicked;
         if (button.type == OpenXRButtonType::ButtonA || button.type == OpenXRButtonType::ButtonX)
@@ -1042,10 +1042,10 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
           }
         }
 
-        // FingerDance: grip shows/hides HUD and suppresses laser in ALL render modes, both hands.
+        // Glyphew: grip shows/hides HUD and suppresses laser in ALL render modes, both hands.
         if (button.type == OpenXRButtonType::Squeeze && state->clicked != mGlyphewGripHeld) {
           mGlyphewGripHeld = state->clicked;
-          VRB_LOG("FingerDance: Grip %s (hand=%d)", mGlyphewGripHeld ? "PRESSED" : "RELEASED", mIndex);
+          VRB_LOG("Glyphew: Grip %s (hand=%d)", mGlyphewGripHeld ? "PRESSED" : "RELEASED", mIndex);
           // Hand ordinal matches com.igalia.wolvic.VRBrowserActivity.ComboHand:
           // 0 = LEFT, 1 = RIGHT.
           const int hand = (mHandeness == OpenXRHandFlags::Left) ? 0 : 1;
@@ -1072,7 +1072,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     buttonCount += placeholders.size();
     delegate.SetButtonCount(mIndex, buttonCount);
 
-    // FingerDance: A/X face-button just-pressed while grip held + path active → FROM_CAPTURE.
+    // Glyphew: A/X face-button just-pressed while grip held + path active → FROM_CAPTURE.
     // Java dispatcher decides whether to open the bind flow (checks mCombosEnabled, etc.).
     if (faceABtnClicked && !mPrevFaceABtnClicked && squeezeClicked && !mComboRecognizer.IsPathEmpty()) {
         const int hand = (mHandeness == OpenXRHandFlags::Left) ? 0 : 1;
@@ -1107,7 +1107,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
       } else if (axis.type == OpenXRAxisType::Thumbstick) {
         axesContainer[device::kImmersiveAxisThumbstickX] = state->x;
         axesContainer[device::kImmersiveAxisThumbstickY] = -state->y;
-        // FingerDance: both hands are combo hands. Grip activates combo mode.
+        // Glyphew: both hands are combo hands. Grip activates combo mode.
         const int64_t timestampMs = static_cast<int64_t>(
             frameState.predictedDisplayTime / 1'000'000LL);
         // Capture "was the recognizer idle?" BEFORE Process runs. Process may
@@ -1118,7 +1118,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         const bool pathWasEmpty = mComboRecognizer.IsPathEmpty();
         bool consumed = mComboRecognizer.Process(
             state->x, -state->y, thumbstickBtnClicked, squeezeClicked, timestampMs);
-        // FingerDance: thumbstick click in idle (no ongoing combo) toggles HUD,
+        // Glyphew: thumbstick click in idle (no ongoing combo) toggles HUD,
         // regardless of grip state. Fire on RELEASE-edge with press-duration <
         // LONG_PRESS_MS gate — the LONG_PRESS_MS gate prevents a Settings-open
         // long-press from also firing a HUD toggle. pathWasEmpty gate prevents
@@ -1138,9 +1138,9 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
         mPrevThumbstickForHUD = heldNow;
         static int fdAxisLog = 0;
         if (squeezeClicked && (fdAxisLog++ % 50 == 0)) {
-            VRB_LOG("FingerDance: Axis x=%.3f y=%.3f grip=%d consumed=%d hand=%d", state->x, state->y, (int)squeezeClicked, (int)consumed, mIndex);
+            VRB_LOG("Glyphew: Axis x=%.3f y=%.3f grip=%d consumed=%d hand=%d", state->x, state->y, (int)squeezeClicked, (int)consumed, mIndex);
         }
-        // FingerDance: suppress page scroll delta whenever grip is held —
+        // Glyphew: suppress page scroll delta whenever grip is held —
         // the joystick belongs to the combo recognizer, not the page.
         if (!consumed && !squeezeClicked) {
           delegate.SetScrolledDelta(mIndex, -state->x, state->y);

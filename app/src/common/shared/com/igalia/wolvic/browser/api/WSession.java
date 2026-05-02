@@ -2990,7 +2990,7 @@ public interface WSession {
     @Nullable
     WSession.SelectionActionDelegate getSelectionActionDelegate();
 
-    // ── FingerDance JS bridge (MPL diff) ──────────────────────────────────
+    // ── Glyphew JS bridge (MPL diff) ──────────────────────────────────
 
     /**
      * Expose a Java object to JavaScript via the named global property.

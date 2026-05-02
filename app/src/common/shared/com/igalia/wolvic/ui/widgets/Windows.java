@@ -87,10 +87,10 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
     private static final int BOOKMARK_ADDED_NOTIFICATION_ID = 2;
     private static final int WEB_APP_ADDED_NOTIFICATION_ID = 3;
 
-    // launch FingerDance in immersive mode automatically
-    private static final String PARENT_ELEMENT_XPATH_PARAMETER = "fingerdance-launchimmersive-parentElementXPath";
-    private static final String TARGET_ELEMENT_XPATH_PARAMETER = "fingerdance-launchimmersive-targetElementXPath";
-    private static final String IMMERSIVE_EXTENSION_ID = "fingerdance-launchimmersive@thanford.com";
+    // launch Glyphew in immersive mode automatically
+    private static final String PARENT_ELEMENT_XPATH_PARAMETER = "glyphew-launchimmersive-parentElementXPath";
+    private static final String TARGET_ELEMENT_XPATH_PARAMETER = "glyphew-launchimmersive-targetElementXPath";
+    private static final String IMMERSIVE_EXTENSION_ID = "glyphew-launchimmersive@thanford.com";
     private static final String IMMERSIVE_EXTENSION_URL = "resource://android/assets/extensions/wolvic_launchimmersive/";
 
     class WindowState {

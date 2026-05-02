@@ -112,7 +112,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private static final int[] CARDINAL_ANGLES = { 0, 90, 180, 270 };
 
     // Colours — skin-aware, resolved per instance from resources.
-    // fd_hud_* lives in values/colors-fd-hud.xml (skin-neutral) except fd_hud_accent
+    // gw_hud_* lives in values/colors-gw-hud.xml (skin-neutral) except gw_hud_accent
     // which lives per-skin in res-gw-<skin>/values/colors-fd.xml.
     private final int mColorBg;
     private final int mColorBgStroke;
@@ -321,20 +321,20 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     public ComboHUDWidget(Context aContext) {
         super(aContext);
-        mColorBg           = aContext.getColor(R.color.fd_hud_bg);
-        mColorBgStroke     = aContext.getColor(R.color.fd_hud_bg_stroke);
-        mColorWedgeIdle    = aContext.getColor(R.color.fd_hud_wedge_idle);
-        mColorWedgePreview = aContext.getColor(R.color.fd_hud_wedge_preview);
-        mColorWedgeHit     = aContext.getColor(R.color.fd_hud_wedge_hit);
-        mColorAccent       = aContext.getColor(R.color.fd_hud_accent);
-        mColorCenter       = aContext.getColor(R.color.fd_hud_center);
-        mColorTextIdle     = aContext.getColor(R.color.fd_hud_text_idle);
-        mColorTextPreview  = aContext.getColor(R.color.fd_hud_text_preview);
-        mColorTextHit      = aContext.getColor(R.color.fd_hud_text_hit);
-        mColorTextLast     = aContext.getColor(R.color.fd_hud_text_last);
-        mColorGhostYellow  = aContext.getColor(R.color.fd_hud_ghost_yellow);
-        mColorTipText      = aContext.getColor(R.color.fd_hud_tip_text);
-        mColorLabelPill    = aContext.getColor(R.color.fd_hud_label_pill);
+        mColorBg           = aContext.getColor(R.color.gw_hud_bg);
+        mColorBgStroke     = aContext.getColor(R.color.gw_hud_bg_stroke);
+        mColorWedgeIdle    = aContext.getColor(R.color.gw_hud_wedge_idle);
+        mColorWedgePreview = aContext.getColor(R.color.gw_hud_wedge_preview);
+        mColorWedgeHit     = aContext.getColor(R.color.gw_hud_wedge_hit);
+        mColorAccent       = aContext.getColor(R.color.gw_hud_accent);
+        mColorCenter       = aContext.getColor(R.color.gw_hud_center);
+        mColorTextIdle     = aContext.getColor(R.color.gw_hud_text_idle);
+        mColorTextPreview  = aContext.getColor(R.color.gw_hud_text_preview);
+        mColorTextHit      = aContext.getColor(R.color.gw_hud_text_hit);
+        mColorTextLast     = aContext.getColor(R.color.gw_hud_text_last);
+        mColorGhostYellow  = aContext.getColor(R.color.gw_hud_ghost_yellow);
+        mColorTipText      = aContext.getColor(R.color.gw_hud_tip_text);
+        mColorLabelPill    = aContext.getColor(R.color.gw_hud_label_pill);
         mBgPaint.setColor(mColorBg);
         mTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
@@ -783,7 +783,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
             if (nexts.isEmpty()) {
                 // R4: handedness-reactive CTA. Accent-yellow brand emphasis.
                 String buttonGlyph = handOrdinalToGlyph(handOrdinal);
-                String cta = getContext().getString(R.string.fd_meta_tip_create_combo, buttonGlyph);
+                String cta = getContext().getString(R.string.gw_meta_tip_create_combo, buttonGlyph);
                 accent = true;
                 out = new SpannableString(cta);
             } else {
@@ -897,7 +897,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private void drawHUD(Canvas canvas, int w, int h) {
         // Cache frame time once at top of onDraw for all per-ghost animation math.
         mCurrentFrameTimeMs = System.nanoTime() / 1_000_000L;
-        android.util.Log.d("FingerDance", "drawHUD w=" + w + " h=" + h
+        android.util.Log.d("Glyphew", "drawHUD w=" + w + " h=" + h
                 + " grip=" + mGripHeld + " building=" + mIsBuilding
                 + " pathLen=" + mPathLength + " ghosts=" + mGhostCount
                 + " lastNode=" + mLastNode);

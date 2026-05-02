@@ -1,5 +1,5 @@
 /* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * FingerDance proprietary. No redistribution without permission. */
+ * Glyphew proprietary. No redistribution without permission. */
 
 package com.igalia.wolvic.utils;
 

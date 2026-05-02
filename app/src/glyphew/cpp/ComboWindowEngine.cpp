@@ -67,7 +67,7 @@ bool ComboWindowEngine::Process(float axisX, float axisY,
         mLongPressFired     = false;
     }
 
-    // FingerDance (CLAUDE.md §5.4): joystick click mid-path = silent cancel.
+    // Glyphew (CLAUDE.md §5.4): joystick click mid-path = silent cancel.
     // No fire, no toast. CancelSilent() already resets state and fires an
     // empty progress event so the HUD drops its path. We re-assert
     // mPrev{Grip,ThumbstickBtn} after the reset because CancelSilent zeroes

@@ -1073,7 +1073,7 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
         return mViewModel.getIsFullscreen().getValue().get();
     }
 
-    /** FingerDance: open the find-in-page bar for the current window. */
+    /** Glyphew: open the find-in-page bar for the current window. */
     public void showFindInPage() {
         mViewModel.setIsFindInPage(true);
     }

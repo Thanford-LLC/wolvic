@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 Thanford. All rights reserved.
  *
- * Proprietary FingerDance component. Not licensed under the MPL 2.0 that
+ * Proprietary Glyphew component. Not licensed under the MPL 2.0 that
  * covers the surrounding Wolvic files.
  */
 package com.thanford.glyphew.home;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * JS bridge exposed as window.fdHome on the FingerDance homepage.
+ * JS bridge exposed as window.gwHome on the Glyphew homepage.
  *
  * Async methods receive a requestId and resolve via
  * evaluateJavaScript("window.fdHome._resolve(id, json)") on the UI thread.

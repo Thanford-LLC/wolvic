@@ -558,7 +558,7 @@ public class ComboDispatcher {
                 if (tray != null) {
                     com.igalia.wolvic.ui.widgets.NotificationManager.Notification hint =
                             new com.igalia.wolvic.ui.widgets.NotificationManager.Builder(tray)
-                                    .withString(R.string.fd_hud_off_joystick_hint)
+                                    .withString(R.string.gw_hud_off_joystick_hint)
                                     .withPosition(com.igalia.wolvic.ui.widgets.NotificationManager.Notification.TOP)
                                     .withMargin(20.0f)
                                     .withDuration(3000)

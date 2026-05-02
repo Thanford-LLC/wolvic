@@ -234,8 +234,8 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     Windows mWindows;
     com.igalia.wolvic.input.ComboDispatcher mComboDispatcher;
     com.igalia.wolvic.ui.widgets.ComboHUDWidget mHUDWidget;
-    boolean mHUDEnabled = true;  // FingerDance: thumbstick press toggles HUD visibility
-    // FingerDance (Phase 6): stable id for the one-shot long-press onboarding
+    boolean mHUDEnabled = true;  // Glyphew: thumbstick press toggles HUD visibility
+    // Glyphew (Phase 6): stable id for the one-shot long-press onboarding
     // hint. Kept FD-namespaced so it cannot collide with Wolvic's own
     // NotificationManager ids.
     private static final int FD_LONGPRESS_ONBOARDING_NOTIFICATION_ID = 0xFD0601;
@@ -338,7 +338,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         BitmapCache.getInstance(this).onCreate();
 
         WRuntime runtime = EngineProvider.INSTANCE.getOrCreateRuntime(this);
-        runtime.appendAppNotesToCrashReport("FingerDance " + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "-" + BuildConfig.FLAVOR + "-" + BuildConfig.BUILD_TYPE + " (" + BuildConfig.GIT_HASH + ")");
+        runtime.appendAppNotesToCrashReport("Glyphew " + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "-" + BuildConfig.FLAVOR + "-" + BuildConfig.BUILD_TYPE + " (" + BuildConfig.GIT_HASH + ")");
 
         // Create broadcast receiver for getting crash messages from crash process
         IntentFilter intentFilter = new IntentFilter();
@@ -525,7 +525,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         mWindows.restoreSessions();
 
-        // FingerDance (Phase 6): schedule the one-shot long-press onboarding
+        // Glyphew (Phase 6): schedule the one-shot long-press onboarding
         // hint. 3s delay lets the splash fade complete before the tooltip
         // appears above the Tray. Gated inside the helper so repeat launches
         // are no-ops.
@@ -1283,7 +1283,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleComboEvent(final int[] path, final int length) {
-        android.util.Log.e("FingerDance", "handleComboEvent length=" + length + " path=" + java.util.Arrays.toString(java.util.Arrays.copyOf(path, length)));
+        android.util.Log.e("Glyphew", "handleComboEvent length=" + length + " path=" + java.util.Arrays.toString(java.util.Arrays.copyOf(path, length)));
         runOnUiThread(() -> {
             if (mComboDispatcher != null) {
                 mComboDispatcher.dispatch(path, length);
@@ -1311,7 +1311,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         });
     }
 
-    // FingerDance (Phase 3b): continuous [0,1] preview-progress signal. Throttled
+    // Glyphew (Phase 3b): continuous [0,1] preview-progress signal. Throttled
     // by the native engine so this fires only on meaningful change. The HUD
     // applies its own EMA smoothing before consumption in Phase 3c.
     @SuppressWarnings({"UnusedDeclaration"})
@@ -1336,14 +1336,14 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
                     androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
             mHUDEnabled = !prefs.getBoolean(
                     com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_HUD_VISIBLE, true);
-            android.util.Log.d("FingerDance", "HUD toggled: " + mHUDEnabled);
+            android.util.Log.d("Glyphew", "HUD toggled: " + mHUDEnabled);
             // setHudVisible updates the pref AND shows/hides the widget, so
             // show() will no longer be blocked by a stale mVisiblePref=false.
             mHUDWidget.setHudVisible(mHUDEnabled);
         });
     }
 
-    // FingerDance (Phase 6): native JNI receiver — joystick (either hand) held
+    // Glyphew (Phase 6): native JNI receiver — joystick (either hand) held
     // >= LONG_PRESS_MS with grip OFF. Opens Combos Settings directly. Grip-OFF
     // gating lives in the native engine (ComboWindowEngine); we just route to
     // the Tray on the UI thread. Both hand recognizers register this callback
@@ -1352,16 +1352,16 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleLongPressThumbstick() {
-        android.util.Log.d("FingerDance", "handleLongPressThumbstick → openCombosSettingsDirect");
+        android.util.Log.d("Glyphew", "handleLongPressThumbstick → openCombosSettingsDirect");
         runOnUiThread(this::openCombosSettingsDirect);
     }
 
-    // FingerDance (Phase 7): A/X face button pressed while grip held + path
+    // Glyphew (Phase 7): A/X face button pressed while grip held + path
     // non-empty → notify dispatcher so the next combo release opens FROM_CAPTURE.
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleComboAXPressed(int hand) {
-        android.util.Log.d("FingerDance", "handleComboAXPressed hand=" + hand);
+        android.util.Log.d("Glyphew", "handleComboAXPressed hand=" + hand);
         if (mComboDispatcher != null) {
             runOnUiThread(() -> mComboDispatcher.onAXButtonPressed(hand));
         }
@@ -1373,19 +1373,19 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     private static final long OPEN_COMBOS_SETTINGS_DEBOUNCE_MS = 500L;
     private long mLastOpenCombosSettingsMs = 0L;
 
-    // FingerDance (Phase 6): open the Combos settings panel from anywhere.
+    // Glyphew (Phase 6): open the Combos settings panel from anywhere.
     // Safe to call from any thread via runOnUiThread(); must be on UI thread
     // when invoked directly. Guards against null Tray (cold-start edge per
     // Eng Review E-gap: long-press firing before mTray initialized) and
     // double-fire from simultaneous both-hand long-press ticks.
     public void openCombosSettings() {
         if (mTray == null) {
-            android.util.Log.w("FingerDance", "openCombosSettings: mTray null, dropping");
+            android.util.Log.w("Glyphew", "openCombosSettings: mTray null, dropping");
             return;
         }
         long now = android.os.SystemClock.uptimeMillis();
         if (now - mLastOpenCombosSettingsMs < OPEN_COMBOS_SETTINGS_DEBOUNCE_MS) {
-            android.util.Log.d("FingerDance", "openCombosSettings: debounced (both-hands long-press)");
+            android.util.Log.d("Glyphew", "openCombosSettings: debounced (both-hands long-press)");
             return;
         }
         mLastOpenCombosSettingsMs = now;
@@ -1397,12 +1397,12 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     // settings widget on Back (skip the app settings grid).
     private void openCombosSettingsDirect() {
         if (mTray == null) {
-            android.util.Log.w("FingerDance", "openCombosSettingsDirect: mTray null, dropping");
+            android.util.Log.w("Glyphew", "openCombosSettingsDirect: mTray null, dropping");
             return;
         }
         long now = android.os.SystemClock.uptimeMillis();
         if (now - mLastOpenCombosSettingsMs < OPEN_COMBOS_SETTINGS_DEBOUNCE_MS) {
-            android.util.Log.d("FingerDance", "openCombosSettingsDirect: debounced");
+            android.util.Log.d("Glyphew", "openCombosSettingsDirect: debounced");
             return;
         }
         mLastOpenCombosSettingsMs = now;
@@ -1410,7 +1410,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
     }
 
-    // FingerDance (Phase 6): first-launch discovery hint for the long-press
+    // Glyphew (Phase 6): first-launch discovery hint for the long-press
     // joystick gesture. One-shot per install lifetime, gated by
     // ComboBindingStore.KEY_LONGPRESS_HINT_SEEN. Anchored above the Tray so
     // it lands in the subtitle zone per CLAUDE.md §5.3 (never the top 20%
@@ -1433,7 +1433,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         store.markLongPressHintSeen();
     }
 
-    // FingerDance (Phase 3b): which controller hand owns the active combo grip.
+    // Glyphew (Phase 3b): which controller hand owns the active combo grip.
     // NONE = neither hand's grip is held. LEFT / RIGHT = that hand is driving
     // the recognizer. If both are held simultaneously the most-recent press
     // wins (mLastComboGripHand), matching how the recognizer routes joystick
@@ -1450,7 +1450,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
     void handleGripStateChanged(final boolean held, final int hand) {
-        android.util.Log.d("FingerDance", "handleGripStateChanged held=" + held + " hand=" + hand + " mHUDEnabled=" + mHUDEnabled);
+        android.util.Log.d("Glyphew", "handleGripStateChanged held=" + held + " hand=" + hand + " mHUDEnabled=" + mHUDEnabled);
         runOnUiThread(() -> {
             if (hand == COMBO_HAND_LEFT_IDX || hand == COMBO_HAND_RIGHT_IDX) {
                 mComboGripHeldByHand[hand] = held;
@@ -1479,7 +1479,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     }
 
     /**
-     * FingerDance (Phase 3b): expose which controller hand is currently driving
+     * Glyphew (Phase 3b): expose which controller hand is currently driving
      * combo input. Phase 3c's R4 dead-end CTA reads this to label the commit
      * button glyph ("A" for right, "X" for left). Returns NONE when neither
      * grip is held. Read on the UI thread only.
@@ -2450,7 +2450,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         return mWindows;
     }
 
-    // FingerDance: proprietary Combos Settings panel needs read access to the
+    // Glyphew: proprietary Combos Settings panel needs read access to the
     // dispatcher so its adapter can call getAllBindings()/isCombo4DirMode() and
     // register as a BindingsListener. Not on WidgetManagerDelegate to avoid
     // widening that interface.
@@ -2458,7 +2458,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         return mComboDispatcher;
     }
 
-    // Phase 5 — FingerDance accessor. BindComboView dims the HUD to 0.3 alpha
+    // Phase 5 — Glyphew accessor. BindComboView dims the HUD to 0.3 alpha
     // during capture so the dialog chrome carries the authoritative trace.
     public com.igalia.wolvic.ui.widgets.ComboHUDWidget getComboHUDWidget() {
         return mHUDWidget;

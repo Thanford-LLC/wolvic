@@ -426,7 +426,7 @@ public class SessionImpl implements WSession {
         return mUrlUtilsVisitor;
     }
 
-    // ── FingerDance JS bridge (Gecko — TODO, non-gating) ──────────────────
+    // ── Glyphew JS bridge (Gecko — TODO, non-gating) ──────────────────
 
     @Override
     public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {

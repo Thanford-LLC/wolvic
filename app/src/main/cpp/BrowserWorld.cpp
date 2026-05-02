@@ -1485,14 +1485,14 @@ BrowserWorld::UpdateWidget(int32_t aHandle, const WidgetPlacementPtr& aPlacement
   widget->SetPlacement(aPlacement);
   m.UpdateWidgetCylinder(widget, m.cylinderDensity);
   if (aHandle == 5) {
-    VRB_LOG("FingerDance: UpdateWidget handle=5 visible=%d composited=%d clearAlpha=%.2f toggleState=%d hasLayer=%d hasSurface=%d",
+    VRB_LOG("Glyphew: UpdateWidget handle=5 visible=%d composited=%d clearAlpha=%.2f toggleState=%d hasLayer=%d hasSurface=%d",
             (int)aPlacement->visible, (int)aPlacement->composited,
             aPlacement->GetClearColor().Alpha(), (int)widget->IsVisible(),
             (int)(widget->GetLayer() != nullptr), (int)(widget->GetSurfaceTexture() != nullptr));
   }
   widget->ToggleWidget(aPlacement->visible);
   if (aHandle == 5) {
-    VRB_LOG("FingerDance: After toggle handle=5 toggleState=%d", (int)widget->IsVisible());
+    VRB_LOG("Glyphew: After toggle handle=5 toggleState=%d", (int)widget->IsVisible());
   }
   widget->SetSurfaceTextureSize(aPlacement->GetTextureWidth(), aPlacement->GetTextureHeight());
 
@@ -1716,7 +1716,7 @@ BrowserWorld::LayoutWidget(int32_t aHandle) {
   widget->SetTransform(parent ? parent->GetTransform().PostMultiply(transform) : transform);
   if (aHandle == 5) {
     auto t = transform.GetTranslation();
-    VRB_LOG("FingerDance: LayoutWidget handle=5 tx=%.3f ty=%.3f tz=%.3f worldW=%.3f worldH=%.3f parent=%d",
+    VRB_LOG("Glyphew: LayoutWidget handle=5 tx=%.3f ty=%.3f tz=%.3f worldW=%.3f worldH=%.3f parent=%d",
             t.x(), t.y(), t.z(), worldWidth, worldHeight, parent ? 1 : 0);
   }
 
@@ -1868,7 +1868,7 @@ BrowserWorld::TickWorld() {
   }
   const vrb::Vector headPosition = m.device->GetHeadTransform().GetTranslation();
   if (m.skybox) {
-    // FingerDance: yaw the skybox so the current real-world season faces -X (user default).
+    // Glyphew: yaw the skybox so the current real-world season faces -X (user default).
     const float seasonalYaw = VRBrowser::GetSkyboxSeasonalYaw();
     m.skybox->SetTransform(vrb::Matrix::Translation(headPosition)
         .PostMultiply(vrb::Matrix::Rotation(vrb::Vector(0.0f, 1.0f, 0.0f), seasonalYaw)));

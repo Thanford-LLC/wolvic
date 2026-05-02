@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 Thanford. All rights reserved.
  *
- * Proprietary FingerDance component. Not licensed under the MPL 2.0 that
+ * Proprietary Glyphew component. Not licensed under the MPL 2.0 that
  * covers the surrounding Wolvic files.
  */
 package com.thanford.glyphew.home;
@@ -14,7 +14,7 @@ import androidx.annotation.NonNull;
  * Brand colors are precomputed at build time by tools/precompute-brand-colors.mjs
  * and embedded here. Re-run the script when the site list changes.
  *
- * Icon paths use the bundled PNG filenames at assets/fingerdance/icons/<domain>.png.
+ * Icon paths use the bundled PNG filenames at assets/glyphew/icons/<domain>.png.
  * The Java layer does not need to know the full asset path — homepage.js resolves
  * relative paths against its own document base.
  */

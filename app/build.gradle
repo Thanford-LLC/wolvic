@@ -105,7 +105,7 @@ def GECKO_RELEASE_VERSION_NAME = '1.9'
 
 // ── Design-system staleness check ─────────────────────────────────────────
 // Fails the build if generated color XML / homepage CSS are stale vs DESIGN.md.
-// Requires Node ≥ 20 and `npm ci` to have been run in the fingerdance/ planning repo.
+// Requires Node ≥ 20 and `npm ci` to have been run in the glyphew/ planning repo.
 // Skip by passing -PskipDesignCheck=true to Gradle.
 if (!project.hasProperty('skipDesignCheck')) {
     task verifyDesignExports(type: Exec) {
@@ -508,7 +508,7 @@ android {
             // Glyphew skin selection.
             // Override with -PgwSkin=signature|ice-rink|arcade at build time.
             // Each skin dir contains values/colors-fd.xml (12 brand tokens + fd_hud_accent)
-            // and fingerdance/homepage.html. Only one is included per build.
+            // and glyphew/homepage.html. Only one is included per build.
             def gwSkin = project.findProperty('gwSkin') ?: 'signature'
             def gwSkinAllowed = ['signature', 'ice-rink', 'arcade']
             if (!gwSkinAllowed.contains(gwSkin)) {
@@ -782,7 +782,7 @@ dependencies {
     implementation libs.opentelemetry.exporter.logging
     coreLibraryDesugaring libs.desugar.jdk.libs
 
-    // FingerDance: runtime brand-color extraction for user-bookmark favicons (catalog colors are precomputed)
+    // Glyphew: runtime brand-color extraction for user-bookmark favicons (catalog colors are precomputed)
     implementation "androidx.palette:palette-ktx:1.0.0"
 }
 

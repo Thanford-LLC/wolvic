@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 Thanford. All rights reserved.
  *
- * FingerDance proprietary — not part of the Wolvic MPL 2.0 codebase.
+ * Glyphew proprietary — not part of the Wolvic MPL 2.0 codebase.
  */
 package com.igalia.wolvic.ui.widgets.combo;
 
@@ -437,24 +437,24 @@ public final class ComboTipBuilder {
 
         // Meta tips first.
         out.add(new TipCandidate(
-                "meta:" + R.string.fd_meta_tip_release,
+                "meta:" + R.string.gw_meta_tip_release,
                 null, ComboDispatcher.A_NONE,
-                R.string.fd_meta_tip_release,
+                R.string.gw_meta_tip_release,
                 Difficulty.MUST_KNOW));
         out.add(new TipCandidate(
-                "meta:" + R.string.fd_meta_tip_cancel,
+                "meta:" + R.string.gw_meta_tip_cancel,
                 null, ComboDispatcher.A_NONE,
-                R.string.fd_meta_tip_cancel,
+                R.string.gw_meta_tip_cancel,
                 Difficulty.MUST_KNOW));
         out.add(new TipCandidate(
-                "meta:" + R.string.fd_meta_tip_origin,
+                "meta:" + R.string.gw_meta_tip_origin,
                 null, ComboDispatcher.A_NONE,
-                R.string.fd_meta_tip_origin,
+                R.string.gw_meta_tip_origin,
                 Difficulty.MUST_KNOW));
         out.add(new TipCandidate(
-                "meta:" + R.string.fd_meta_tip_long_press_settings,
+                "meta:" + R.string.gw_meta_tip_long_press_settings,
                 null, ComboDispatcher.A_NONE,
-                R.string.fd_meta_tip_long_press_settings,
+                R.string.gw_meta_tip_long_press_settings,
                 Difficulty.MUST_KNOW));
 
         // Binding tips intentionally omitted: rendered as

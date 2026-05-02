@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 Thanford. All rights reserved.
  *
- * FingerDance proprietary — not part of the Wolvic MPL 2.0 codebase.
+ * Glyphew proprietary — not part of the Wolvic MPL 2.0 codebase.
  */
 package com.igalia.wolvic.ui.widgets.combo;
 
