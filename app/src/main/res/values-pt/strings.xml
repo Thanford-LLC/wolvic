@@ -189,9 +189,10 @@
     <string name="external_open_uri_error_security_exception_body">SecurityException ao iniciar intent para %1$s</string>
     <string name="hvr_connect_glass_message">Conecte o seu HUAWEI VR Glass para usar esta app</string>
     <string name="hvr_enter_vr">Entrar em VR</string>
+    <!-- TODO: re-translate after Glyphew ToS finalized -->
     <string name="privacy_dialog_title">Privacidade</string>
-    <string name="privacy_dialog_message">A sua privacidade é importante para nós. Para executar o navegador, aceite os nossos termos de serviço e política de privacidade. Obrigado por usar o FingerDance!</string>
-    <string name="privacy_dialog_disagree">Fechar FingerDance</string>
+    <string name="privacy_dialog_message">A sua privacidade é importante para nós. Para executar o navegador, aceite os nossos termos de serviço e política de privacidade. Obrigado por usar o Glyphew!</string>
+    <string name="privacy_dialog_disagree">Fechar Glyphew</string>
     <string name="terms_service_title">Termos de serviço</string>
     <string name="terms_service_section_1">Wolvic é um software gratuito e de código aberto, construído por uma comunidade de milhares de pessoas de todo o mundo. Existem algumas coisas que deve saber:
 \n
@@ -737,7 +738,7 @@
     <string name="clear_user_data_dialog_text">O %1$s será redefinido. Todos os dados, incluindo logins salvos, histórico e favoritos, serão removidos permanentemente se não tiverem sido sincronizados. O %1$s fechará automaticamente após a conclusão da redefinição. Você quer continuar?</string>
     <string name="display_options_start_with_passthrough">Iniciar com modo Passthrough</string>
     <string name="developer_options_clear_user_data_description">Todos os dados do usuário</string>
-    <string name="security_options_permission_fine_location_warning">O FingerDance só pode obter a sua localização aproximada. Isto pode ser alterado nas configurações do sistema.</string>
+    <string name="security_options_permission_fine_location_warning">O Glyphew só pode obter a sua localização aproximada. Isto pode ser alterado nas configurações do sistema.</string>
     <string name="security_options_use_system_root_ca">Usar Certificados Raiz Confiáveis do Sistema</string>
     <string name="voice_input_start">O que gostaria de introduzir?</string>
     <string name="video_mode_3d_top_bottom">3D Top Bottom</string>
@@ -768,9 +769,9 @@
 \n
 \nPode ler o Acordo de Usuário e a Política de Privacidade completos.</string>
     <string name="rCN_first_launch_confirmation_agree">Concordar e continuar</string>
-    <string name="rCN_first_launch_body">Bem-vindo ao “FingerDance”!
+    <string name=”rCN_first_launch_body”>Bem-vindo ao “Glyphew”!
 \n
-\nPara se registar e usar o “FingerDance”, tem de concordar com o Acordo de Usuário e a Política de Privacidade, caso contrário não podemos prestar-lhe serviços. Por favor, leia atentamente os documentos e clique em “Concordar” para continuar. Se clicar em “Não concordar”, não poderá continuar a usar o “FingerDance”.
+\nPara se registar e usar o “Glyphew”, tem de concordar com o Acordo de Usuário e a Política de Privacidade, caso contrário não podemos prestar-lhe serviços. Por favor, leia atentamente os documentos e clique em “Concordar” para continuar. Se clicar em “Não concordar”, não poderá continuar a usar o “Glyphew”.
 \n
 \nPode ler o Acordo de Usuário e a Política de Privacidade completos.</string>
     <string name="display_options_latin_auto_complete">Preenchimento automático de entradas em teclado latino</string>
@@ -779,7 +780,7 @@
     <string name="hamburger_menu_zoom">Zoom</string>
     <string name="permission_microphone_rationale">Realizar pesquisas por voz e entrada de texto requer permissão para utilizar o seu microfone.</string>
     <string name="permission_notification_rationale">Notificá-lo sobre notícias e atualizações requer permissão para enviar notificações.</string>
-    <string name="phone_ui_set3dmode_alert_dialog_description">Falha ao mudar para o modo 3D. Tente desconectar os óculos, conectá-los novamente e reiniciar o FingerDance.</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">Falha ao mudar para o modo 3D. Tente desconectar os óculos, conectá-los novamente e reiniciar o Glyphew.</string>
     <string name="permission_camera_and_microphone_rationale">Fornecer serviços como videoconferência requer permissão para utilizar a sua câmera e microfone.</string>
     <string name="permission_location_rationale">Notícias e conteúdo nas proximidades requerem permissão para acessar a sua localização.</string>
     <string name="permission_read_external_storage_rationale">Abrir arquivos no seu dispositivo requer permissão para acessar o armazenamento externo.</string>
@@ -787,11 +788,11 @@
     <string name="tray_status_phone">Telefone: %1$s</string>
     <string name="vision_glass_touchpad_instructions">Toque para clicar. Deslize para rolar</string>
     <string name="phone_ui_alert_dialog_title">Erro</string>
-    <string name="phone_ui_usb_alert_dialog_description">Falha ao obter permissões USB. Tente desconectar os óculos, conectá-los novamente e reiniciar o FingerDance.</string>
+    <string name="phone_ui_usb_alert_dialog_description">Falha ao obter permissões USB. Tente desconectar os óculos, conectá-los novamente e reiniciar o Glyphew.</string>
     <string name="vision_glass_disconnected_message">Por favor, conecte o Vision Glass</string>
     <string name="vision_glass_error_message">Ocorreu um erro.\nPor favor, tente novamente.</string>
     <string name="incompatible_os_version_title">Versão não suportada</string>
-    <string name="incompatible_os_version_message">A versão atual do sistema não é suportada. O FingerDance requer pelo menos a versão %1$s</string>
+    <string name="incompatible_os_version_message">A versão atual do sistema não é suportada. O Glyphew requer pelo menos a versão %1$s</string>
     <string name="tabs_bookmark_selected">Adicionar aos favoritos</string>
     <string name="controller_options_handtracking">Rastreamento de mãos</string>
     <string name="vision_glass_realign_dialog_explanation">Para configurar o controlador, aponte o seu telefone para a frente e toque no botão.</string>

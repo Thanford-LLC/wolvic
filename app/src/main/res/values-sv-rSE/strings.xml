@@ -1599,6 +1599,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     '%1$s' Will be replaced at runtime with headset battery level. -->
     <string name="tray_status_headset">Headset: %1$s</string>
     <string name="settings_privacy_choose_search_engine_reset">Återställ sökmotorinställningar</string>
+    <!-- TODO: re-translate after Glyphew ToS finalized -->
     <string name="privacy_dialog_agree">Acceptera</string>
     <string name="hvr_connect_glass_message">Anslut dina HUAWEI VR Glass för att använda den här appen</string>
     <string name="settings_privacy_choose_search_engine_description">Välj din föredragna sökmotor.</string>
@@ -1609,17 +1610,17 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="privacy_policy_subtitle_3">Tillämplig lag och originalspråk</string>
     <string name="privacy_dialog_title">Integritet</string>
     <string name="settings_privacy_search_engine_title">Sökmotor</string>
-    <string name="privacy_dialog_disagree">Stäng FingerDance</string>
+    <string name="privacy_dialog_disagree">Stäng Glyphew</string>
     <string name="privacy_policy_section_3">Denna integritetspolicy lyder under spansk lag. Språket för denna applikations sekretesspolicy är spanska. Av denna anledning kommer alla möjliga skillnader mellan originalversionen på spanska och dess översättning till ett annat språk att anses vara dominerande i den spanska versionen som finns här: https://wolvic.com/es/legal/privacy/ .</string>
     <string name="settings_terms_service">Användarvillkor</string>
     <string name="privacy_policy_subtitle_1">Allmän information</string>
     <string name="settings_language_choose_language_voice_search_service_title">Röstsöktjänst</string>
-    <string name="privacy_dialog_message">Din integritet är viktig för oss. För att kunna köra webbläsaren, vänligen acceptera våra användarvillkor och sekretesspolicy. Tack för att du använder FingerDance!</string>
+    <string name="privacy_dialog_message">Din integritet är viktig för oss. För att kunna köra webbläsaren, vänligen acceptera våra användarvillkor och sekretesspolicy. Tack för att du använder Glyphew!</string>
     <string name="privacy_policy_title">Allmän integritetspolicy</string>
     <string name="voice_service_metkai">MeetKai</string>
     <string name="voice_service_huawei_asr">Huawei automatisk taligenkänning</string>
     <string name="language_options_voice_search_service_title">Röstsökningstjänst</string>
-    <string name="terms_service_subtitle_2">Wolvic webbaserade informationstjänster</string>
+    <string name="terms_service_subtitle_2">Glyphew webbaserade informationstjänster</string>
     <string name="external_open_uri_error_bad_uri_body">Ogiltig uri %1$s</string>
     <string name="settings_language_choose_language_voice_search_service_description">Välj din föredragna onlinetjänst för röstsökning.</string>
     <string name="external_open_uri_error_no_activity_body">Ingen app hittades för att hantera %1$s</string>
@@ -1650,7 +1651,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="download_addon_install">Installera tillägg</string>
     <string name="download_addon_install_cancel">Avbryt</string>
     <string name="download_addon_install_blocked">Lokal tilläggsinstallation blockerad</string>
-    <string name="security_options_permission_fine_location_warning">FingerDance kan bara få din ungefärliga plats. Detta kan ändras i systeminställningarna.</string>
+    <string name="security_options_permission_fine_location_warning">Glyphew kan bara få din ungefärliga plats. Detta kan ändras i systeminställningarna.</string>
     <string name="upload_list_empty">Inga filer tillgängliga för uppladdning</string>
     <string name="deprecated_version_dialog_title">Stöd upphör snart</string>
     <string name="deprecated_version_dialog_info_button">Läs mer…</string>
@@ -1763,9 +1764,9 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \n
 \nInnehållet och elementen som utgör applikationen har implementerats och/eller utvecklats av IGALIA under licenser med öppen källkod, och skyddas, utan begränsningar, av lagen om immateriell och industriell äganderätt i kungariket Spanien och av de internationella fördrag och avtal som kan resultat av ansökan.</string>
     <string name="rCN_first_launch_title">Användaravtal och integritetspolicyavisering</string>
-    <string name="rCN_first_launch_body">Välkommen till “FingerDance”!
+    <string name=”rCN_first_launch_body”>Välkommen till “Glyphew”!
 \n
-\nRegistrering och användning av \"FingerDance\" kräver att du godkänner användaravtalet och integritetspolicyn, annars kan vi inte tillhandahålla tjänster till dig. Läs dokumenten noggrant och klicka på \"Godkänn\" för att fortsätta. Om du klickar på \"Godkänn inte\" kommer du inte att kunna fortsätta använda \"FingerDance\".
+\nRegistrering och användning av \”Glyphew\” kräver att du godkänner användaravtalet och integritetspolicyn, annars kan vi inte tillhandahålla tjänster till dig. Läs dokumenten noggrant och klicka på \”Godkänn\” för att fortsätta. Om du klickar på \”Godkänn inte\” kommer du inte att kunna fortsätta använda \”Glyphew\”.
 \n
 \nDu kan läsa hela användaravtalet och sekretesspolicyn.</string>
     <string name="rCN_first_launch_clickable_terms_text">Användaravtal</string>
@@ -1814,8 +1815,8 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="permission_read_external_storage_rationale">För att öppna filer på din enhet krävs behörighet att läsa din externa lagring.</string>
     <string name="vision_glass_touchpad_instructions">Tryck för att klicka. Svep för att rulla</string>
     <string name="phone_ui_alert_dialog_title">Fel</string>
-    <string name="phone_ui_set3dmode_alert_dialog_description">Misslyckades att växla till 3D-läge. Testa att koppla ur glasögonen och koppla tillbaka dem och starta om FingerDance.</string>
-    <string name="phone_ui_usb_alert_dialog_description">Misslyckades att få USB-behörigheter. Testa att koppla ur glasögonen och koppla tillbaka dem och starta om FingerDance.</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">Misslyckades att växla till 3D-läge. Testa att koppla ur glasögonen och koppla tillbaka dem och starta om Glyphew.</string>
+    <string name="phone_ui_usb_alert_dialog_description">Misslyckades att få USB-behörigheter. Testa att koppla ur glasögonen och koppla tillbaka dem och starta om Glyphew.</string>
     <string name="vision_glass_disconnected_message">Vänligen anslut Apple Vision glasögon</string>
     <string name="vision_glass_error_message">Ett fel uppstog.
 \nVar god försök igen.</string>
@@ -1824,7 +1825,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="developer_options_pointer_mode_tracked_eye">Ögonspårning</string>
     <string name="eye_tracking_permission_title">Behörigheter för ögonspårning</string>
     <string name="incompatible_os_version_title">Inkompatibel OS-version</string>
-    <string name="incompatible_os_version_message">Din OS-version stöds inte. Denna version av FingerDance kräver minst version %1$s</string>
+    <string name="incompatible_os_version_message">Din OS-version stöds inte. Denna version av Glyphew kräver minst version %1$s</string>
     <string name="vision_glass_realign_dialog_explanation">För att ställa in handkontrollen, vänligen rikta telefonen rakt fram och tryck på knappen.</string>
     <string name="controller_options_pointer_mode">Blickläge</string>
     <string name="developer_options_pointer_mode_tracked_pointer">Pekare</string>

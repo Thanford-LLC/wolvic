@@ -1642,11 +1642,11 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     '%1$s' Will be replaced at runtime with headset battery level. -->
     <string name="tray_status_headset">头戴设备：%1$s</string>
     <!-- These strings are used in the first-run flow on the phone UI in mainland China. -->
-    <string name="rCN_first_launch_title">“FingerDance”用户协议及隐私政策申明</string>
-    <string name="rCN_first_launch_body">
-        欢迎使用 FingerDance !
+    <string name=”rCN_first_launch_title”>”Glyphew”用户协议及隐私政策申明</string>
+    <string name=”rCN_first_launch_body”>
+        欢迎使用 Glyphew !
         \n
-        \n 注册使用 FingerDance 需要您同意用户协议和隐私政策，否则我们无法为 您提供服务。请您仔细阅读下方政策中的条款后再点击“同意”前往下一 步。如果您选择“不同意”，您将无法使用 FingerDance 。
+        \n 注册使用 Glyphew 需要您同意用户协议和隐私政策，否则我们无法为 您提供服务。请您仔细阅读下方政策中的条款后再点击”同意”前往下一 步。如果您选择”不同意”，您将无法使用 Glyphew 。
         \n
         \n您可以阅读完整版用户协议和隐私政策
     </string>
@@ -1666,12 +1666,13 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="hvr_connect_glass_message">若要使用该应用,请连接华为 VR 眼镜 </string>
     <string name="hvr_enter_vr">进入VR</string>
     <!-- This strings are displayed in the privacy dialog on first launch. -->
+    <!-- TODO: re-translate after Glyphew ToS finalized -->
     <string name="privacy_dialog_title">隐私</string>
-    <string name="privacy_dialog_message">您的隐私很重要。在运行浏览器前，请先同意我们的用户协议与隐私政策。感谢使用FingerDance！</string>
+    <string name="privacy_dialog_message">您的隐私很重要。在运行浏览器前，请先同意我们的用户协议与隐私政策。感谢使用Glyphew！</string>
     <string name="privacy_dialog_agree">同意</string>
     <string name="privacy_dialog_disagree">不同意</string>
     <!-- These strings are the content of the Terms of Service. -->
-    <string name="terms_service_title">FingerDance移动应用程序用户协议</string>
+    <string name="terms_service_title">Glyphew移动应用程序用户协议</string>
     <string name="terms_service_section_1">
     Wolvic 是免费的开源软件，由来自世界各地的数千名社区构建。您应该了解以下几点：
     \n\n\t\u2022 Wolvic 是根据 Mozilla 公共许可证的条款向您提供的。这意味着您可以使用、复制 Wolvic 并将其分发给其他人。也欢迎您根据需要修改 Wolvic 的源代码。 Mozilla 公共许可证还赋予您分发修改版本的权利。
@@ -1709,7 +1710,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     \n\n\t\t\t\u2043 增强跟踪保护现已禁用。
     </string>
     <!-- These strings are the content of the Privacy Policy. -->
-    <string name="privacy_policy_title">FingerDance移动应用程序隐私政策</string>
+    <string name="privacy_policy_title">Glyphew移动应用程序隐私政策</string>
     <string name="privacy_policy_subtitle_1">通告</string>
     <string name="privacy_policy_section_1">
         该应用程序由 Igalia, SL（以下简称 IGALIA）开发，注册办事处位于 Bugallal Marchesi, 22 – 1°, 15008, A Coruña, Galicia (Spain)，其联系方式为：
@@ -1791,7 +1792,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="download_addon_install_cancel">取消</string>
     <string name="download_addon_install_blocked_body">要继续安装请在开发者选项中选择允许本地插件安装。</string>
     <string name="settings_language_portuguese">葡萄牙语</string>
-    <string name="security_options_permission_fine_location_warning">FingerDance 只可以获取您的大致位置。 您可在系统设置菜单更改设置。</string>
+    <string name="security_options_permission_fine_location_warning">Glyphew 只可以获取您的大致位置。 您可在系统设置菜单更改设置。</string>
     <string name="upload_list_empty">无可上载文档</string>
     <string name="hamburger_menu_toggle_passthrough">通过</string>
     <string name="deprecated_version_dialog_body">Wolvic 的“App Lab”版本将于2023年10月底删除。
@@ -1820,10 +1821,10 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="permission_camera_rationale">拍摄周围世界的图像需要获得使用您的摄像头的权限。</string>
     <string name="permission_read_external_storage_rationale">打开设备上的文件需要获得读取您的外部存储权限。</string>
     <string name="phone_ui_alert_dialog_title">错误</string>
-    <string name="phone_ui_usb_alert_dialog_description">获取 USB 权限失败。尝试拔下眼镜并插回，然后重启 FingerDance。</string>
+    <string name="phone_ui_usb_alert_dialog_description">获取 USB 权限失败。尝试拔下眼镜并插回，然后重启 Glyphew。</string>
     <string name="vision_glass_disconnected_message">请连接Vision Glass</string>
     <string name="vision_glass_error_message">发生错误。请重试。</string>
-    <string name="phone_ui_set3dmode_alert_dialog_description">切换到 3D 模式失败。尝试拔下眼镜并插回，然后重新启动 FingerDance。</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">切换到 3D 模式失败。尝试拔下眼镜并插回，然后重新启动 Glyphew。</string>
     <string name="hamburger_menu_zoom">放大</string>
     <string name="tray_status_phone">电话: %1$s</string>
     <string name="vision_glass_touchpad_instructions">轻击屏幕即可点击。 轻滑即可滚动</string>

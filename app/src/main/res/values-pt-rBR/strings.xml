@@ -392,7 +392,7 @@
     <string name="security_options_permission_camera">Câmera</string>
     <string name="security_options_permission_microphone">Microfone</string>
     <string name="security_options_permission_location">Localização</string>
-    <string name="security_options_permission_fine_location_warning">FingerDance só pode aceder à sua localização aproximada. Pode modificar isto nas configurações do sistema.</string>
+    <string name="security_options_permission_fine_location_warning">Glyphew só pode aceder à sua localização aproximada. Pode modificar isto nas configurações do sistema.</string>
     <string name="security_options_block_pup_up_windows">Bloquear janelas Pop-Up</string>
     <string name="security_options_block_pup_up_settings">Avançado</string>
     <string name="security_options_webxr_settings">Avançado</string>
@@ -510,8 +510,9 @@
     <string name="slow_script_dialog_description">Uma página da web está deixando seu navegador mais lento (%1$s). O que você gostaria de fazer\?</string>
     <string name="popup_permission_dialog_message">O bloqueio de pop-ups é %1$s para este site.</string>
     <string name="tracking_dialog_button_on">Ligado</string>
-    <string name="download_delete_file_confirm_title">Excluir arquivo</string>
-    <string name="terms_service_section_2">Wolvic usa serviços de informação baseados na web (“Serviços”) para fornecer alguns dos recursos fornecidos para seu uso com esta versão binária do Wolvic sob os termos descritos abaixo.
+    <string name=”download_delete_file_confirm_title”>Excluir arquivo</string>
+    <!-- TODO: re-translate after Glyphew ToS finalized -->
+    <string name=”terms_service_section_2”>Wolvic usa serviços de informação baseados na web (“Serviços”) para fornecer alguns dos recursos fornecidos para seu uso com esta versão binária do Wolvic sob os termos descritos abaixo.
 \n
 \n• A Igalia e seus colaboradores, licenciadores e parceiros trabalham para fornecer os Serviços mais precisos e atualizados. No entanto, não podemos garantir que essas informações sejam abrangentes e livres de erros. Por exemplo, o Safe Browsing Service pode não identificar alguns sites arriscados e pode identificar alguns sites seguros por engano, e no Location Aware Service todos os locais retornados por nossos provedores de serviços são apenas estimativas e nem nós, nem nossos provedores de serviços garantimos a precisão do locais fornecidos.
 \n
@@ -662,9 +663,9 @@
     <string name="external_open_uri_error_security_exception_body">SecurityException ao iniciar intent para %1$s</string>
     <string name="hvr_connect_glass_message">Conecte seu HUAWEI VR Glass para usar este aplicativo</string>
     <string name="privacy_dialog_title">Privacidade</string>
-    <string name="privacy_dialog_message">Sua privacidade é importante para nós. Para executar o navegador, aceite nossos termos de serviço e política de privacidade. Obrigado por usar o FingerDance!</string>
+    <string name="privacy_dialog_message">Sua privacidade é importante para nós. Para executar o navegador, aceite nossos termos de serviço e política de privacidade. Obrigado por usar o Glyphew!</string>
     <string name="privacy_dialog_agree">Aceitar</string>
-    <string name="privacy_dialog_disagree">Fechar FingerDance</string>
+    <string name="privacy_dialog_disagree">Fechar Glyphew</string>
     <string name="terms_service_title">Termos de serviço</string>
     <string name="terms_service_section_1">Wolvic é um software gratuito e de código aberto, construído por uma comunidade de milhares de pessoas de todo o mundo. Existem algumas coisas que você deve saber:
 \n
@@ -755,9 +756,9 @@
     <string name="keyboardview_keycode_done">Feito</string>
     <string name="keyboardview_keycode_enter">Entrar</string>
     <string name="tray_wifi_unavailable_ssid">SSID indisponível</string>
-    <string name="rCN_first_launch_body">Bem-vindo ao “FingerDance”!
+    <string name=”rCN_first_launch_body”>Bem-vindo ao “Glyphew”!
 \n
-\nRegistrar e usar o “FingerDance” exige que você concorde com o Contrato de Usuário e Política de Privacidade, ou então não podemos fornecer serviços para você. Leia cuidadosamente os documentos e clique em “Aceitar” para continuar. Se você clicar em “Discordar”, você não será capaz de continuar usando o “FingerDance”.
+\nRegistrar e usar o “Glyphew” exige que você concorde com o Contrato de Usuário e Política de Privacidade, ou então não podemos fornecer serviços para você. Leia cuidadosamente os documentos e clique em “Aceitar” para continuar. Se você clicar em “Discordar”, você não será capaz de continuar usando o “Glyphew”.
 \n
 \nVocê pode ler o Contrato de Usuário completo e Política de Privacidade.</string>
     <string name="clear_user_data_dialog_text">%1$s será redefinido. Todos os dados, incluindo logins salvos, histórico e marcadores, serão excluídos permanentemente se não forem sincronizados. %1$s fechará automaticamente após a reinicialização ser concluída. Deseja continuar?</string>
@@ -776,7 +777,7 @@
     <string name="permission_read_external_storage_rationale">Abrir arquivos em seu dispositivo requer permissão para ler seu armazenamento externo.</string>
     <string name="tray_status_phone">Telefone: %1$s</string>
     <string name="vision_glass_touchpad_instructions">Toque para clicar. Deslize para rolar</string>
-    <string name="phone_ui_set3dmode_alert_dialog_description">"Falhado para mudar para o modo 3D. Tente desconectar o óculos, conecte-o  novamente e reinicie o FingerDance."</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">"Falhado para mudar para o modo 3D. Tente desconectar o óculos, conecte-o  novamente e reinicie o Glyphew."</string>
     <string name="vision_glass_disconnected_message">Por favor, conecte o Vision Glass</string>
     <string name="permission_rationale_title">Permissões adicionais</string>
     <string name="permission_persistent_storage_rationale">Salvar e abrir arquivos em seu dispositivo requer permissão para armazenar dados em armazenamento persistente.</string>
@@ -786,10 +787,10 @@
     <string name="permission_notification_rationale">Notificá-lo de notícias e atualizações requer permissão para enviar notificações.</string>
     <string name="hamburger_menu_zoom">Zoom</string>
     <string name="phone_ui_alert_dialog_title">Erro</string>
-    <string name="phone_ui_usb_alert_dialog_description">Falha para obter permissões USB. Tente desconectar o óculos, conecte-o novamente e reinicie o FingerDance.</string>
+    <string name="phone_ui_usb_alert_dialog_description">Falha para obter permissões USB. Tente desconectar o óculos, conecte-o novamente e reinicie o Glyphew.</string>
     <string name="vision_glass_error_message">Aconteceu um erro.
 \nPor favor, tente novamente.</string>
-    <string name="incompatible_os_version_message">A versão atual do sistema não é suportada. O FingerDance requer pelo menos a versão %1$s</string>
+    <string name="incompatible_os_version_message">A versão atual do sistema não é suportada. O Glyphew requer pelo menos a versão %1$s</string>
     <string name="tabs_bookmark_selected">Adicionar aos favoritos</string>
     <string name="incompatible_os_version_title">Versão não suportada</string>
     <string name="controller_options_handtracking">Rastreamento de mãos</string>
