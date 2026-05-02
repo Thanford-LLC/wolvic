@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Glyphew skin remap: structural chrome colors point at fd_* tokens
-         defined per-skin in res-gw-<skin>/values/colors-fd.xml.
+    <!-- Glyphew skin remap: structural chrome colors point at gw_* tokens
+         defined per-skin in res-gw-<skin>/values/colors-gw.xml.
          Functional signals (blackberry=private, fire/tomato/garnet=destructive,
          grass/forest/jade=ok, tangerine=warn) stay as literal hexes. -->
 

@@ -113,7 +113,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     // Colours — skin-aware, resolved per instance from resources.
     // gw_hud_* lives in values/colors-gw-hud.xml (skin-neutral) except gw_hud_accent
-    // which lives per-skin in res-gw-<skin>/values/colors-fd.xml.
+    // which lives per-skin in res-gw-<skin>/values/colors-gw.xml.
     private final int mColorBg;
     private final int mColorBgStroke;
     private final int mColorWedgeIdle;

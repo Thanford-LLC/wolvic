@@ -507,7 +507,7 @@ android {
 
             // Glyphew skin selection.
             // Override with -PgwSkin=signature|ice-rink|arcade at build time.
-            // Each skin dir contains values/colors-fd.xml (12 brand tokens + fd_hud_accent)
+            // Each skin dir contains values/colors-gw.xml (12 brand tokens + gw_hud_accent)
             // and glyphew/homepage.html. Only one is included per build.
             def gwSkin = project.findProperty('gwSkin') ?: 'signature'
             def gwSkinAllowed = ['signature', 'ice-rink', 'arcade']

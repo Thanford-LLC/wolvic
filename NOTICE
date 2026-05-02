@@ -8,11 +8,11 @@ Licensed under the Apache License, Version 2.0.
 Full text: https://www.apache.org/licenses/LICENSE-2.0
 
 Derived icons (modified for Glyphew brand tinting):
-  - app/src/main/res/drawable/fd_action_scroll_top_24dp.xml      (from vertical_align_top)
-  - app/src/main/res/drawable/fd_action_scroll_bottom_24dp.xml   (from vertical_align_bottom)
-  - app/src/main/res/drawable/fd_action_scroll_left_24dp.xml     (from keyboard_double_arrow_left)
-  - app/src/main/res/drawable/fd_action_scroll_right_24dp.xml    (from keyboard_double_arrow_right)
-  - app/src/main/res/drawable/fd_action_stop_24dp.xml            (from stop)
-  - app/src/main/res/drawable/fd_action_reader_mode_24dp.xml     (from menu_book)
-  - app/src/main/res/drawable/fd_action_duplicate_window_24dp.xml (from file_copy)
-  - app/src/main/res/drawable/fd_action_unknown_24dp.xml         (from help_outline)
+  - app/src/main/res/drawable/gw_action_scroll_top_24dp.xml      (from vertical_align_top)
+  - app/src/main/res/drawable/gw_action_scroll_bottom_24dp.xml   (from vertical_align_bottom)
+  - app/src/main/res/drawable/gw_action_scroll_left_24dp.xml     (from keyboard_double_arrow_left)
+  - app/src/main/res/drawable/gw_action_scroll_right_24dp.xml    (from keyboard_double_arrow_right)
+  - app/src/main/res/drawable/gw_action_stop_24dp.xml            (from stop)
+  - app/src/main/res/drawable/gw_action_reader_mode_24dp.xml     (from menu_book)
+  - app/src/main/res/drawable/gw_action_duplicate_window_24dp.xml (from file_copy)
+  - app/src/main/res/drawable/gw_action_unknown_24dp.xml         (from help_outline)
