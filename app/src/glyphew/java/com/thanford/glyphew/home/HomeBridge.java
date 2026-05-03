@@ -6,6 +6,7 @@
  */
 package com.thanford.glyphew.home;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
@@ -35,7 +36,7 @@ import java.util.Locale;
  * JS bridge exposed as window.gwHome on the Glyphew homepage.
  *
  * Async methods receive a requestId and resolve via
- * evaluateJavaScript("window.fdHome._resolve(id, json)") on the UI thread.
+ * evaluateJavaScript("window.gwHome._resolve(id, json)") on the UI thread.
  *
  * Threading:
  *   @JavascriptInterface methods run on the JS-binder thread.
@@ -46,11 +47,13 @@ public class HomeBridge {
     private static final Handler mHandler = new Handler(Looper.getMainLooper());
 
     private volatile Session         mSession;
+    private final Context            mContext;
     private final HomePrefs          mPrefs;
     private final BrowserIconsHelper mIcons;
 
-    public HomeBridge(@NonNull Session session, @NonNull HomePrefs prefs,
-                      @NonNull BrowserIconsHelper icons) {
+    public HomeBridge(@NonNull Context context, @NonNull Session session,
+                      @NonNull HomePrefs prefs, @NonNull BrowserIconsHelper icons) {
+        mContext = context;
         mSession = session;
         mPrefs   = prefs;
         mIcons   = icons;
@@ -166,6 +169,28 @@ public class HomeBridge {
     }
 
     /**
+     * Returns a base64-encoded PNG for a bundled catalog icon in glyphew/icons/.
+     * Resolves synchronously (local asset read) — returns "" on any failure.
+     */
+    @JavascriptInterface
+    @NonNull
+    public String getIcon(@Nullable String relPath) {
+        if (relPath == null || relPath.isEmpty()) return "";
+        try {
+            java.io.InputStream is = mContext.getAssets().open("glyphew/icons/" + relPath);
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = is.read(buf)) != -1) baos.write(buf, 0, n);
+            is.close();
+            String b64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+            return "data:image/png;base64," + b64;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
      * Returns the dominant brand color (as #RRGGBB hex string) for a user-bookmark favicon.
      * Resolves with "" on failure — JS side falls back to --text-muted @ 60% alpha.
      */
@@ -187,7 +212,7 @@ public class HomeBridge {
 
     private void resolveOnUiThread(@NonNull String requestId, @NonNull String json) {
         final String escaped = json.replace("\\", "\\\\").replace("'", "\\'");
-        final String script = "window.fdHome._resolve('" + requestId + "','" + escaped + "')";
+        final String script = "window.gwHome._resolve('" + requestId + "','" + escaped + "')";
         mHandler.post(() -> {
             final Session s = mSession;
             if (s != null) s.evaluateJavaScript(script);

@@ -103,6 +103,7 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     private transient byte[] mPrivatePage;
     private transient boolean mOnHomePage;
     private transient String mHomePageDataUri;
+    private transient com.thanford.glyphew.home.HomeBridge mHomeBridge;
     private transient boolean mFirstContentfulPaint;
     private transient long mKeepAlive;
     private transient Media mMedia;
@@ -914,17 +915,36 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         mOnHomePage = true;
         if (BuildConfig.FLAVOR_backend.equalsIgnoreCase("chromium")) {
             // Chromium doesn't resolve relative asset:// URLs in a data: URI.
-            // Inline _design-vars.css so CSS variables resolve correctly.
+            // Inline _design-vars.css, homepage.css, and homepage.js so all
+            // sibling assets resolve correctly under the data: scheme.
             try {
-                final String html  = readAssetAsString("glyphew/homepage.html");
-                final String vars  = readAssetAsString("glyphew/_design-vars.css");
-                final String injected = html.replace(
+                String html      = readAssetAsString("glyphew/homepage.html");
+                final String vars = readAssetAsString("glyphew/_design-vars.css");
+                final String css  = readAssetAsString("glyphew/homepage.css");
+                final String js   = readAssetAsString("glyphew/homepage.js");
+                html = html.replace(
                     "<link rel=\"stylesheet\" href=\"_design-vars.css\">",
                     "<style>\n" + vars + "\n</style>");
-                final byte[] data = injected.getBytes(StandardCharsets.UTF_8);
+                html = html.replace(
+                    "<link rel=\"stylesheet\" href=\"homepage.css\">",
+                    "<style>\n" + css + "\n</style>");
+                html = html.replace(
+                    "<script src=\"homepage.js\"></script>",
+                    "<script>\n" + js + "\n</script>");
+                final byte[] data = html.getBytes(StandardCharsets.UTF_8);
                 final String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
                 mHomePageDataUri = "data:text/html;base64," + encoded;
+                // Register the HomeBridge before loading so window.gwHome is
+                // available on first script evaluation. Gecko throws on
+                // addJavascriptInterface so this block is Chromium-only.
+                if (mHomeBridge == null) {
+                    mHomeBridge = new com.thanford.glyphew.home.HomeBridge(
+                        mContext, this,
+                        new com.thanford.glyphew.home.HomePrefs(mContext),
+                        SessionStore.get().getBrowserIcons());
+                }
                 if (mState.mSession != null) {
+                    mState.mSession.addJavascriptInterface(mHomeBridge, "gwHome");
                     mState.mSession.loadUri(mHomePageDataUri, WSession.LOAD_FLAGS_NONE);
                 }
                 return;
