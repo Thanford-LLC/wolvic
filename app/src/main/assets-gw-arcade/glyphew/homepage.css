@@ -1,0 +1,490 @@
+/* Glyphew homepage v2 — 3×3 combo-navigable grid · 1280×720 VR quad
+ * Consumes only canonical variables from _design-vars.css.
+ * Colors not in _design-vars.css that come from DESIGN.md tokens:
+ *   surface hover = #2A2DA3  (colors.surface.hover)
+ *   border strong = #4B4FC7  (colors.surface.borderStrong)
+ *   accent pressed = #D9BE00 (colors.accent.pressed)
+ *   text disabled  = #3A3D6F (colors.text.disabled) */
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+}
+
+/* Soft brand wash — radial glow that reads on dark bg */
+#app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(253,222,10,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 80%, rgba(75,79,199,0.12) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Screen header (top center) ─────────────────────────────────────────── */
+#screen-header {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+  pointer-events: none;
+  text-align: center;
+}
+
+#header-kind {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+#header-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  transition: opacity 220ms cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Page dots */
+#header-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.page-dot {
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--text-dim);
+  opacity: 0.6;
+  transition: background 200ms, transform 200ms, opacity 200ms;
+}
+.page-dot.on {
+  background: var(--accent);
+  opacity: 1;
+  transform: scale(1.35);
+}
+
+/* ── Row rail (left side) ───────────────────────────────────────────────── */
+#row-rail {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.45;
+  transition: opacity 200ms;
+  cursor: default;
+}
+.rail-item.on { opacity: 1; }
+
+.rail-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius);
+  background: var(--hud-label-pill);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.rail-item.on .rail-icon {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.rail-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: color 200ms;
+}
+.rail-item.on .rail-label { color: var(--text); }
+
+/* ── Chevrons (top/bottom nav hints) ────────────────────────────────────── */
+.chevron {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  color: var(--accent);
+  opacity: 0.8;
+  z-index: 10;
+  pointer-events: none;
+  transition: opacity 200ms;
+}
+#chevron-n { top: 14px; }
+#chevron-s { bottom: 14px; }
+.chevron.hidden { opacity: 0; pointer-events: none; }
+
+/* ── Grid viewport + canvas ────────────────────────────────────────────── */
+#grid-viewport {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 5;
+}
+
+#grid-canvas {
+  display: grid;
+  grid-template-columns: repeat(3, 156px);
+  grid-template-rows: repeat(3, 136px);
+  gap: 14px;
+  transition: opacity 220ms cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Cross-fade transition on row/page change */
+#grid-canvas.fading { opacity: 0; }
+
+/* Rim flash on transition: brief yellow pulse on all cell tiles */
+#grid-canvas.pulsing .cell-tile {
+  animation: rimFlash 380ms cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes rimFlash {
+  0%   { box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+  25%  { box-shadow: 0 0 0 3px var(--accent-bright), 0 0 32px var(--accent-glow); }
+  100% { box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+}
+
+/* ── Cell slot (3×3 grid item) ──────────────────────────────────────────── */
+.cell-slot {
+  width: 156px; height: 136px;
+  display: grid;
+  place-items: center;
+}
+
+/* ── Site cell (outer 8 slots) ──────────────────────────────────────────── */
+.cell {
+  width: 136px; height: 116px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cell-tile {
+  width: 72px; height: 72px;
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  overflow: hidden;
+  position: relative;
+  transition:
+    transform 120ms cubic-bezier(0.16,1,0.3,1),
+    border-color 120ms,
+    box-shadow 120ms,
+    background 120ms;
+}
+
+.cell-favicon {
+  width: 44px; height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+.cell-glyph {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+}
+
+/* Brand-color dot — content tier, never accent */
+.brand-dot {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(7,8,37,0.55);
+  opacity: 0.85;
+}
+
+.cell-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 136px;
+  transition: color 120ms;
+}
+
+/* Focus state — brightness/outline only, no hue swap */
+.cell.focused .cell-tile {
+  transform: scale(1.08);
+  background: #2A2DA3;
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 6px var(--accent-glow),
+    0 12px 32px rgba(0,0,0,0.4);
+}
+
+/* Trigger flash — 80ms accent-bright pulse before navigation */
+.cell.triggered .cell-tile {
+  animation: triggerFlash 80ms ease forwards;
+}
+@keyframes triggerFlash {
+  0%   { border-color: var(--accent); }
+  50%  { border-color: var(--accent-bright); box-shadow: 0 0 0 3px var(--accent-bright), 0 0 0 8px var(--accent-glow); }
+  100% { border-color: var(--accent); }
+}
+
+/* Empty cell */
+.cell-empty .cell-tile {
+  background: transparent;
+  border: 1px dashed var(--border);
+  box-shadow: none;
+  opacity: 0.4;
+}
+.cell-empty .cell-label { display: none; }
+
+/* ── Center hub ─────────────────────────────────────────────────────────── */
+.center-slot {
+  width: 156px; height: 136px;
+  display: grid;
+  place-items: center;
+}
+
+.hub {
+  width: 116px; height: 116px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--surface-hi) 0%, var(--surface) 70%);
+  border: 1.5px solid var(--border);
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle accent ring inside hub */
+.hub::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+/* ── Passive joystick illustration (pure CSS) ────────────────────────────
+   Controller face: grey circle with recessed thumbstick well,
+   directional pips, and an animated yellow thumb cap.
+   The cap cycles UP→RIGHT→DOWN→LEFT every 2s (8s full cycle).
+   Uses GPU-only transform. No JS animation loop needed. */
+
+.joystick-wrap {
+  position: relative;
+  width: 84px; height: 84px;
+}
+
+.joystick-face {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 44% 38%, #f2f3f8, #c8cbd8 60%, #7a7f95);
+  border: 1px solid #5a5e72;
+  position: relative;
+}
+
+/* Recessed thumbstick well */
+.joystick-well {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(15,18,40,0.55);
+  border: 0.5px solid rgba(0,0,0,0.7);
+}
+
+/* 8 directional pips — cardinal ones are yellow, diagonal white-dim */
+.joy-pip {
+  position: absolute;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform-origin: 0 0;
+}
+/* Cardinals (N/E/S/W) — yellow, slightly larger */
+.joy-pip.cardinal { background: var(--accent); width: 5px; height: 5px; }
+/* Diagonals — white, dimmer */
+.joy-pip.diagonal { background: rgba(255,255,255,0.35); width: 3px; height: 3px; }
+
+/* Pip positions relative to well center (32px radius from center = 28px from well top/left of well = 19px from well center) */
+.joy-pip.n  { margin: -2.5px 0 0 -2.5px; transform: translate(16px, -19px); }
+.joy-pip.e  { margin: -2.5px 0 0 -2.5px; transform: translate(19px, -2.5px); }
+.joy-pip.s  { margin: -2.5px 0 0 -2.5px; transform: translate(16px, 14px); }
+.joy-pip.w  { margin: -2.5px 0 0 -2.5px; transform: translate(-4px, -2.5px); }
+.joy-pip.ne { margin: -1.5px 0 0 -1.5px; transform: translate(18px, -14px); }
+.joy-pip.se { margin: -1.5px 0 0 -1.5px; transform: translate(18px, 11px); }
+.joy-pip.sw { margin: -1.5px 0 0 -1.5px; transform: translate(0px, 11px); }
+.joy-pip.nw { margin: -1.5px 0 0 -1.5px; transform: translate(0px, -14px); }
+
+/* Yellow thumb cap — positioned over center, animated to snap to cardinals */
+.joy-cap {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  /* Concave dish gradient */
+  background: radial-gradient(circle at 38% 32%, #fff1a0, #fdde0a 40%, #c9a800 80%, #7a6800);
+  border: 0.5px solid #7a6800;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  margin: -11px 0 0 -11px; /* center */
+  animation: capSnap 8s steps(1,end) infinite;
+  /* Fallback: stays at center if animation doesn't work */
+}
+
+/* Center dimple */
+.joy-cap::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(122,104,0,0.5);
+  margin: -1.5px 0 0 -1.5px;
+}
+
+/* Cap snaps to cardinal positions: UP → RIGHT → DOWN → LEFT → center (brief) */
+@keyframes capSnap {
+  0%    { transform: translate(0, -18px); }   /* UP    */
+  25%   { transform: translate(18px, 0); }    /* RIGHT */
+  50%   { transform: translate(0, 18px); }    /* DOWN  */
+  75%   { transform: translate(-18px, 0); }   /* LEFT  */
+}
+
+/* Hub tip text — rotated every 6s by JS */
+.hub-tip {
+  position: absolute;
+  bottom: 6px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  text-transform: uppercase;
+  opacity: 0.9;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: 0 6px;
+}
+
+/* ── Gradient veils (edge bleed) ────────────────────────────────────────── */
+.veil {
+  position: absolute;
+  z-index: 8;
+  pointer-events: none;
+  transition: opacity 200ms;
+}
+#veil-n {
+  top: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+}
+#veil-s {
+  bottom: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+}
+#veil-e {
+  top: 0; bottom: 0; right: 0;
+  width: 120px;
+  background: linear-gradient(to right, transparent 0%, var(--bg) 100%);
+}
+#veil-w {
+  top: 0; bottom: 0; left: 0;
+  width: 120px;
+  background: linear-gradient(to left, transparent 0%, var(--bg) 100%);
+}
+/* Grip held — veils brighten and collapse to 80px to signal scroll mode armed */
+body.grip-held #veil-n { height: 80px; }
+body.grip-held #veil-s { height: 80px; }
+body.grip-held #veil-e { width: 80px; }
+body.grip-held #veil-w { width: 80px; }
+
+/* ── First-launch hint toast (y=620, subtitle zone) ─────────────────────── */
+/* Per §5.3: "Toast position: 72% down (subtitle zone). Do NOT use 20% from top." */
+#hint-toast {
+  position: absolute;
+  bottom: calc(720px - 620px);  /* y=620 from top = 100px from bottom */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+  z-index: 12;
+  transition: opacity 200ms ease;
+}
+#hint-toast.dismissed {
+  opacity: 0;
+  pointer-events: none;
+}
+.hint-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+.hint-text {
+  font-size: 28px;
+  font-weight: 500;
+}
+
+/* ── Focus ring (accessibility, not VR-primary) ─────────────────────────── */
+*:focus { outline: none; }
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--accent-glow);
+}
