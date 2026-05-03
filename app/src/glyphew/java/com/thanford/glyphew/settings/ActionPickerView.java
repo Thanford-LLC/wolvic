@@ -94,8 +94,8 @@ public class ActionPickerView extends PromptDialogWidget {
         Context ctx = getContext();
         float density = ctx.getResources().getDisplayMetrics().density;
         int iconSizePx = (int) (22f * density);
-        int accentColor = ContextCompat.getColor(ctx, R.color.fd_accent);
-        int textColor = ContextCompat.getColor(ctx, R.color.fd_text);
+        int accentColor = ContextCompat.getColor(ctx, R.color.gw_accent);
+        int textColor = ContextCompat.getColor(ctx, R.color.gw_text);
 
         SpannableStringBuilder sb = new SpannableStringBuilder();
 
@@ -150,7 +150,7 @@ public class ActionPickerView extends PromptDialogWidget {
             mBinding.body.setMovementMethod(LinkMovementMethod.getInstance());
             mBinding.body.setHighlightColor(Color.TRANSPARENT);
             mBinding.body.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                    getContext().getResources().getDimension(R.dimen.fd_text_action_picker_body));
+                    getContext().getResources().getDimension(R.dimen.gw_text_action_picker_body));
         }
     }
 

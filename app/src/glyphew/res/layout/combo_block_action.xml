@@ -43,7 +43,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="14sp"
-            android:textColor="@color/fd_text"
+            android:textColor="@color/gw_text"
             android:gravity="center"
             android:textAlignment="center"
             android:maxLines="2"
@@ -54,7 +54,7 @@
             android:id="@+id/button_cell"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="@dimen/fd_min_touch_target"
+            android:minHeight="@dimen/gw_min_touch_target"
             android:orientation="horizontal"
             android:gravity="center" />
 
@@ -74,7 +74,7 @@
         android:gravity="center"
         android:includeFontPadding="false"
         android:textSize="18sp"
-        android:textColor="@color/fd_accent"
+        android:textColor="@color/gw_accent"
         android:background="@drawable/combo_tip_bg"
         android:visibility="invisible" />
 

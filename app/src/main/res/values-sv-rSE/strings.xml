@@ -1764,7 +1764,7 @@ the Select` button. When clicked it closes all the previously selected tabs -->
 \n
 \nInnehållet och elementen som utgör applikationen har implementerats och/eller utvecklats av IGALIA under licenser med öppen källkod, och skyddas, utan begränsningar, av lagen om immateriell och industriell äganderätt i kungariket Spanien och av de internationella fördrag och avtal som kan resultat av ansökan.</string>
     <string name="rCN_first_launch_title">Användaravtal och integritetspolicyavisering</string>
-    <string name=”rCN_first_launch_body”>Välkommen till “Glyphew”!
+    <string name="rCN_first_launch_body">Välkommen till “Glyphew”!
 \n
 \nRegistrering och användning av \”Glyphew\” kräver att du godkänner användaravtalet och integritetspolicyn, annars kan vi inte tillhandahålla tjänster till dig. Läs dokumenten noggrant och klicka på \”Godkänn\” för att fortsätta. Om du klickar på \”Godkänn inte\” kommer du inte att kunna fortsätta använda \”Glyphew\”.
 \n

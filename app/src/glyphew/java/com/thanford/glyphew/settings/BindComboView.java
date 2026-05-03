@@ -149,7 +149,7 @@ public class BindComboView extends PromptDialogWidget
         }
 
         int iconSizePx = (int) (22f * ctx.getResources().getDisplayMetrics().density);
-        int chipColor = ContextCompat.getColor(ctx, R.color.fd_accent);
+        int chipColor = ContextCompat.getColor(ctx, R.color.gw_accent);
         Spannable arrows = ComboTipBuilder.renderArrowsOnly(
                 ctx, mCapturedPath, iconSizePx, chipColor);
         sb.append(arrows);

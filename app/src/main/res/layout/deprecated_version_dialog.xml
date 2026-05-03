@@ -35,7 +35,7 @@
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:src="@drawable/ic_icon_exit"
-            android:tint="@color/fd_accent" />
+            android:tint="@color/gw_accent" />
 
         <FrameLayout
             android:id="@+id/titleContainer"

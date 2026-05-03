@@ -79,7 +79,7 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
     private CharSequence buildBody() {
         Context ctx = getContext();
         int iconSizePx = (int) (22f * ctx.getResources().getDisplayMetrics().density);
-        int chipColor = ContextCompat.getColor(ctx, R.color.fd_accent);
+        int chipColor = ContextCompat.getColor(ctx, R.color.gw_accent);
         Spannable arrows = ComboTipBuilder.renderArrowsOnly(ctx, mPath, iconSizePx, chipColor);
 
         int labelRes = ComboActionRegistry.labelFor(mActionInt);

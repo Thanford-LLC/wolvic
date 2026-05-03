@@ -14,10 +14,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingStart="@dimen/fd_pad_row_h"
-    android:paddingEnd="@dimen/fd_pad_row_h"
-    android:paddingTop="@dimen/fd_pad_row_v_action"
-    android:paddingBottom="@dimen/fd_pad_row_v_action"
+    android:paddingStart="@dimen/gw_pad_row_h"
+    android:paddingEnd="@dimen/gw_pad_row_h"
+    android:paddingTop="@dimen/gw_pad_row_v_action"
+    android:paddingBottom="@dimen/gw_pad_row_v_action"
     android:gravity="center_vertical">
 
     <!-- Column 1: action name -->
@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         style="@style/settingsText"
-        android:textColor="@color/fd_text"
+        android:textColor="@color/gw_text"
         android:textAlignment="viewStart" />
 
     <!-- Column 2: combo arrows pill or "—" (centered, weight=1) -->
@@ -39,15 +39,15 @@
         android:layout_gravity="center_vertical"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginStart="@dimen/fd_pad_combo_margin"
-        android:layout_marginEnd="@dimen/fd_pad_combo_margin" />
+        android:layout_marginStart="@dimen/gw_pad_combo_margin"
+        android:layout_marginEnd="@dimen/gw_pad_combo_margin" />
 
     <!-- Column 3: delete ✕ or + Create button (hover-revealed) -->
     <LinearLayout
         android:id="@+id/button_cell"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:minWidth="@dimen/fd_min_touch_target"
+        android:minWidth="@dimen/gw_min_touch_target"
         android:orientation="horizontal"
         android:gravity="center_vertical|end" />
 

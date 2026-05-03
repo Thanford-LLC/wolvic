@@ -510,9 +510,9 @@
     <string name="slow_script_dialog_description">Uma página da web está deixando seu navegador mais lento (%1$s). O que você gostaria de fazer\?</string>
     <string name="popup_permission_dialog_message">O bloqueio de pop-ups é %1$s para este site.</string>
     <string name="tracking_dialog_button_on">Ligado</string>
-    <string name=”download_delete_file_confirm_title”>Excluir arquivo</string>
+    <string name="download_delete_file_confirm_title">Excluir arquivo</string>
     <!-- TODO: re-translate after Glyphew ToS finalized -->
-    <string name=”terms_service_section_2”>Wolvic usa serviços de informação baseados na web (“Serviços”) para fornecer alguns dos recursos fornecidos para seu uso com esta versão binária do Wolvic sob os termos descritos abaixo.
+    <string name="terms_service_section_2">Wolvic usa serviços de informação baseados na web (“Serviços”) para fornecer alguns dos recursos fornecidos para seu uso com esta versão binária do Wolvic sob os termos descritos abaixo.
 \n
 \n• A Igalia e seus colaboradores, licenciadores e parceiros trabalham para fornecer os Serviços mais precisos e atualizados. No entanto, não podemos garantir que essas informações sejam abrangentes e livres de erros. Por exemplo, o Safe Browsing Service pode não identificar alguns sites arriscados e pode identificar alguns sites seguros por engano, e no Location Aware Service todos os locais retornados por nossos provedores de serviços são apenas estimativas e nem nós, nem nossos provedores de serviços garantimos a precisão do locais fornecidos.
 \n
@@ -756,7 +756,7 @@
     <string name="keyboardview_keycode_done">Feito</string>
     <string name="keyboardview_keycode_enter">Entrar</string>
     <string name="tray_wifi_unavailable_ssid">SSID indisponível</string>
-    <string name=”rCN_first_launch_body”>Bem-vindo ao “Glyphew”!
+    <string name="rCN_first_launch_body">Bem-vindo ao “Glyphew”!
 \n
 \nRegistrar e usar o “Glyphew” exige que você concorde com o Contrato de Usuário e Política de Privacidade, ou então não podemos fornecer serviços para você. Leia cuidadosamente os documentos e clique em “Aceitar” para continuar. Se você clicar em “Discordar”, você não será capaz de continuar usando o “Glyphew”.
 \n

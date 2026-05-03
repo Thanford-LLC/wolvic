@@ -88,7 +88,7 @@ public final class ComboPathView extends View {
     }
 
     private void init(Context ctx) {
-        int accent = ContextCompat.getColor(ctx, R.color.fd_accent);
+        int accent = ContextCompat.getColor(ctx, R.color.gw_accent);
         mAccentColor = accent;
 
         mBgPaint.setStyle(Paint.Style.FILL);

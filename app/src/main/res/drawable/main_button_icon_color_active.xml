@@ -1,9 +1,9 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_enabled="false"
-        android:color="@color/fd_text_disabled"/>
+        android:color="@color/gw_text_disabled"/>
     <item android:state_pressed="true"
-        android:color="@color/fd_accent_pressed"/>
+        android:color="@color/gw_accent_pressed"/>
     <item android:state_hovered="true"
-        android:color="@color/fd_accent_hover"/>
-    <item android:color="@color/fd_accent"/>
+        android:color="@color/gw_accent_hover"/>
+    <item android:color="@color/gw_accent"/>
 </selector>

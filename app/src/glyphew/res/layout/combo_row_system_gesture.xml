@@ -11,10 +11,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingStart="@dimen/fd_pad_row_h"
-    android:paddingEnd="@dimen/fd_pad_row_h"
-    android:paddingTop="@dimen/fd_pad_row_v_system"
-    android:paddingBottom="@dimen/fd_pad_row_v_system"
+    android:paddingStart="@dimen/gw_pad_row_h"
+    android:paddingEnd="@dimen/gw_pad_row_h"
+    android:paddingTop="@dimen/gw_pad_row_v_system"
+    android:paddingBottom="@dimen/gw_pad_row_v_system"
     android:gravity="center_vertical">
 
     <TextView
@@ -23,16 +23,16 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         style="@style/settingsText"
-        android:textColor="@color/fd_text_muted"
+        android:textColor="@color/gw_text_muted"
         android:textAlignment="viewStart" />
 
     <TextView
         android:id="@+id/system_gesture_action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingStart="@dimen/fd_pad_gesture_action_start"
+        android:paddingStart="@dimen/gw_pad_gesture_action_start"
         style="@style/settingsText"
-        android:textColor="@color/fd_text"
+        android:textColor="@color/gw_text"
         android:textAlignment="viewEnd" />
 
 </LinearLayout>

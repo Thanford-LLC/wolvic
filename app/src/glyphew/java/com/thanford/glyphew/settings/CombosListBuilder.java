@@ -316,7 +316,7 @@ public final class CombosListBuilder {
         xView.setText("✕  Unbind");
         xView.setTextSize(11f);
         xView.setLetterSpacing(0.08f);
-        xView.setTextColor(ContextCompat.getColor(ctx, R.color.fd_accent));
+        xView.setTextColor(ContextCompat.getColor(ctx, R.color.gw_accent));
         xView.setPadding(padH, padV, padH, padV);
         xView.setContentDescription(ctx.getString(R.string.combos_chip_delete_content_desc));
         xView.setClickable(true);

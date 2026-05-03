@@ -2510,44 +2510,34 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- REVIEW WITH ATTORNEY BEFORE META STORE SUBMISSION -->
     <!-- These strings are the content of the Terms of Service. -->
     <string name="terms_service_title">Terms of Service</string>
-    <string name="terms_service_section_1">
-    By using Glyphew, you agree to these Terms of Service. Glyphew is operated by Thanford LLC (in formation). The App is distributed through the Meta Horizon Store; Meta Platform Terms also apply.
-    \n\nGlyphew is built on Wolvic (developed by Igalia, S.L.) under the Mozilla Public License 2.0. MPL 2.0-licensed source code and Thanford's modifications to Wolvic files are available as required by MPL 2.0. Nothing in these Terms limits rights granted to you under MPL 2.0.
-    \n\nLicense: Thanford grants you a personal, non-exclusive, non-transferable, non-sublicensable license to use the App on your Meta Quest device for personal, non-commercial use.
-    \n\nUser Conduct: You agree to use the App only for lawful purposes. You may not attempt to reverse-engineer proprietary portions of the App (except as permitted by applicable open source licenses), gain unauthorized access to any networks through the App, or use the App to transmit unlawful or harmful content.
-    \n\nNo account required: Glyphew does not require a Thanford account. No registration data is collected by Thanford.
-    </string>
+    <string name="terms_service_section_1">By using Glyphew, you agree to these Terms of Service. Glyphew is operated by Thanford LLC (in formation). The App is distributed through the Meta Horizon Store; Meta Platform Terms also apply.
+        \n\nGlyphew is built on Wolvic (developed by Igalia, S.L.) under the Mozilla Public License 2.0. MPL 2.0-licensed source code and Thanford\'s modifications to Wolvic files are available as required by MPL 2.0. Nothing in these Terms limits rights granted to you under MPL 2.0.
+        \n\nLicense: Thanford grants you a personal, non-exclusive, non-transferable, non-sublicensable license to use the App on your Meta Quest device for personal, non-commercial use.
+        \n\nUser Conduct: You agree to use the App only for lawful purposes. You may not attempt to reverse-engineer proprietary portions of the App (except as permitted by applicable open source licenses), gain unauthorized access to any networks through the App, or use the App to transmit unlawful or harmful content.
+        \n\nNo account required: Glyphew does not require a Thanford account. No registration data is collected by Thanford.</string>
     <string name="terms_service_subtitle_2">Disclaimers, Liability, and Governing Law</string>
-    <string name="terms_service_section_2">
-    Disclaimer of Warranties: THE APP IS PROVIDED \u201cAS IS\u201d AND \u201cAS AVAILABLE\u201d WITHOUT WARRANTY OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-    \n\nLimitation of Liability: TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD'S TOTAL LIABILITY TO YOU SHALL NOT EXCEED THE AMOUNT YOU PAID FOR THE APP (USD $6.99). THANFORD IS NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES.
-    \n\nChanges to Terms: Thanford may update these Terms from time to time. Continued use of the App after notice of an update constitutes your acceptance. If you do not agree, stop using the App.
-    \n\nGoverning Law: These Terms are governed by the laws of the State of [STATE], USA.
-    \n\nContact: hubert2gavin@gmail.com
-    </string>
+    <string name="terms_service_section_2">Disclaimer of Warranties: THE APP IS PROVIDED “AS IS” AND “AS AVAILABLE” WITHOUT WARRANTY OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+        \n\nLimitation of Liability: TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD\'S TOTAL LIABILITY TO YOU SHALL NOT EXCEED THE AMOUNT YOU PAID FOR THE APP (USD $6.99). THANFORD IS NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES.
+        \n\nChanges to Terms: Thanford may update these Terms from time to time. Continued use of the App after notice of an update constitutes your acceptance. If you do not agree, stop using the App.
+        \n\nGoverning Law: These Terms are governed by the laws of the State of [STATE], USA.
+        \n\nContact: hubert2gavin@gmail.com</string>
 
     <!-- REVIEW WITH ATTORNEY BEFORE META STORE SUBMISSION -->
     <!-- These strings are the content of the Privacy Policy. -->
     <string name="privacy_policy_title">Privacy Policy</string>
     <string name="privacy_policy_subtitle_1">Data We Collect</string>
-    <string name="privacy_policy_section_1">
-    Glyphew is operated by Thanford LLC (in formation). Contact: hubert2gavin@gmail.com. Privacy URL: https://glyphew.app/legal/privacy/
-    \n\nTelemetry is OFF by default. When telemetry is disabled, Thanford collects NO data from you \u2014 no browsing history, no URLs, no personal information, nothing.
-    \n\nIf you voluntarily enable telemetry in Settings, Thanford may collect limited diagnostic data only: crash reports, app version, device model (e.g. \u201cQuest 3\u201d), and aggregate session duration. We do NOT collect browsing history, URLs, search queries, passwords, payment data, your name, email, location, voice, or any personal identifiers.
-    \n\nYou may enable or disable telemetry at any time in Settings \u203a Privacy. Disabling takes effect immediately.
-    </string>
+    <string name="privacy_policy_section_1">Glyphew is operated by Thanford LLC (in formation). Contact: hubert2gavin@gmail.com. Privacy URL: https://glyphew.app/legal/privacy/
+        \n\nTelemetry is OFF by default. When telemetry is disabled, Thanford collects NO data from you — no browsing history, no URLs, no personal information, nothing.
+        \n\nIf you voluntarily enable telemetry in Settings, Thanford may collect limited diagnostic data only: crash reports, app version, device model (e.g. “Quest 3”), and aggregate session duration. We do NOT collect browsing history, URLs, search queries, passwords, payment data, your name, email, location, voice, or any personal identifiers.
+        \n\nYou may enable or disable telemetry at any time in Settings › Privacy. Disabling takes effect immediately.</string>
     <string name="privacy_policy_subtitle_2">Third-Party Services and Your Rights</string>
-    <string name="privacy_policy_section_2">
-    Third-party processors: (1) Meta Platform \u2014 app distribution and payment, governed by Meta\u2019s privacy policy. (2) Google Chromium \u2014 browser engine; Thanford does not instrument Chromium\u2019s network activity beyond running the browser. See https://policies.google.com/privacy. (3) Mozilla Firefox Sync (optional, user-initiated) \u2014 governed solely by Mozilla\u2019s Privacy Notice; Thanford does not access or store Firefox Sync data. See https://www.mozilla.org/en-US/privacy/firefox/
-    \n\nCrash report data is retained for a maximum of 90 days, then automatically deleted.
-    \n\nYour rights: You may opt out of telemetry at any time via Settings \u203a Privacy. To request deletion of crash report data, email hubert2gavin@gmail.com with subject \u201cData Deletion Request.\u201d
-    \n\nCCPA (California): We do not sell personal information. Contact hubert2gavin@gmail.com to exercise CCPA rights.
-    \n\nGDPR/UK GDPR: Where applicable, legal basis for telemetry processing is your explicit consent. You have rights of access, rectification, erasure, restriction, portability, and objection. Contact hubert2gavin@gmail.com.
-    </string>
+    <string name="privacy_policy_section_2">Third-party processors: (1) Meta Platform — app distribution and payment, governed by Meta\’s privacy policy. (2) Google Chromium — browser engine; Thanford does not instrument Chromium\’s network activity beyond running the browser. See https://policies.google.com/privacy. (3) Mozilla Firefox Sync (optional, user-initiated) — governed solely by Mozilla\’s Privacy Notice; Thanford does not access or store Firefox Sync data. See https://www.mozilla.org/en-US/privacy/firefox/
+        \n\nCrash report data is retained for a maximum of 90 days, then automatically deleted.
+        \n\nYour rights: You may opt out of telemetry at any time via Settings › Privacy. To request deletion of crash report data, email hubert2gavin@gmail.com with subject “Data Deletion Request.”
+        \n\nCCPA (California): We do not sell personal information. Contact hubert2gavin@gmail.com to exercise CCPA rights.
+        \n\nGDPR/UK GDPR: Where applicable, legal basis for telemetry processing is your explicit consent. You have rights of access, rectification, erasure, restriction, portability, and objection. Contact hubert2gavin@gmail.com.</string>
     <string name="privacy_policy_subtitle_3">Governing Law and Contact</string>
-    <string name="privacy_policy_section_3">
-    This Privacy Policy is governed by the laws of the State of [STATE], USA. For questions or requests, contact Thanford LLC at hubert2gavin@gmail.com. The current Privacy Policy is always available at https://glyphew.app/legal/privacy/
-    </string>
+    <string name="privacy_policy_section_3">This Privacy Policy is governed by the laws of the State of [STATE], USA. For questions or requests, contact Thanford LLC at hubert2gavin@gmail.com. The current Privacy Policy is always available at https://glyphew.app/legal/privacy/</string>
 
     <!-- Display names for the supported voice recognition services -->
     <string name="voice_service_metkai">MeetKai</string>

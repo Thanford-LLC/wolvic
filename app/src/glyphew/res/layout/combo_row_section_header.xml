@@ -13,10 +13,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingStart="@dimen/fd_pad_row_h"
-    android:paddingEnd="@dimen/fd_pad_row_h"
-    android:paddingTop="@dimen/fd_pad_row_top_section"
-    android:paddingBottom="@dimen/fd_pad_row_bottom_section"
+    android:paddingStart="@dimen/gw_pad_row_h"
+    android:paddingEnd="@dimen/gw_pad_row_h"
+    android:paddingTop="@dimen/gw_pad_row_top_section"
+    android:paddingBottom="@dimen/gw_pad_row_bottom_section"
     android:gravity="center_vertical"
     android:clickable="true"
     android:focusable="true">
@@ -26,9 +26,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textSize="@dimen/fd_text_settings_section_title"
+        android:textSize="@dimen/gw_text_settings_section_title"
         android:textStyle="bold"
-        android:textColor="@color/fd_accent"
+        android:textColor="@color/gw_accent"
         android:fontFamily="sans-serif"
         android:textAlignment="viewStart" />
 
@@ -36,10 +36,10 @@
         android:id="@+id/section_chevron"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="@dimen/fd_text_settings_chevron"
+        android:textSize="@dimen/gw_text_settings_chevron"
         android:textStyle="bold"
-        android:textColor="@color/fd_accent"
-        android:paddingStart="@dimen/fd_pad_chevron_start"
+        android:textColor="@color/gw_accent"
+        android:paddingStart="@dimen/gw_pad_chevron_start"
         android:text="&#9660;"
         android:rotation="0" />
 
