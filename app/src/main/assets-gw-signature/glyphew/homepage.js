@@ -86,16 +86,21 @@ const STATIC_CATALOG = [
   },
 ];
 
-// Tip text pool — rotated every 6s in the center hub.
+// Tips shown during logo hub slide (cycles each logo appearance)
 const HUB_TIPS = [
   'HOLD GRIP · FLICK · RELEASE',
-  'PUSH UP/DOWN TO SWITCH CATEGORY',
-  'PUSH LEFT/RIGHT TO SWITCH SETS',
-  'CENTER IS HOME',
-  'COMBOS NEED GRIP',
-  'LONG-PRESS OPENS SETTINGS',
-  'FLICK & RELEASE',
-  'JOYSTICK MOVES FOCUS',
+  'PUSH UP / DOWN = CATEGORY',
+  'PUSH LEFT / RIGHT = PAGE',
+  'GRIP + FLICK = COMBO',
+];
+
+// Hub slide deck: logo (3 s) followed by 4 directional combo demos (2.5 s each).
+const HUB_SLIDES = [
+  { type: 'logo',  duration: 3000 },
+  { type: 'combo', dir: 2, label: '↑  PREV CATEGORY', duration: 2500 },
+  { type: 'combo', dir: 8, label: '↓  NEXT CATEGORY', duration: 2500 },
+  { type: 'combo', dir: 4, label: '←  PREV SET',       duration: 2500 },
+  { type: 'combo', dir: 6, label: '→  NEXT SET',       duration: 2500 },
 ];
 
 // ── Grid slot mapping ──────────────────────────────────────────────────────
@@ -105,15 +110,25 @@ const OUTER_TO_GRID = [0, 1, 2, 3, 5, 6, 7, 8];
 // GRID_TO_OUTER: gridPos → outerIdx (only for non-center slots)
 const GRID_TO_OUTER = { 0:0, 1:1, 2:2, 3:3, 5:4, 6:5, 7:6, 8:7 };
 
+// Hub combo disc geometry — 116×116 hub, ring at radius 38 px, center (58,58).
+// Node angles: 2=270° (up), 8=90° (down), 4=180° (left), 6=0° (right).
+var DIR_NODES  = { 2:{x:58,y:20}, 8:{x:58,y:96}, 4:{x:20,y:58}, 6:{x:96,y:58} };
+var DIAG_NODES = [{x:85,y:31},{x:85,y:85},{x:31,y:85},{x:31,y:31}];
+var CAP_CLASS  = { 2:'to-n', 8:'to-s', 4:'to-w', 6:'to-e' };
+
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
-  catalog: STATIC_CATALOG,   // may be augmented by bridge on load
+  catalog: STATIC_CATALOG,
   rowIndex: 0,
   pageIndex: 0,
-  focusIdx: 0,               // outer slot 0-7 currently focused
+  focusIdx: 0,
   hintDismissed: false,
-  hubTipIdx: 0,
 };
+
+// Hub slide state (presentation only — not serialized)
+var _hubSlideIdx   = 0;
+var _hubTipIdx     = 0;
+var _hubSlideTimer = null;
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
@@ -141,8 +156,8 @@ function render(opts) {
   const row = currentRow();
   opts = opts || {};
 
-  // Header
-  headerKind.textContent  = row.kind === 'user' ? 'BOOKMARKS' : 'CATEGORY';
+  // Header — kind label is always HOME for catalog rows
+  headerKind.textContent  = row.kind === 'user' ? 'BOOKMARKS' : 'HOME';
   headerTitle.textContent = row.title;
   renderDots(row.pages.length, state.pageIndex);
 
@@ -205,27 +220,13 @@ function renderGrid() {
   var sites = currentPage();
 
   OUTER_TO_GRID.forEach(function(gridPos, outerIdx) {
-    // Determine row/col in the 3×3
-    var gr = Math.floor(gridPos / 3);
-    var gc = gridPos % 3;
-
-    // Before center slot, insert center
-    if (gc === 0 && gr === 1) {
-      // We're inserting row 1: left slot (gridPos=3), then center (4), then right (5)
-      // gridPos=3 is outerIdx=3, gridPos=5 is outerIdx=4
-      // But our loop visits them in order, so center needs to be injected
-    }
-
     var slot = document.createElement('div');
     slot.className = 'cell-slot';
 
-    // Inject center hub before slot for gridPos === 5 (right slot of middle row)
-    // i.e., after gridPos===3 (outerIdx=3) we inject the center
     if (outerIdx === 3) {
-      gridCanvas.appendChild(slot); // left middle slot (gridPos=3)
+      gridCanvas.appendChild(slot);
       slot.appendChild(makeSiteCell(sites[outerIdx], outerIdx));
 
-      // Now inject center hub slot
       var centerSlot = document.createElement('div');
       centerSlot.className = 'cell-slot center-slot';
       centerSlot.appendChild(makeCenterHub());
@@ -238,7 +239,6 @@ function renderGrid() {
     gridCanvas.appendChild(slot);
   });
 
-  // Apply focus to current outer slot
   applyFocus(state.focusIdx);
 }
 
@@ -262,18 +262,15 @@ function makeSiteCell(site, outerIdx) {
   var tile = document.createElement('div');
   tile.className = 'cell-tile';
 
-  // Favicon img with letter fallback
   var img = document.createElement('img');
   img.className = 'cell-favicon';
   img.alt = site.name;
   img.src = 'icons/' + site.icon;
   img.addEventListener('error', function() {
-    // Chromium: try bridge resolution
     if (window.gwHome && typeof window.gwHome.getIcon === 'function') {
       var dataUrl = window.gwHome.getIcon(site.icon);
       if (dataUrl) { img.src = dataUrl; return; }
     }
-    // Ultimate fallback: show letter glyph
     img.style.display = 'none';
     var glyph = document.createElement('div');
     glyph.className = 'cell-glyph';
@@ -282,7 +279,6 @@ function makeSiteCell(site, outerIdx) {
   });
   tile.appendChild(img);
 
-  // Brand color dot (content-tier, per BRAND.md)
   if (site.color) {
     var dot = document.createElement('div');
     dot.className = 'brand-dot';
@@ -297,48 +293,112 @@ function makeSiteCell(site, outerIdx) {
   label.textContent = site.name;
   cell.appendChild(label);
 
-  // Activation: trigger flash then navigate
   cell.addEventListener('pointerdown', function() { setFocus(outerIdx); });
   cell.addEventListener('click', function() { activateOuter(outerIdx); });
 
   return cell;
 }
 
+// ── Center hub (PowerPoint slide: logo → 4 combo demos) ───────────────────
 function makeCenterHub() {
   var hub = document.createElement('div');
   hub.className = 'hub';
   hub.id = 'hub-center';
 
-  // Passive joystick illustration (CSS-animated cap)
-  var wrap = document.createElement('div');
-  wrap.className = 'joystick-wrap';
+  var inner = document.createElement('div');
+  inner.id = 'hub-inner';
+  inner.className = 'hub-inner';
+  hub.appendChild(inner);
 
-  var face = document.createElement('div');
-  face.className = 'joystick-face';
-
-  var well = document.createElement('div');
-  well.className = 'joystick-well';
-
-  // 8 directional pips
-  [
-    ['n',  true], ['ne', false], ['e',  true], ['se', false],
-    ['s',  true], ['sw', false], ['w',  true], ['nw', false],
-  ].forEach(function(entry) {
-    var pip = document.createElement('div');
-    pip.className = 'joy-pip ' + entry[0] + (entry[1] ? ' cardinal' : ' diagonal');
-    well.appendChild(pip);
-  });
-
-  // Animated thumb cap
-  var cap = document.createElement('div');
-  cap.className = 'joy-cap';
-  well.appendChild(cap);
-
-  face.appendChild(well);
-  wrap.appendChild(face);
-  hub.appendChild(wrap);
+  // Populate with whichever slide is currently active
+  populateHubInner(inner);
 
   return hub;
+}
+
+function buildLogoHTML() {
+  return '<svg class="hub-logo-svg" viewBox="0 0 604 677" xmlns="http://www.w3.org/2000/svg">' +
+         '<use href="#gw-glyph"/>' +
+         '</svg>';
+}
+
+function buildComboSlideHTML(dir) {
+  var target = DIR_NODES[dir];
+  var capCls = CAP_CLASS[dir];
+  var parts  = [];
+
+  parts.push('<svg class="combo-disc-svg" viewBox="0 0 116 116" xmlns="http://www.w3.org/2000/svg">');
+  // Dark background disc (matches ComboPathView: #090d38)
+  parts.push('<circle cx="58" cy="58" r="52" fill="#090d38"/>');
+  // Thin path ring (#1c2265)
+  parts.push('<circle cx="58" cy="58" r="38" fill="none" stroke="#1c2265" stroke-width="1.5"/>');
+  // Diagonal dim nodes
+  DIAG_NODES.forEach(function(n) {
+    parts.push('<circle cx="' + n.x + '" cy="' + n.y + '" r="2.5" fill="#1a2060"/>');
+  });
+  // Cardinal dim nodes (non-target)
+  [2, 8, 4, 6].forEach(function(d) {
+    if (d === dir) return;
+    var n = DIR_NODES[d];
+    parts.push('<circle cx="' + n.x + '" cy="' + n.y + '" r="4" fill="#252c75"/>');
+  });
+  // Accent path line: center → target
+  parts.push('<line x1="58" y1="58" x2="' + target.x + '" y2="' + target.y +
+             '" stroke="#FDDE0A" stroke-width="2" stroke-linecap="round" opacity="0.45"/>');
+  // Target glow ring
+  parts.push('<circle cx="' + target.x + '" cy="' + target.y +
+             '" r="10" fill="none" stroke="#FDDE0A" stroke-width="1" opacity="0.3"/>');
+  // Target node fill
+  parts.push('<circle cx="' + target.x + '" cy="' + target.y +
+             '" r="5.5" fill="#FDDE0A"/>');
+  parts.push('</svg>');
+  // Animated thumb cap (CSS keyframe drives it, no JS loop)
+  parts.push('<div class="hub-cap ' + capCls + '"></div>');
+
+  return parts.join('');
+}
+
+function populateHubInner(inner) {
+  var slide = HUB_SLIDES[_hubSlideIdx];
+  inner.innerHTML = slide.type === 'logo' ? buildLogoHTML() : buildComboSlideHTML(slide.dir);
+}
+
+function nextHubSlide() {
+  _hubSlideIdx = (_hubSlideIdx + 1) % HUB_SLIDES.length;
+  var slide = HUB_SLIDES[_hubSlideIdx];
+
+  var inner = document.getElementById('hub-inner');
+  if (inner) {
+    inner.style.opacity = '0';
+    setTimeout(function() {
+      populateHubInner(inner);
+      inner.style.opacity = '1';
+    }, 200);
+  }
+
+  updateStripeTip(slide);
+  scheduleNextSlide();
+}
+
+function scheduleNextSlide() {
+  clearTimeout(_hubSlideTimer);
+  _hubSlideTimer = setTimeout(nextHubSlide, HUB_SLIDES[_hubSlideIdx].duration);
+}
+
+function updateStripeTip(slide) {
+  stripeTip.style.opacity = '0';
+  setTimeout(function() {
+    if (slide.type === 'logo') {
+      stripeTip.textContent = HUB_TIPS[_hubTipIdx];
+      _hubTipIdx = (_hubTipIdx + 1) % HUB_TIPS.length;
+      stripeTip.removeAttribute('data-combo');
+      stripeTip.style.opacity = '0.75';
+    } else {
+      stripeTip.textContent = slide.label;
+      stripeTip.setAttribute('data-combo', '');
+      stripeTip.style.opacity = '1';
+    }
+  }, 150);
 }
 
 // ── Focus management ───────────────────────────────────────────────────────
@@ -362,7 +422,6 @@ function activateOuter(outerIdx) {
   var site = sites[outerIdx];
   if (!site) return;
 
-  // Brief trigger flash
   var cells = gridCanvas.querySelectorAll('.cell');
   cells.forEach(function(cell) {
     if (parseInt(cell.dataset.outerIdx, 10) === outerIdx) {
@@ -415,7 +474,6 @@ function changeRow(delta) {
   var next = state.rowIndex + delta;
   if (next < 0 || next >= state.catalog.length) return;
   state.rowIndex = next;
-  // Clamp pageIndex to valid range for new row
   var pages = currentRow().pages.length;
   if (state.pageIndex >= pages) state.pageIndex = pages - 1;
   dismissHint();
@@ -439,16 +497,6 @@ function dismissHint() {
   if (window.gwHome && typeof window.gwHome.markHintSeen === 'function') {
     window.gwHome.markHintSeen();
   }
-}
-
-// ── Stripe tip rotation (every 6s) ─────────────────────────────────────────
-function rotateTip() {
-  state.hubTipIdx = (state.hubTipIdx + 1) % HUB_TIPS.length;
-  stripeTip.style.opacity = '0';
-  setTimeout(function() {
-    stripeTip.textContent = HUB_TIPS[state.hubTipIdx];
-    stripeTip.style.opacity = '0.75';
-  }, 200);
 }
 
 // ── Wheel / combo navigation ───────────────────────────────────────────────
@@ -509,7 +557,6 @@ function bridgeCall(method) {
   });
 }
 
-// Exposed for the bridge resolve callback
 if (typeof window.gwHome === 'undefined') {
   window.gwHome = {};
 }
@@ -517,7 +564,7 @@ window.gwHome._resolve = function(id, json) {
   if (_pendingResolvers[id]) _pendingResolvers[id](json);
 };
 
-// Called by native ComboDispatcher once wired (future PR).
+// Called by native ComboDispatcher (Session.dispatchComboToHome).
 window.gwHome._onCombo = function(direction) {
   switch (direction) {
     case 2: changeRow(-1);  break;
@@ -531,7 +578,6 @@ window.gwHome._onCombo = function(direction) {
 function tryBridgeUpgrade() {
   if (!window.gwHome || typeof window.gwHome.getFolders !== 'function') return;
 
-  // Restore last position
   bridgeCall('getPrefs').then(function(prefs) {
     if (!prefs) return;
     if (prefs.hintSeen) dismissHint();
@@ -545,7 +591,6 @@ function tryBridgeUpgrade() {
     render({});
   });
 
-  // Auto-detect bookmark folders and prepend as user rows
   bridgeCall('getFolders').then(function(folders) {
     if (!folders || !folders.length) return;
     var userRows = folders.map(function(f) {
@@ -569,19 +614,18 @@ function tryBridgeUpgrade() {
       };
     });
     state.catalog = userRows.concat(STATIC_CATALOG);
-    state.rowIndex = userRows.length; // land on first STATIC_CATALOG row
+    state.rowIndex = userRows.length;
     render({});
   });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (function init() {
+  // Show first logo tip immediately; next call will advance to index 1
   stripeTip.textContent = HUB_TIPS[0];
+  _hubTipIdx = 1;
+
   render({});
-
-  // Stripe tip rotation (6s interval)
-  setInterval(rotateTip, 6000);
-
-  // Bridge upgrade (after first paint)
+  scheduleNextSlide();
   setTimeout(tryBridgeUpgrade, 0);
 }());
