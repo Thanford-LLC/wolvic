@@ -392,8 +392,33 @@ html, body {
   100% { transform: translate(0, 0); }
 }
 
-/* Stripe tip — hint / combo label below page dots in #screen-header */
+/* Long-press hold indicator — pulsing center rings */
+.lp-ring {
+  transform-origin: 58px 58px;
+  animation: lpRing 1.4s ease-out infinite;
+}
+@keyframes lpRing {
+  0%   { transform: scale(0.6); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.lp-fill {
+  transform-origin: 58px 58px;
+  animation: lpFill 1.4s ease-in-out infinite;
+}
+@keyframes lpFill {
+  0%, 100% { transform: scale(0.85); opacity: 0.65; }
+  50%       { transform: scale(1.0);  opacity: 1; }
+}
+.hub-cap.lp-cap {
+  box-shadow: 0 0 14px 6px rgba(253,222,10,0.6), 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Stripe tip — combo/hint label at VR subtitle zone (y ≈ 580, above hint toast) */
 #stripe-tip {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -403,7 +428,8 @@ html, body {
   transition: opacity 200ms ease;
   pointer-events: none;
   white-space: nowrap;
-  margin-top: 2px;
+  z-index: 11;
+  text-align: center;
 }
 /* Combo mode: arrow + label at full opacity, slightly larger */
 #stripe-tip[data-combo] {

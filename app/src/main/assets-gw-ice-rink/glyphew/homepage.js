@@ -8,81 +8,129 @@
 const STATIC_CATALOG = [
   {
     id: 'video', title: 'Video', icon: '▶',
-    pages: [[
-      { name: 'YouTube',    domain: 'youtube.com',     icon: 'youtube.png',    color: '#FF0033', letter: '▶' },
-      { name: 'Netflix',    domain: 'netflix.com',     icon: 'netflix.png',    color: '#E50914', letter: 'N' },
-      { name: 'Twitch',     domain: 'twitch.tv',       icon: 'twitch.png',     color: '#9146FF', letter: 'T' },
-      { name: 'Vimeo',      domain: 'vimeo.com',       icon: 'vimeo.png',      color: '#1ab7ea', letter: 'V' },
-      { name: 'Prime',      domain: 'primevideo.com',  icon: 'primevideo.png', color: '#00A8E1', letter: '▷' },
-      { name: 'Disney+',    domain: 'disneyplus.com',  icon: 'disneyplus.png', color: '#1A1D29', letter: 'D+' },
-      { name: 'Apple TV',   domain: 'tv.apple.com',    icon: 'appletv.png',    color: '#FFFFFF', letter: '' },
-      { name: 'Plex',       domain: 'plex.tv',         icon: 'plex.png',       color: '#E5A00D', letter: 'P' },
-    ]],
+    pages: [
+      [
+        { name: 'YouTube',    domain: 'youtube.com',      icon: 'youtube.png',      color: '#FF0033', letter: '▶' },
+        { name: 'Netflix',    domain: 'netflix.com',      icon: 'netflix.png',      color: '#E50914', letter: 'N' },
+        { name: 'Twitch',     domain: 'twitch.tv',        icon: 'twitch.png',       color: '#9146FF', letter: 'T' },
+        { name: 'Vimeo',      domain: 'vimeo.com',        icon: 'vimeo.png',        color: '#1ab7ea', letter: 'V' },
+        { name: 'Prime',      domain: 'primevideo.com',   icon: 'primevideo.png',   color: '#00A8E1', letter: '▷' },
+        { name: 'Disney+',    domain: 'disneyplus.com',   icon: 'disneyplus.png',   color: '#1A1D29', letter: 'D+' },
+        { name: 'Apple TV',   domain: 'tv.apple.com',     icon: 'appletv.png',      color: '#555555', letter: '' },
+        { name: 'Plex',       domain: 'plex.tv',          icon: 'plex.png',         color: '#E5A00D', letter: 'P' },
+      ],
+      [
+        { name: 'HBO Max',    domain: 'max.com',           icon: 'hbomax.png',       color: '#8B5CF6', letter: 'M' },
+        { name: 'Peacock',    domain: 'peacocktv.com',     icon: 'peacock.png',      color: '#FFD700', letter: 'P' },
+        { name: 'Paramount+', domain: 'paramountplus.com', icon: 'paramount.png',    color: '#0064FF', letter: 'P+' },
+        { name: 'Crunchyroll',domain: 'crunchyroll.com',   icon: 'crunchyroll.png',  color: '#F47521', letter: 'C' },
+        { name: 'Funimation', domain: 'funimation.com',    icon: 'funimation.png',   color: '#4A0077', letter: 'F' },
+        { name: 'Dailymotion',domain: 'dailymotion.com',   icon: 'dailymotion.png',  color: '#0072EA', letter: 'D' },
+        { name: 'Rumble',     domain: 'rumble.com',        icon: 'rumble.png',       color: '#85BE00', letter: 'R' },
+        { name: 'Odysee',     domain: 'odysee.com',        icon: 'odysee.png',       color: '#E50054', letter: 'O' },
+      ],
+    ],
   },
   {
     id: 'vr', title: 'VR', icon: '◎',
     pages: [[
-      { name: 'Quest Store',domain: 'meta.com/quest',  icon: 'metaquest.png',    color: '#0668E1', letter: 'Q' },
-      { name: 'SideQuest',  domain: 'sidequestvr.com', icon: 'sidequest.png',    color: '#FF5722', letter: '▽' },
-      { name: 'UploadVR',   domain: 'uploadvr.com',    icon: 'uploadvr.png',     color: '#1CAAD9', letter: 'U' },
-      { name: 'WebXR',      domain: 'immersive-web.github.io', icon: 'immersiveweb.png', color: '#FFFFFF', letter: 'X' },
-      { name: 'VR Focus',   domain: 'vrfocus.com',     icon: 'vrfocus.png',      color: '#E02020', letter: 'V' },
-      { name: 'VRScout',    domain: 'vrscout.com',     icon: 'vrscout.png',      color: '#222222', letter: 'V' },
-      { name: 'Road to VR', domain: 'roadtovr.com',    icon: 'roadtovr.png',     color: '#B00000', letter: 'R' },
-      { name: 'Within',     domain: 'within.com',      icon: 'within.png',       color: '#FF5C1A', letter: 'W' },
+      { name: 'Quest Store', domain: 'meta.com/quest',           icon: 'metaquest.png',    color: '#0668E1', letter: 'Q' },
+      { name: 'SideQuest',   domain: 'sidequestvr.com',          icon: 'sidequest.png',    color: '#FF5722', letter: '▽' },
+      { name: 'UploadVR',    domain: 'uploadvr.com',             icon: 'uploadvr.png',     color: '#1CAAD9', letter: 'U' },
+      { name: 'WebXR',       domain: 'immersive-web.github.io',  icon: 'immersiveweb.png', color: '#FFFFFF', letter: 'X' },
+      { name: 'VR Focus',    domain: 'vrfocus.com',              icon: 'vrfocus.png',      color: '#E02020', letter: 'V' },
+      { name: 'VRScout',     domain: 'vrscout.com',              icon: 'vrscout.png',      color: '#222222', letter: 'V' },
+      { name: 'Road to VR',  domain: 'roadtovr.com',             icon: 'roadtovr.png',     color: '#B00000', letter: 'R' },
+      { name: 'Within',      domain: 'within.com',               icon: 'within.png',       color: '#FF5C1A', letter: 'W' },
     ]],
   },
   {
     id: 'search', title: 'Search', icon: '⊙',
-    pages: [[
-      { name: 'Google',     domain: 'google.com',       icon: 'google.png',     color: '#4285F4', letter: 'G' },
-      { name: 'Bing',       domain: 'bing.com',          icon: 'bing.png',       color: '#008373', letter: 'b' },
-      { name: 'DuckDuckGo', domain: 'duckduckgo.com',    icon: 'duckduckgo.png', color: '#DE5833', letter: 'D' },
-      { name: 'Brave',      domain: 'search.brave.com',  icon: 'brave.png',      color: '#FB542B', letter: '▲' },
-      { name: 'Kagi',       domain: 'kagi.com',          icon: 'kagi.png',       color: '#FFB319', letter: 'K' },
-      { name: 'Perplexity', domain: 'perplexity.ai',     icon: 'perplexity.png', color: '#20808D', letter: 'P' },
-      { name: 'Startpage',  domain: 'startpage.com',     icon: 'startpage.png',  color: '#5046E4', letter: 'S' },
-      { name: 'Ecosia',     domain: 'ecosia.org',        icon: 'ecosia.png',     color: '#22885B', letter: '🌿' },
-    ]],
+    pages: [
+      [
+        { name: 'Google',     domain: 'google.com',       icon: 'google.png',      color: '#4285F4', letter: 'G' },
+        { name: 'Bing',       domain: 'bing.com',         icon: 'bing.png',        color: '#008373', letter: 'b' },
+        { name: 'DuckDuckGo', domain: 'duckduckgo.com',   icon: 'duckduckgo.png',  color: '#DE5833', letter: 'D' },
+        { name: 'Brave',      domain: 'search.brave.com', icon: 'brave.png',       color: '#FB542B', letter: '▲' },
+        { name: 'Kagi',       domain: 'kagi.com',         icon: 'kagi.png',        color: '#FFB319', letter: 'K' },
+        { name: 'Perplexity', domain: 'perplexity.ai',    icon: 'perplexity.png',  color: '#20808D', letter: 'P' },
+        { name: 'Startpage',  domain: 'startpage.com',    icon: 'startpage.png',   color: '#5046E4', letter: 'S' },
+        { name: 'Ecosia',     domain: 'ecosia.org',       icon: 'ecosia.png',      color: '#22885B', letter: '🌿' },
+      ],
+      [
+        { name: 'Yahoo',      domain: 'search.yahoo.com', icon: 'yahoo.png',       color: '#6001D2', letter: 'Y' },
+        { name: 'Yandex',     domain: 'yandex.com',       icon: 'yandex.png',      color: '#FF0000', letter: 'Я' },
+        { name: 'Qwant',      domain: 'qwant.com',        icon: 'qwant.png',       color: '#5C2D91', letter: 'Q' },
+        { name: 'Swisscows',  domain: 'swisscows.com',    icon: 'swisscows.png',   color: '#D12B24', letter: 'S' },
+        { name: 'Mojeek',     domain: 'mojeek.com',       icon: 'mojeek.png',      color: '#00B9F2', letter: 'M' },
+        { name: 'Searx',      domain: 'searx.space',      icon: 'searx.png',       color: '#3465A4', letter: 'S' },
+        { name: 'Ask',        domain: 'ask.com',          icon: 'ask.png',         color: '#E63B2E', letter: '?' },
+        { name: 'Baidu',      domain: 'baidu.com',        icon: 'baidu.png',       color: '#2932E1', letter: '百' },
+      ],
+    ],
   },
   {
     id: 'gaming', title: 'Gaming', icon: '⊞',
-    pages: [[
-      { name: 'Steam',      domain: 'store.steampowered.com', icon: 'steam.png',     color: '#1B2838', letter: 'S' },
-      { name: 'Twitch',     domain: 'twitch.tv',              icon: 'twitch.png',    color: '#9146FF', letter: 'T' },
-      { name: 'Epic',       domain: 'epicgames.com',          icon: 'epicgames.png', color: '#2A2A2A', letter: 'E' },
-      { name: 'GOG',        domain: 'gog.com',                icon: 'gog.png',       color: '#86328A', letter: 'G' },
-      { name: 'Reddit',     domain: 'reddit.com/r/gaming',    icon: 'reddit.png',    color: '#FF4500', letter: 'r' },
-      { name: 'IGN',        domain: 'ign.com',                icon: 'ign.png',       color: '#BF1313', letter: '▣' },
-      { name: 'Polygon',    domain: 'polygon.com',            icon: 'polygon.png',   color: '#FF4060', letter: '▶' },
-      { name: 'Kotaku',     domain: 'kotaku.com',             icon: 'kotaku.png',    color: '#000000', letter: 'K' },
-    ]],
+    pages: [
+      [
+        { name: 'Steam',      domain: 'store.steampowered.com', icon: 'steam.png',      color: '#1B2838', letter: 'S' },
+        { name: 'Twitch',     domain: 'twitch.tv',              icon: 'twitch.png',     color: '#9146FF', letter: 'T' },
+        { name: 'Epic',       domain: 'epicgames.com',          icon: 'epicgames.png',  color: '#2A2A2A', letter: 'E' },
+        { name: 'GOG',        domain: 'gog.com',                icon: 'gog.png',        color: '#86328A', letter: 'G' },
+        { name: 'Reddit',     domain: 'reddit.com/r/gaming',    icon: 'reddit.png',     color: '#FF4500', letter: 'r' },
+        { name: 'IGN',        domain: 'ign.com',                icon: 'ign.png',        color: '#BF1313', letter: '▣' },
+        { name: 'Polygon',    domain: 'polygon.com',            icon: 'polygon.png',    color: '#FF4060', letter: '▶' },
+        { name: 'Kotaku',     domain: 'kotaku.com',             icon: 'kotaku.png',     color: '#F5C518', letter: 'K' },
+      ],
+      [
+        { name: 'Xbox',       domain: 'xbox.com',               icon: 'xbox.png',       color: '#107C10', letter: 'X' },
+        { name: 'PlayStation',domain: 'playstation.com',         icon: 'playstation.png',color: '#00439C', letter: 'PS' },
+        { name: 'Nintendo',   domain: 'nintendo.com',            icon: 'nintendo.png',   color: '#E60012', letter: 'N' },
+        { name: 'GameSpot',   domain: 'gamespot.com',            icon: 'gamespot.png',   color: '#FFCC00', letter: 'G' },
+        { name: 'Eurogamer',  domain: 'eurogamer.net',           icon: 'eurogamer.png',  color: '#22AA44', letter: 'E' },
+        { name: 'Fextralife', domain: 'fextralife.com',          icon: 'fextralife.png', color: '#B4A028', letter: 'F' },
+        { name: 'VG247',      domain: 'vg247.com',               icon: 'vg247.png',      color: '#E84040', letter: 'V' },
+        { name: 'GamesRadar', domain: 'gamesradar.com',          icon: 'gamesradar.png', color: '#00AAFF', letter: 'G' },
+      ],
+    ],
   },
   {
     id: 'tools', title: 'Tools', icon: '⚙',
     pages: [[
-      { name: 'GitHub',     domain: 'github.com',      icon: 'github.png',       color: '#FFFFFF', letter: 'G' },
-      { name: 'StackOverflow', domain: 'stackoverflow.com', icon: 'stackoverflow.png', color: '#F48024', letter: 'S' },
-      { name: 'MDN',        domain: 'developer.mozilla.org', icon: 'mdn.png',    color: '#4A4A4A', letter: 'M' },
-      { name: 'W3Schools',  domain: 'w3schools.com',   icon: 'w3schools.png',    color: '#4CAF50', letter: 'W' },
-      { name: 'Translate',  domain: 'translate.google.com',  icon: 'translate.png', color: '#4285F4', letter: 'T' },
-      { name: 'Wikipedia',  domain: 'wikipedia.org',   icon: 'wikipedia.png',    color: '#FFFFFF', letter: 'W' },
-      { name: 'Archive',    domain: 'archive.org',     icon: 'archive.png',      color: '#888888', letter: 'A' },
-      { name: 'Wolfram',    domain: 'wolframalpha.com', icon: 'wolframalpha.png', color: '#E47000', letter: 'W' },
+      { name: 'GitHub',        domain: 'github.com',             icon: 'github.png',         color: '#FFFFFF', letter: 'G' },
+      { name: 'StackOverflow', domain: 'stackoverflow.com',      icon: 'stackoverflow.png',  color: '#F48024', letter: 'S' },
+      { name: 'MDN',           domain: 'developer.mozilla.org',  icon: 'mdn.png',            color: '#4A4A4A', letter: 'M' },
+      { name: 'W3Schools',     domain: 'w3schools.com',          icon: 'w3schools.png',      color: '#4CAF50', letter: 'W' },
+      { name: 'Translate',     domain: 'translate.google.com',   icon: 'translate.png',      color: '#4285F4', letter: 'T' },
+      { name: 'Wikipedia',     domain: 'wikipedia.org',          icon: 'wikipedia.png',      color: '#FFFFFF', letter: 'W' },
+      { name: 'Archive',       domain: 'archive.org',            icon: 'archive.png',        color: '#888888', letter: 'A' },
+      { name: 'Wolfram',       domain: 'wolframalpha.com',       icon: 'wolframalpha.png',   color: '#E47000', letter: 'W' },
     ]],
   },
   {
     id: 'social', title: 'Social', icon: '◉',
-    pages: [[
-      { name: 'Reddit',     domain: 'reddit.com',      icon: 'reddit.png',    color: '#FF4500', letter: 'r' },
-      { name: 'Twitter/X',  domain: 'x.com',           icon: 'twitter.png',   color: '#FFFFFF', letter: '𝕏' },
-      { name: 'Instagram',  domain: 'instagram.com',   icon: 'instagram.png', color: '#E4405F', letter: '○' },
-      { name: 'Discord',    domain: 'discord.com',     icon: 'discord.png',   color: '#5865F2', letter: 'D' },
-      { name: 'Mastodon',   domain: 'mastodon.social', icon: 'mastodon.png',  color: '#6364FF', letter: 'M' },
-      { name: 'Facebook',   domain: 'facebook.com',    icon: 'facebook.png',  color: '#1877F2', letter: 'f' },
-      { name: 'LinkedIn',   domain: 'linkedin.com',    icon: 'linkedin.png',  color: '#0A66C2', letter: 'in' },
-      { name: 'Hacker News',domain: 'news.ycombinator.com', icon: 'hackernews.png', color: '#FF6600', letter: 'Y' },
-    ]],
+    pages: [
+      [
+        { name: 'Reddit',     domain: 'reddit.com',       icon: 'reddit.png',    color: '#FF4500', letter: 'r' },
+        { name: 'Twitter/X',  domain: 'x.com',            icon: 'twitter.png',   color: '#FFFFFF', letter: '𝕏' },
+        { name: 'Instagram',  domain: 'instagram.com',    icon: 'instagram.png', color: '#E4405F', letter: '○' },
+        { name: 'Discord',    domain: 'discord.com',      icon: 'discord.png',   color: '#5865F2', letter: 'D' },
+        { name: 'Mastodon',   domain: 'mastodon.social',  icon: 'mastodon.png',  color: '#6364FF', letter: 'M' },
+        { name: 'Facebook',   domain: 'facebook.com',     icon: 'facebook.png',  color: '#1877F2', letter: 'f' },
+        { name: 'LinkedIn',   domain: 'linkedin.com',     icon: 'linkedin.png',  color: '#0A66C2', letter: 'in' },
+        { name: 'Hacker News',domain: 'news.ycombinator.com', icon: 'hackernews.png', color: '#FF6600', letter: 'Y' },
+      ],
+      [
+        { name: 'Bluesky',    domain: 'bsky.app',         icon: 'bluesky.png',   color: '#0085FF', letter: 'B' },
+        { name: 'Threads',    domain: 'threads.net',      icon: 'threads.png',   color: '#CCCCCC', letter: 'T' },
+        { name: 'Tumblr',     domain: 'tumblr.com',       icon: 'tumblr.png',    color: '#35465C', letter: 't' },
+        { name: 'Pinterest',  domain: 'pinterest.com',    icon: 'pinterest.png', color: '#E60023', letter: 'P' },
+        { name: 'Snapchat',   domain: 'snapchat.com',     icon: 'snapchat.png',  color: '#FFFC00', letter: 'S' },
+        { name: 'TikTok',     domain: 'tiktok.com',       icon: 'tiktok.png',    color: '#69C9D0', letter: 'T' },
+        { name: 'Lemmy',      domain: 'lemmy.world',      icon: 'lemmy.png',     color: '#00C853', letter: 'L' },
+        { name: 'Matrix',     domain: 'matrix.to',        icon: 'matrix.png',    color: '#0DBD8B', letter: 'M' },
+      ],
+    ],
   },
 ];
 
@@ -94,20 +142,19 @@ const HUB_TIPS = [
   'GRIP + FLICK = COMBO',
 ];
 
-// Hub slide deck: logo (3 s) followed by 4 directional combo demos (2.5 s each).
+// Hub slide deck: logo → 4 directional combos → long-press combo.
 const HUB_SLIDES = [
-  { type: 'logo',  duration: 3000 },
-  { type: 'combo', dir: 2, label: '↑  PREV CATEGORY', duration: 2500 },
-  { type: 'combo', dir: 8, label: '↓  NEXT CATEGORY', duration: 2500 },
-  { type: 'combo', dir: 4, label: '←  PREV SET',       duration: 2500 },
-  { type: 'combo', dir: 6, label: '→  NEXT SET',       duration: 2500 },
+  { type: 'logo',      duration: 3000 },
+  { type: 'combo',     dir: 2,          label: '↑  PREV CATEGORY', duration: 2500 },
+  { type: 'combo',     dir: 8,          label: '↓  NEXT CATEGORY', duration: 2500 },
+  { type: 'combo',     dir: 4,          label: '←  PREV SET',       duration: 2500 },
+  { type: 'combo',     dir: 6,          label: '→  NEXT SET',       duration: 2500 },
+  { type: 'longpress',                  label: 'HOLD GRIP → SETTINGS', duration: 2500 },
 ];
 
 // ── Grid slot mapping ──────────────────────────────────────────────────────
 // 3×3 grid positions 0-8. Center = 4. Outer slots: 0,1,2,3,5,6,7,8 → catalog idx 0-7.
-// OUTER_TO_GRID[outerIdx] → gridPos (0-8, skipping 4)
 const OUTER_TO_GRID = [0, 1, 2, 3, 5, 6, 7, 8];
-// GRID_TO_OUTER: gridPos → outerIdx (only for non-center slots)
 const GRID_TO_OUTER = { 0:0, 1:1, 2:2, 3:3, 5:4, 6:5, 7:6, 8:7 };
 
 // Hub combo disc geometry — 116×116 hub, ring at radius 38 px, center (58,58).
@@ -148,27 +195,23 @@ function currentRow() {
 }
 
 function currentPage() {
-  const row = currentRow();
+  var row = currentRow();
   return (row.pages[state.pageIndex] || row.pages[0]) || [];
 }
 
 function render(opts) {
-  const row = currentRow();
+  var row = currentRow();
   opts = opts || {};
 
-  // Header — kind label is always HOME for catalog rows
   headerKind.textContent  = row.kind === 'user' ? 'BOOKMARKS' : 'HOME';
   headerTitle.textContent = row.title;
   renderDots(row.pages.length, state.pageIndex);
 
-  // Rail
   renderRail();
 
-  // Chevrons
   chevronN.classList.toggle('hidden', state.rowIndex === 0);
   chevronS.classList.toggle('hidden', state.rowIndex === state.catalog.length - 1);
 
-  // Grid — cross-fade then render
   if (opts.animate) {
     gridCanvas.classList.add('fading');
     setTimeout(function() {
@@ -234,8 +277,7 @@ function renderGrid() {
       return;
     }
 
-    var siteEl = makeSiteCell(sites[outerIdx], outerIdx);
-    slot.appendChild(siteEl);
+    slot.appendChild(makeSiteCell(sites[outerIdx], outerIdx));
     gridCanvas.appendChild(slot);
   });
 
@@ -246,12 +288,8 @@ function makeSiteCell(site, outerIdx) {
   if (!site) {
     var empty = document.createElement('div');
     empty.className = 'cell cell-empty';
-    var emptyTile = document.createElement('div');
-    emptyTile.className = 'cell-tile';
-    empty.appendChild(emptyTile);
-    var emptyLabel = document.createElement('div');
-    emptyLabel.className = 'cell-label';
-    empty.appendChild(emptyLabel);
+    empty.appendChild(document.createElement('div')).className = 'cell-tile';
+    empty.appendChild(document.createElement('div')).className = 'cell-label';
     return empty;
   }
 
@@ -299,7 +337,7 @@ function makeSiteCell(site, outerIdx) {
   return cell;
 }
 
-// ── Center hub (PowerPoint slide: logo → 4 combo demos) ───────────────────
+// ── Center hub (PowerPoint slide: logo → combos) ───────────────────────────
 function makeCenterHub() {
   var hub = document.createElement('div');
   hub.className = 'hub';
@@ -310,9 +348,7 @@ function makeCenterHub() {
   inner.className = 'hub-inner';
   hub.appendChild(inner);
 
-  // Populate with whichever slide is currently active
   populateHubInner(inner);
-
   return hub;
 }
 
@@ -328,39 +364,63 @@ function buildComboSlideHTML(dir) {
   var parts  = [];
 
   parts.push('<svg class="combo-disc-svg" viewBox="0 0 116 116" xmlns="http://www.w3.org/2000/svg">');
-  // Dark background disc (matches ComboPathView: #090d38)
   parts.push('<circle cx="58" cy="58" r="52" fill="#090d38"/>');
-  // Thin path ring (#1c2265)
   parts.push('<circle cx="58" cy="58" r="38" fill="none" stroke="#1c2265" stroke-width="1.5"/>');
-  // Diagonal dim nodes
   DIAG_NODES.forEach(function(n) {
     parts.push('<circle cx="' + n.x + '" cy="' + n.y + '" r="2.5" fill="#1a2060"/>');
   });
-  // Cardinal dim nodes (non-target)
   [2, 8, 4, 6].forEach(function(d) {
     if (d === dir) return;
     var n = DIR_NODES[d];
     parts.push('<circle cx="' + n.x + '" cy="' + n.y + '" r="4" fill="#252c75"/>');
   });
-  // Accent path line: center → target
+  // Accent path line
   parts.push('<line x1="58" y1="58" x2="' + target.x + '" y2="' + target.y +
              '" stroke="#FDDE0A" stroke-width="2" stroke-linecap="round" opacity="0.45"/>');
   // Target glow ring
   parts.push('<circle cx="' + target.x + '" cy="' + target.y +
              '" r="10" fill="none" stroke="#FDDE0A" stroke-width="1" opacity="0.3"/>');
-  // Target node fill
-  parts.push('<circle cx="' + target.x + '" cy="' + target.y +
-             '" r="5.5" fill="#FDDE0A"/>');
+  // Target node
+  parts.push('<circle cx="' + target.x + '" cy="' + target.y + '" r="5.5" fill="#FDDE0A"/>');
   parts.push('</svg>');
-  // Animated thumb cap (CSS keyframe drives it, no JS loop)
   parts.push('<div class="hub-cap ' + capCls + '"></div>');
+
+  return parts.join('');
+}
+
+function buildLongPressHTML() {
+  var parts = [];
+
+  parts.push('<svg class="combo-disc-svg" viewBox="0 0 116 116" xmlns="http://www.w3.org/2000/svg">');
+  parts.push('<circle cx="58" cy="58" r="52" fill="#090d38"/>');
+  parts.push('<circle cx="58" cy="58" r="38" fill="none" stroke="#1c2265" stroke-width="1.5"/>');
+  // All node dots dim
+  DIAG_NODES.forEach(function(n) {
+    parts.push('<circle cx="' + n.x + '" cy="' + n.y + '" r="2.5" fill="#1a2060"/>');
+  });
+  [2, 8, 4, 6].forEach(function(d) {
+    var n = DIR_NODES[d];
+    parts.push('<circle cx="' + n.x + '" cy="' + n.y + '" r="4" fill="#252c75"/>');
+  });
+  // Pulsing center: expanding ring + glowing fill
+  parts.push('<circle class="lp-ring" cx="58" cy="58" r="14" fill="none" stroke="#FDDE0A" stroke-width="1.5" opacity="0.5"/>');
+  parts.push('<circle class="lp-fill" cx="58" cy="58" r="8" fill="#FDDE0A"/>');
+  parts.push('</svg>');
+  // Cap stays at center (lp-cap = glow only, no directional animation)
+  parts.push('<div class="hub-cap lp-cap"></div>');
 
   return parts.join('');
 }
 
 function populateHubInner(inner) {
   var slide = HUB_SLIDES[_hubSlideIdx];
-  inner.innerHTML = slide.type === 'logo' ? buildLogoHTML() : buildComboSlideHTML(slide.dir);
+  if (slide.type === 'logo') {
+    inner.innerHTML = buildLogoHTML();
+  } else if (slide.type === 'longpress') {
+    inner.innerHTML = buildLongPressHTML();
+  } else {
+    inner.innerHTML = buildComboSlideHTML(slide.dir);
+  }
 }
 
 function nextHubSlide() {
@@ -453,7 +513,6 @@ function moveFocus(dir) {
   if (dir === 'left')  nc = Math.max(0, col - 1);
   if (dir === 'right') nc = Math.min(2, col + 1);
 
-  // Skip center (4)
   if (nr * 3 + nc === 4) {
     if (dir === 'up')    nr = Math.max(0, nr - 1);
     if (dir === 'down')  nr = Math.min(2, nr + 1);
@@ -461,15 +520,11 @@ function moveFocus(dir) {
     if (dir === 'right') nc = Math.min(2, nc + 1);
   }
 
-  var newGridPos = nr * 3 + nc;
-  var newOuter = GRID_TO_OUTER[newGridPos];
-  if (newOuter !== undefined) {
-    setFocus(newOuter);
-  }
+  var newOuter = GRID_TO_OUTER[nr * 3 + nc];
+  if (newOuter !== undefined) setFocus(newOuter);
 }
 
 // ── Row / page switching ───────────────────────────────────────────────────
-// Called by: keyboard combo keys (2/4/6/8) AND window.gwHome._onCombo().
 function changeRow(delta) {
   var next = state.rowIndex + delta;
   if (next < 0 || next >= state.catalog.length) return;
@@ -500,8 +555,6 @@ function dismissHint() {
 }
 
 // ── Wheel / combo navigation ───────────────────────────────────────────────
-// Vertical scroll → category (row) change; horizontal scroll → page change.
-// Intra-grid cell focus is moved by arrow keys only.
 var accumX = 0, accumY = 0;
 var WHEEL_THRESHOLD = 36;
 
@@ -533,7 +586,6 @@ window.addEventListener('keydown', function(e) {
       e.preventDefault();
       activateFocused();
       break;
-    // Shortcut keys for row/page during dev/testing
     case '2': changeRow(-1);  break;
     case '8': changeRow(1);   break;
     case '4': changePage(-1); break;
@@ -542,7 +594,6 @@ window.addEventListener('keydown', function(e) {
 });
 
 // ── Native JS bridge (window.gwHome) ──────────────────────────────────────
-// Async resolve pattern: bridge calls window.gwHome._resolve(id, json).
 var _pendingResolvers = {};
 
 function bridgeCall(method) {
@@ -564,7 +615,6 @@ window.gwHome._resolve = function(id, json) {
   if (_pendingResolvers[id]) _pendingResolvers[id](json);
 };
 
-// Called by native ComboDispatcher (Session.dispatchComboToHome).
 window.gwHome._onCombo = function(direction) {
   switch (direction) {
     case 2: changeRow(-1);  break;
@@ -621,7 +671,6 @@ function tryBridgeUpgrade() {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (function init() {
-  // Show first logo tip immediately; next call will advance to index 1
   stripeTip.textContent = HUB_TIPS[0];
   _hubTipIdx = 1;
 
