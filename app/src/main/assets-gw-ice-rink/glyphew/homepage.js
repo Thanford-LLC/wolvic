@@ -120,6 +120,7 @@ const $ = (id) => document.getElementById(id);
 const headerKind   = $('header-kind');
 const headerTitle  = $('header-title');
 const headerDots   = $('header-dots');
+const stripeTip    = $('stripe-tip');
 const rowRailEl    = $('row-rail');
 const chevronN     = $('chevron-n');
 const chevronS     = $('chevron-s');
@@ -337,13 +338,6 @@ function makeCenterHub() {
   wrap.appendChild(face);
   hub.appendChild(wrap);
 
-  // Tip text (rotated every 6s by JS)
-  var tip = document.createElement('div');
-  tip.className = 'hub-tip';
-  tip.id = 'hub-tip';
-  tip.textContent = HUB_TIPS[0];
-  hub.appendChild(tip);
-
   return hub;
 }
 
@@ -447,19 +441,19 @@ function dismissHint() {
   }
 }
 
-// ── Hub tip rotation (every 6s) ────────────────────────────────────────────
+// ── Stripe tip rotation (every 6s) ─────────────────────────────────────────
 function rotateTip() {
-  var tip = document.getElementById('hub-tip');
-  if (!tip) return;
   state.hubTipIdx = (state.hubTipIdx + 1) % HUB_TIPS.length;
-  tip.style.opacity = '0';
+  stripeTip.style.opacity = '0';
   setTimeout(function() {
-    tip.textContent = HUB_TIPS[state.hubTipIdx];
-    tip.style.opacity = '0.9';
+    stripeTip.textContent = HUB_TIPS[state.hubTipIdx];
+    stripeTip.style.opacity = '0.75';
   }, 200);
 }
 
-// ── Wheel navigation (joystick without grip) ──────────────────────────────
+// ── Wheel / combo navigation ───────────────────────────────────────────────
+// Vertical scroll → category (row) change; horizontal scroll → page change.
+// Intra-grid cell focus is moved by arrow keys only.
 var accumX = 0, accumY = 0;
 var WHEEL_THRESHOLD = 36;
 
@@ -468,29 +462,14 @@ window.addEventListener('wheel', function(e) {
   accumX += e.deltaX;
   accumY += e.deltaY;
 
-  var gridPos = OUTER_TO_GRID[state.focusIdx];
-  var row = Math.floor(gridPos / 3);
-  var col = gridPos % 3;
-
-  if (accumY >= WHEEL_THRESHOLD) {
-    accumY = 0;
-    // At bottom row: change category row
-    if (row === 2) { changeRow(1); return; }
-    moveFocus('down');
-  } else if (accumY <= -WHEEL_THRESHOLD) {
-    accumY = 0;
-    if (row === 0) { changeRow(-1); return; }
-    moveFocus('up');
-  }
-  if (accumX >= WHEEL_THRESHOLD) {
-    accumX = 0;
-    // At right column: change page
-    if (col === 2) { changePage(1); return; }
-    moveFocus('right');
-  } else if (accumX <= -WHEEL_THRESHOLD) {
-    accumX = 0;
-    if (col === 0) { changePage(-1); return; }
-    moveFocus('left');
+  if (Math.abs(accumY) >= WHEEL_THRESHOLD) {
+    var dy = accumY;
+    accumX = 0; accumY = 0;
+    changeRow(dy > 0 ? 1 : -1);
+  } else if (Math.abs(accumX) >= WHEEL_THRESHOLD) {
+    var dx = accumX;
+    accumX = 0; accumY = 0;
+    changePage(dx > 0 ? 1 : -1);
   }
 }, { passive: false });
 
@@ -597,9 +576,10 @@ function tryBridgeUpgrade() {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (function init() {
+  stripeTip.textContent = HUB_TIPS[0];
   render({});
 
-  // Hub tip rotation (6s interval)
+  // Stripe tip rotation (6s interval)
   setInterval(rotateTip, 6000);
 
   // Bridge upgrade (after first paint)

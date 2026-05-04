@@ -794,6 +794,19 @@ public class ComboDispatcher {
     private void scroll(float deltaX, float deltaY) {
         WindowWidget win = focusedWindow();
         if (win == null) return;
+        // On home page, translate scroll combos into category/page nav via JS bridge.
+        Session session = focusedSession();
+        if (session != null && session.isOnHomePage()) {
+            // deltaY>0 = A_SCROLL_UP = AXIS_VSCROLL positive = prev category (dir 2)
+            // deltaY<0 = A_SCROLL_DOWN = next category (dir 8)
+            // deltaX<0 = A_SCROLL_LEFT = prev page (dir 4)
+            // deltaX>0 = A_SCROLL_RIGHT = next page (dir 6)
+            int dir;
+            if (deltaY != 0) dir = (deltaY > 0) ? 2 : 8;
+            else dir = (deltaX < 0) ? 4 : 6;
+            session.dispatchComboToHome(dir);
+            return;
+        }
         MotionEventGenerator.dispatchScroll(win, 0, true, deltaX, deltaY);
     }
 
