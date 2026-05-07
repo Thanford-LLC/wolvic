@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
 
 /**
  * Persists homepage-specific user state across app restarts.
@@ -28,10 +29,15 @@ public class HomePrefs {
     private static final String KEY_LAST_ROW       = "last_row_index";
     private static final String KEY_LAST_COL       = "last_col_index";
 
+    // ComboDispatcher stores this in the default (PreferenceManager) prefs, not a named file.
+    private static final String KEY_4DIR_MODE = "glyphew_combo_4dir_mode";
+
     private final SharedPreferences mPrefs;
+    private final SharedPreferences mDefaultPrefs;
 
     public HomePrefs(@NonNull Context context) {
-        mPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        mPrefs        = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        mDefaultPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
     // ── Category / folder order ────────────────────────────────────────────
@@ -79,6 +85,13 @@ public class HomePrefs {
 
     public int getLastColIndex() {
         return mPrefs.getInt(KEY_LAST_COL, 0);
+    }
+
+    // ── Combo mode (read-only; written by ComboDispatcher) ────────────────
+
+    /** Returns true when 4-dir mode is active (default). False = 8-dir mode. */
+    public boolean is4DirMode() {
+        return mDefaultPrefs.getBoolean(KEY_4DIR_MODE, true);
     }
 
     // ── Reset (for testing) ────────────────────────────────────────────────

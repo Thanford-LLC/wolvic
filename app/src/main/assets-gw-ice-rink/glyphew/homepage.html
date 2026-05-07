@@ -35,6 +35,10 @@
     <div id="chevron-n" class="chevron" aria-hidden="true">▲</div>
     <div id="chevron-s" class="chevron" aria-hidden="true">▼</div>
 
+    <!-- Ghost peek columns — adjacent-page tiles behind E/W veils (populated by JS) -->
+    <div id="ghost-prev" class="ghost-col" aria-hidden="true"></div>
+    <div id="ghost-next" class="ghost-col" aria-hidden="true"></div>
+
     <!-- 3×3 grid viewport — JS swaps #grid-canvas content on row/page change -->
     <div id="grid-viewport">
       <div id="grid-canvas"></div>
@@ -49,11 +53,7 @@
     <!-- Stripe tip — combo/hint label at VR subtitle zone (populated by JS) -->
     <span id="stripe-tip"></span>
 
-    <!-- First-launch hint toast — auto-dismissed on first nav event -->
-    <div id="hint-toast" role="status">
-      <span class="hint-icon" aria-hidden="true">⊕</span>
-      <span class="hint-text">Hold grip · flick joystick · release.</span>
-    </div>
+    <!-- First-launch hint shown via #stripe-tip (same element as combo tips) -->
 
   </div>
   <script src="homepage.js"></script>

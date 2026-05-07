@@ -953,9 +953,12 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             }
         }
         // Gecko path: resource:// URL resolves relative assets directly.
+        // Append ?m=4 or ?m=8 so the page knows the current combo mode without a bridge.
         if (mState.mSession != null) {
-            mState.mSession.loadUri("resource://android/assets/glyphew/homepage.html",
-                                    WSession.LOAD_FLAGS_NONE);
+            String comboMode = new com.thanford.glyphew.home.HomePrefs(mContext).is4DirMode() ? "4" : "8";
+            mState.mSession.loadUri(
+                "resource://android/assets/glyphew/homepage.html?m=" + comboMode,
+                WSession.LOAD_FLAGS_NONE);
         }
     }
 
@@ -975,8 +978,12 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
 
     /** Convenience overload for evaluateJavaScript without a result callback. */
     public void evaluateJavaScript(String script) {
-        if (mState.mSession != null) {
-            mState.mSession.evaluateJavaScript(script, null);
+        try {
+            if (mState.mSession != null) {
+                mState.mSession.evaluateJavaScript(script, null);
+            }
+        } catch (UnsupportedOperationException ignored) {
+            // Gecko does not support evaluateJavaScript; silently skip.
         }
     }
 

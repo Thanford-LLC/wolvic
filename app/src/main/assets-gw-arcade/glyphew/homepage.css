@@ -42,7 +42,7 @@ html, body {
 /* ── Screen header (top center) ─────────────────────────────────────────── */
 #screen-header {
   position: absolute;
-  top: 20px;
+  top: 36px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -150,8 +150,8 @@ html, body {
   pointer-events: none;
   transition: opacity 200ms;
 }
-#chevron-n { top: 14px; }
-#chevron-s { bottom: 14px; }
+#chevron-n { top: 8px; }
+#chevron-s { bottom: 8px; }
 .chevron.hidden { opacity: 0; pointer-events: none; }
 
 /* ── Grid viewport + canvas ────────────────────────────────────────────── */
@@ -206,14 +206,13 @@ html, body {
   border-radius: var(--radius);
   display: grid;
   place-items: center;
-  background: var(--surface-hi);
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  background: var(--surface);
+  border: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   overflow: hidden;
   position: relative;
   transition:
     transform 120ms cubic-bezier(0.16,1,0.3,1),
-    border-color 120ms,
     box-shadow 120ms,
     background 120ms;
 }
@@ -254,33 +253,43 @@ html, body {
   transition: color 120ms;
 }
 
-/* Focus state — brightness/outline only, no hue swap */
+/* Hover state — cursor-ray highlight */
+.cell:hover .cell-tile {
+  transform: scale(1.04);
+  background: var(--surface-hi);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(253,222,10,0.45),
+    0 0 14px rgba(253,222,10,0.1),
+    0 6px 20px rgba(0,0,0,0.3);
+}
+
+/* Focus state — inset ring avoids all border/overflow/radius clipping issues */
 .cell.focused .cell-tile {
   transform: scale(1.08);
-  background: #2A2DA3;
-  border-color: var(--accent);
+  background: var(--surface-hi);
   box-shadow:
-    0 0 0 2px var(--accent),
-    0 0 0 6px var(--accent-glow),
-    0 12px 32px rgba(0,0,0,0.4);
+    inset 0 0 0 2px #FDDE0A,
+    0 0 22px rgba(253,222,10,0.35),
+    0 10px 28px rgba(0,0,0,0.4);
 }
+.cell.focused .cell-label { color: #FDDE0A; }
 
 /* Trigger flash — 80ms accent-bright pulse before navigation */
 .cell.triggered .cell-tile {
   animation: triggerFlash 80ms ease forwards;
 }
 @keyframes triggerFlash {
-  0%   { border-color: var(--accent); }
-  50%  { border-color: var(--accent-bright); box-shadow: 0 0 0 3px var(--accent-bright), 0 0 0 8px var(--accent-glow); }
-  100% { border-color: var(--accent); }
+  0%   { box-shadow: inset 0 0 0 2px #FDDE0A, 0 0 22px rgba(253,222,10,0.35), 0 10px 28px rgba(0,0,0,0.4); }
+  50%  { box-shadow: inset 0 0 0 3px #FFE84D, 0 0 32px rgba(253,222,10,0.6),   0 10px 28px rgba(0,0,0,0.4); }
+  100% { box-shadow: inset 0 0 0 2px #FDDE0A, 0 0 22px rgba(253,222,10,0.35), 0 10px 28px rgba(0,0,0,0.4); }
 }
 
 /* Empty cell */
 .cell-empty .cell-tile {
   background: transparent;
-  border: 1px dashed var(--border);
+  border: 1.5px dashed var(--border);
   box-shadow: none;
-  opacity: 0.4;
+  opacity: 0.25;
 }
 .cell-empty .cell-label { display: none; }
 
@@ -324,12 +333,30 @@ html, body {
   transition: opacity 200ms ease;
 }
 
+/* Horizontal lockup: glyph + wordmark, tight together with edge breathing room */
+.hub-logo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 1;
+}
+
 /* Brand glyph shown during logo slide */
 .hub-logo-svg {
-  width: 68px; height: 76px;
+  width: 30px; height: 34px;
   color: var(--accent);
-  display: block;
-  filter: drop-shadow(0 0 6px rgba(253,222,10,0.4));
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 5px rgba(253,222,10,0.45));
+}
+
+.hub-logo-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(253,222,10,0.35);
 }
 
 /* Combo disc — fills the hub circle, matches ComboPathView visual vocab */
@@ -361,35 +388,258 @@ html, body {
   margin: -1.5px 0 0 -1.5px;
 }
 
-/* Per-direction animations: quick flick out, brief hold, ease back */
-.hub-cap.to-n { animation: capToN 1.5s ease infinite; }
-.hub-cap.to-s { animation: capToS 1.5s ease infinite; }
-.hub-cap.to-w { animation: capToW 1.5s ease infinite; }
-.hub-cap.to-e { animation: capToE 1.5s ease infinite; }
+/* Cap animations — one play per slide, no loop */
+.hub-cap.to-n   { animation: capToN   2s ease; }
+.hub-cap.to-s   { animation: capToS   2s ease; }
+.hub-cap.to-w   { animation: capToW   2s ease; }
+.hub-cap.to-e   { animation: capToE   2s ease; }
+.hub-cap.to-n2  { animation: capToN2  2s ease; }
+.hub-cap.to-s2  { animation: capToS2  2s ease; }
+.hub-cap.to-w2  { animation: capToW2  2s ease; }
+.hub-cap.to-e2  { animation: capToE2  2s ease; }
+.hub-cap.to-ns  { animation: capToNS  2s ease; }
+.hub-cap.to-we  { animation: capToWE  2s ease; }
+.hub-cap.to-sn  { animation: capToSN  2s ease; }
+.hub-cap.to-n3  { animation: capToN3  2s ease; }
+.hub-cap.to-s3  { animation: capToS3  2s ease; }
+.hub-cap.to-w3  { animation: capToW3  2s ease; }
+.hub-cap.to-e3  { animation: capToE3  2s ease; }
+.hub-cap.to-e4  { animation: capToE4  2.5s ease; }
+.hub-cap.to-ne  { animation: capToNE  2s ease; }
+.hub-cap.to-nw  { animation: capToNW  2s ease; }
+.hub-cap.to-es  { animation: capToES  2s ease; }
+.hub-cap.to-ws  { animation: capToWS  2s ease; }
+.hub-cap.to-nes { animation: capToNES 2s ease; }
+/* 8-dir diagonal single + double push */
+.hub-cap.to-ne1   { animation: capToNE1   2s ease; }
+.hub-cap.to-nw1   { animation: capToNW1   2s ease; }
+.hub-cap.to-se1   { animation: capToSE1   2s ease; }
+.hub-cap.to-sw1   { animation: capToSW1   2s ease; }
+.hub-cap.to-ne1-2 { animation: capToNE1D2 2s ease; }
 
+/* Single-node (flick → hold → return) */
 @keyframes capToN {
-  0%   { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.1, 0.7, 0.1, 1); }
-  35%  { transform: translate(0, -38px); animation-timing-function: steps(1, end); }
-  65%  { transform: translate(0, -38px); animation-timing-function: ease-in; }
-  100% { transform: translate(0, 0); }
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(0,-38px); animation-timing-function: steps(1,end); }
+  60%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
 }
 @keyframes capToS {
-  0%   { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.1, 0.7, 0.1, 1); }
-  35%  { transform: translate(0, 38px); animation-timing-function: steps(1, end); }
-  65%  { transform: translate(0, 38px); animation-timing-function: ease-in; }
-  100% { transform: translate(0, 0); }
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(0,38px); animation-timing-function: steps(1,end); }
+  60%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
 }
 @keyframes capToW {
-  0%   { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.1, 0.7, 0.1, 1); }
-  35%  { transform: translate(-38px, 0); animation-timing-function: steps(1, end); }
-  65%  { transform: translate(-38px, 0); animation-timing-function: ease-in; }
-  100% { transform: translate(0, 0); }
+  0%   { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(-38px,0);  animation-timing-function: steps(1,end); }
+  60%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
 }
 @keyframes capToE {
-  0%   { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.1, 0.7, 0.1, 1); }
-  35%  { transform: translate(38px, 0); animation-timing-function: steps(1, end); }
-  65%  { transform: translate(38px, 0); animation-timing-function: ease-in; }
-  100% { transform: translate(0, 0); }
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(38px,0);  animation-timing-function: steps(1,end); }
+  60%  { transform: translate(38px,0);  animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+
+/* Double-tap same direction (X→X) */
+@keyframes capToN2 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToS2 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToW2 {
+  0%   { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToE2 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(38px,0);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(38px,0);  animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* Cross paths (A→B where A≠B) */
+@keyframes capToNS {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,38px);  animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToSN {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,38px);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToWE {
+  0%   { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(38px,0);   animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* Triple-tap (X→X→X) */
+@keyframes capToN3 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToS3 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* Triple west: ←←← (4-4-4) */
+@keyframes capToW3 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(-38px,0); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(-38px,0); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(-38px,0); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* Triple east: →→→ (6-6-6) */
+@keyframes capToE3 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* Quad east: →→→→ (6-6-6-6) */
+@keyframes capToE4 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  10%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  18%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  28%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  36%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  46%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  54%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  64%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  72%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* North-East cross: ↑→ (2-6) */
+/* Arc-tracing: cap sweeps the ring arc instead of returning to center.
+ * Intermediate points at 45° diagonals (±27px = 38·sin45°). */
+@keyframes capToNE {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(0,-38px);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(27px,-27px);    animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(38px,0);        animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToNW {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(0,-38px);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(-27px,-27px);   animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(-38px,0);       animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToES {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(38px,0);        animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(27px,27px);     animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(0,38px);        animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToWS {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(-38px,0);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(-27px,27px);    animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(0,38px);        animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* Full right-semicircle sweep: N → NE arc → E → SE arc → S */
+@keyframes capToNES {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(0,-38px);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  25%  { transform: translate(27px,-27px);    animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  38%  { transform: translate(38px,0);        animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  51%  { transform: translate(27px,27px);     animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  64%  { transform: translate(0,38px);        animation-timing-function: ease-in; }
+  78%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* 8-dir diagonal single push (node at ±27px, ±27px) */
+@keyframes capToNE1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(27px,-27px);    animation-timing-function: steps(1,end); }
+  60%  { transform: translate(27px,-27px);    animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToNW1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(-27px,-27px);   animation-timing-function: steps(1,end); }
+  60%  { transform: translate(-27px,-27px);   animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToSE1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(27px,27px);     animation-timing-function: steps(1,end); }
+  60%  { transform: translate(27px,27px);     animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToSW1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(-27px,27px);    animation-timing-function: steps(1,end); }
+  60%  { transform: translate(-27px,27px);    animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+/* 8-dir NE double push (3→3): flick-return-flick-return */
+@keyframes capToNE1D2 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  20%  { transform: translate(27px,-27px);    animation-timing-function: ease-in; }
+  36%  { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  56%  { transform: translate(27px,-27px);    animation-timing-function: ease-in; }
+  72%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
 }
 
 /* Long-press hold indicator — pulsing center rings */
@@ -413,30 +663,39 @@ html, body {
   box-shadow: 0 0 14px 6px rgba(253,222,10,0.6), 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* Stripe tip — combo/hint label at VR subtitle zone (y ≈ 580, above hint toast) */
+/* Stripe tip — yellow pill at bottom center, dark navy text on accent */
 #stripe-tip {
   position: absolute;
-  bottom: 140px;
+  bottom: 68px;
   left: 50%;
   transform: translateX(-50%);
+  background: var(--accent);
+  color: #070825;
+  border-radius: 100px;
+  padding: 7px 22px;
   font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
-  opacity: 0.75;
-  transition: opacity 200ms ease;
-  pointer-events: none;
   white-space: nowrap;
   z-index: 11;
+  pointer-events: none;
+  transition: opacity 200ms ease;
   text-align: center;
+  opacity: 0.82;
 }
-/* Combo mode: arrow + label at full opacity, slightly larger */
 #stripe-tip[data-combo] {
-  font-size: 17px;
-  letter-spacing: 0.07em;
+  font-size: 16px;
   opacity: 1;
 }
+/* Per-arrow spans inside #stripe-tip for lockstep lighting */
+.s-arrow {
+  display: inline-block;
+  opacity: 0.3;
+  transition: opacity 180ms ease;
+}
+.s-arrow.lit  { opacity: 1; }
+.s-arrow.done { opacity: 0.55; }
 
 /* ── Gradient veils (edge bleed) ────────────────────────────────────────── */
 .veil {
@@ -471,35 +730,49 @@ body.grip-held #veil-s { height: 80px; }
 body.grip-held #veil-e { width: 80px; }
 body.grip-held #veil-w { width: 80px; }
 
-/* ── First-launch hint toast (y=620, subtitle zone) ─────────────────────── */
-/* Per §5.3: "Toast position: 72% down (subtitle zone). Do NOT use 20% from top." */
-#hint-toast {
+/* ── Ghost peek columns (adjacent-page peek behind E/W veils) ────────────── */
+/* z-index 3 = below main grid (5) and veils (8); veils fade them naturally */
+.ghost-col {
   position: absolute;
-  bottom: calc(720px - 620px);  /* y=620 from top = 100px from bottom */
-  left: 50%;
-  transform: translateX(-50%);
+  top: 142px;   /* aligns with grid-canvas top */
   display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 28px;
-  font-weight: 500;
-  color: var(--accent);
-  white-space: nowrap;
-  z-index: 12;
-  transition: opacity 200ms ease;
-}
-#hint-toast.dismissed {
-  opacity: 0;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 3;
   pointer-events: none;
+  opacity: 0.18;
+  transition: opacity 200ms;
 }
-.hint-icon {
-  font-size: 28px;
+.ghost-col:empty { display: none; }
+#ghost-prev { left: 110px; }
+#ghost-next { right: 110px; }
+.ghost-cell {
+  width: 72px;
+  height: 136px;
+  display: grid;
+  place-items: center;
+}
+.ghost-tile {
+  width: 64px; height: 64px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.ghost-favicon {
+  width: 38px; height: 38px;
+  object-fit: contain;
+  display: block;
+}
+.ghost-glyph {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-muted);
   line-height: 1;
 }
-.hint-text {
-  font-size: 28px;
-  font-weight: 500;
-}
+
+/* First-launch hint uses #stripe-tip (same element / style as combo tips) */
 
 /* ── Focus ring (accessibility, not VR-primary) ─────────────────────────── */
 *:focus { outline: none; }
