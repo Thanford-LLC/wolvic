@@ -187,8 +187,11 @@ public class ComboDispatcher {
                 String js = "window.__gwSetComboMode&&window.__gwSetComboMode(" + is8Dir + ")";
                 SessionStore.get().getSessions(false).forEach(s -> {
                     s.evaluateJavaScript(js);
+                    // isOnHomePage() can be stale after Gecko's intermediate about:blank event;
+                    // use the normalized URI instead (set to ABOUT_HOME after full load).
                     if (com.igalia.wolvic.BuildConfig.FLAVOR_backend.equalsIgnoreCase("gecko")
-                            && s.isOnHomePage()) {
+                            && com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(
+                                    s.getCurrentUri())) {
                         s.loadHomePage();
                     }
                 });

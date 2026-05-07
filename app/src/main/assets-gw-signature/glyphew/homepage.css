@@ -334,6 +334,14 @@ html, body {
 }
 
 
+/* Brand glyph shown during logo slide */
+.hub-logo-svg {
+  width: 68px; height: 76px;
+  color: var(--accent);
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(253,222,10,0.4));
+}
+
 /* Combo disc — fills the hub circle, matches ComboPathView visual vocab */
 .combo-disc-svg {
   position: absolute;

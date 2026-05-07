@@ -533,13 +533,18 @@ function buildComboSlideHTML(path, is8Dir) {
   parts.push('<circle cx="58" cy="58" r="52" fill="#090d38"/>');
   parts.push('<circle cx="58" cy="58" r="38" fill="none" stroke="#1c2265" stroke-width="1.5"/>');
 
-  // Dim background node dots — all 8 in 8-dir, else 4 cardinal + 4 faint diagonal
+  // Dim background node dots — all 8 equal in 8-dir (distinct octagon), 4 + ghost diagonals in 4-dir
   if (is8Dir) {
+    // Draw thin octagon connecting all 8 nodes so the 8-dir layout is unambiguous
+    var octPts = [1, 2, 3, 6, 9, 8, 7, 4].map(function(n) {
+      var p = _discNodePos(n);
+      return p.x.toFixed(2) + ',' + p.y.toFixed(2);
+    }).join(' ');
+    parts.push('<polygon points="' + octPts + '" fill="none" stroke="#1e2570" stroke-width="1" opacity="0.7"/>');
     [1, 2, 3, 4, 6, 7, 8, 9].forEach(function(n) {
       var p = _discNodePos(n);
-      var isDiag = (n === 1 || n === 3 || n === 7 || n === 9);
       parts.push('<circle cx="' + p.x.toFixed(2) + '" cy="' + p.y.toFixed(2) +
-                 '" r="' + (isDiag ? 2 : 3) + '" fill="' + (isDiag ? '#1a2060' : '#252c75') + '"/>');
+                 '" r="3" fill="#2a3280"/>');
     });
   } else {
     DIAG_NODES.forEach(function(n) {
