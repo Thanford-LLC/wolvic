@@ -180,10 +180,18 @@ public class ComboDispatcher {
             if (COMBO_MODE_4DIR_KEY.equals(key)) {
                 pushModeToNative();
                 stampBindingChange(null);
-                // Push the new mode to all open tabs — the JS guard is a no-op on non-homepage pages.
+                // Push the new mode to all open tabs.
+                // Chromium: evaluateJavaScript works, JS updates hub in-place.
+                // Gecko: evaluateJavaScript throws (caught); reload home page so ?m= param updates.
                 boolean is8Dir = !prefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
                 String js = "window.__gwSetComboMode&&window.__gwSetComboMode(" + is8Dir + ")";
-                SessionStore.get().getSessions(false).forEach(s -> s.evaluateJavaScript(js));
+                SessionStore.get().getSessions(false).forEach(s -> {
+                    s.evaluateJavaScript(js);
+                    if (com.igalia.wolvic.BuildConfig.FLAVOR_backend.equalsIgnoreCase("gecko")
+                            && s.isOnHomePage()) {
+                        s.loadHomePage();
+                    }
+                });
             }
         };
         if (mDefaultPrefs != null) {

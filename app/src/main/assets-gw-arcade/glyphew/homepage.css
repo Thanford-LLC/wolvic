@@ -333,31 +333,6 @@ html, body {
   transition: opacity 200ms ease;
 }
 
-/* Horizontal lockup: glyph + wordmark, tight together with edge breathing room */
-.hub-logo-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  z-index: 1;
-}
-
-/* Brand glyph shown during logo slide */
-.hub-logo-svg {
-  width: 30px; height: 34px;
-  color: var(--accent);
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 5px rgba(253,222,10,0.45));
-}
-
-.hub-logo-name {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--accent);
-  white-space: nowrap;
-  text-shadow: 0 0 8px rgba(253,222,10,0.35);
-}
 
 /* Combo disc — fills the hub circle, matches ComboPathView visual vocab */
 .combo-disc-svg {

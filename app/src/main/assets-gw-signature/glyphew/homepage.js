@@ -496,11 +496,6 @@ function buildLogoHTML(is8Dir) {
     });
   }
   parts.push('</svg>');
-  // Horizontal lockup: glyph + "Glyphew" wordmark, tight together, centred
-  parts.push('<div class="hub-logo-wrap">');
-  parts.push('<svg class="hub-logo-svg" viewBox="0 0 604 677" xmlns="http://www.w3.org/2000/svg"><use href="#gw-glyph"/></svg>');
-  parts.push('<span class="hub-logo-name">Glyphew</span>');
-  parts.push('</div>');
   return parts.join('');
 }
 
