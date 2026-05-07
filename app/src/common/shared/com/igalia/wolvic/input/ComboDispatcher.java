@@ -811,7 +811,8 @@ public class ComboDispatcher {
         if (win == null) return;
         // On home page, translate scroll combos into category/page nav via JS bridge.
         Session session = focusedSession();
-        if (session != null && session.isOnHomePage()) {
+        if (session != null && com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(
+                session.getCurrentUri())) {
             // deltaY>0 = A_SCROLL_UP = AXIS_VSCROLL positive = prev category (dir 2)
             // deltaY<0 = A_SCROLL_DOWN = next category (dir 8)
             // deltaX<0 = A_SCROLL_LEFT = prev page (dir 4)
