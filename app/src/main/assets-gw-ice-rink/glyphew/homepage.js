@@ -475,28 +475,10 @@ function makeCenterHub() {
   return hub;
 }
 
-function buildLogoHTML(is8Dir) {
-  var parts = [];
-  // Disc background — 8-dir shows all 8 equal nodes, 4-dir shows 4 bright + 4 dim
-  parts.push('<svg class="combo-disc-svg" viewBox="0 0 116 116" xmlns="http://www.w3.org/2000/svg">');
-  parts.push('<circle cx="58" cy="58" r="52" fill="#090d38"/>');
-  parts.push('<circle cx="58" cy="58" r="38" fill="none" stroke="#1c2265" stroke-width="1.5"/>');
-  if (is8Dir) {
-    [1, 2, 3, 4, 6, 7, 8, 9].forEach(function(n) {
-      var p = _discNodePos(n);
-      parts.push('<circle cx="' + p.x.toFixed(2) + '" cy="' + p.y.toFixed(2) + '" r="3.5" fill="#252c75"/>');
-    });
-  } else {
-    DIAG_NODES.forEach(function(n) {
-      parts.push('<circle cx="' + n.x + '" cy="' + n.y + '" r="1.8" fill="#1a2060"/>');
-    });
-    [2, 8, 4, 6].forEach(function(d) {
-      var nd = DIR_NODES[d];
-      parts.push('<circle cx="' + nd.x + '" cy="' + nd.y + '" r="3.5" fill="#252c75"/>');
-    });
-  }
-  parts.push('</svg>');
-  return parts.join('');
+function buildLogoHTML() {
+  return '<svg class="hub-logo-svg" viewBox="0 0 604 677" xmlns="http://www.w3.org/2000/svg">' +
+         '<use href="#gw-glyph"/>' +
+         '</svg>';
 }
 
 // Maps a path array (e.g. [2,2]) to the CSS animation class name
@@ -698,7 +680,7 @@ function buildLongPressHTML() {
 function populateHubInner(inner) {
   var slide = HUB_SLIDES[_hubSlideIdx];
   if (slide.type === 'logo') {
-    inner.innerHTML = buildLogoHTML(state.is8Dir);
+    inner.innerHTML = buildLogoHTML();
   } else if (slide.type === 'longpress') {
     inner.innerHTML = buildLongPressHTML();
   } else {
@@ -1017,13 +999,11 @@ window.__gwSetComboMode = function(is8Dir) {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (function init() {
-  // Gecko loader appends ?m=8 when 8-dir mode is active (no JS bridge in Gecko).
-  try {
-    if (new URLSearchParams(location.search).get('m') === '8') {
-      state.is8Dir = true;
-      HUB_SLIDES = HUB_SLIDES_8DIR;
-    }
-  } catch (_) {}
+  // Session.java injects window.__gwIs8Dir before this script runs (both Chromium and Gecko).
+  if (window.__gwIs8Dir) {
+    state.is8Dir = true;
+    HUB_SLIDES = HUB_SLIDES_8DIR;
+  }
 
   stripeTip.textContent = HUB_TIPS[0];
   _hubTipIdx = 1;

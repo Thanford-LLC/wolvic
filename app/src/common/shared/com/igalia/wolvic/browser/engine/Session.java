@@ -913,52 +913,48 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
 
     public void loadHomePage() {
         mOnHomePage = true;
-        if (BuildConfig.FLAVOR_backend.equalsIgnoreCase("chromium")) {
-            // Chromium doesn't resolve relative asset:// URLs in a data: URI.
-            // Inline _design-vars.css, homepage.css, and homepage.js so all
-            // sibling assets resolve correctly under the data: scheme.
-            try {
-                String html      = readAssetAsString("glyphew/homepage.html");
-                final String vars = readAssetAsString("glyphew/_design-vars.css");
-                final String css  = readAssetAsString("glyphew/homepage.css");
-                final String js   = readAssetAsString("glyphew/homepage.js");
-                html = html.replace(
-                    "<link rel=\"stylesheet\" href=\"_design-vars.css\">",
-                    "<style>\n" + vars + "\n</style>");
-                html = html.replace(
-                    "<link rel=\"stylesheet\" href=\"homepage.css\">",
-                    "<style>\n" + css + "\n</style>");
-                html = html.replace(
-                    "<script src=\"homepage.js\"></script>",
-                    "<script>\n" + js + "\n</script>");
-                final byte[] data = html.getBytes(StandardCharsets.UTF_8);
-                final String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
-                mHomePageDataUri = "data:text/html;base64," + encoded;
-                // Register the HomeBridge before loading so window.gwHome is
-                // available on first script evaluation. Gecko throws on
-                // addJavascriptInterface so this block is Chromium-only.
-                if (mHomeBridge == null) {
-                    mHomeBridge = new com.thanford.glyphew.home.HomeBridge(
-                        mContext, this,
-                        new com.thanford.glyphew.home.HomePrefs(mContext),
-                        SessionStore.get().getBrowserIcons());
-                }
-                if (mState.mSession != null) {
+        // Both Chromium and Gecko load the homepage as a data: URI with all assets inlined.
+        // This is the only reliable way to inject the combo mode variable, since:
+        //   - Chromium: resource:// relative paths don't resolve from data: URI
+        //   - Gecko: evaluateJavaScript and addJavascriptInterface are unsupported;
+        //            resource:// query strings are not reliably reflected in location.search
+        try {
+            String html = readAssetAsString("glyphew/homepage.html");
+            final String vars = readAssetAsString("glyphew/_design-vars.css");
+            final String css  = readAssetAsString("glyphew/homepage.css");
+            final String js   = readAssetAsString("glyphew/homepage.js");
+            html = html.replace(
+                "<link rel=\"stylesheet\" href=\"_design-vars.css\">",
+                "<style>\n" + vars + "\n</style>");
+            html = html.replace(
+                "<link rel=\"stylesheet\" href=\"homepage.css\">",
+                "<style>\n" + css + "\n</style>");
+            // Inject combo mode before the main script so init() reads it immediately.
+            boolean is8Dir = !new com.thanford.glyphew.home.HomePrefs(mContext).is4DirMode();
+            html = html.replace(
+                "<!-- __GW_MODE__ -->",
+                "<script>window.__gwIs8Dir=" + is8Dir + ";</script>");
+            html = html.replace(
+                "<script src=\"homepage.js\"></script>",
+                "<script>\n" + js + "\n</script>");
+            final byte[] data = html.getBytes(StandardCharsets.UTF_8);
+            final String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+            mHomePageDataUri = "data:text/html;base64," + encoded;
+            if (mState.mSession != null) {
+                // Register the HomeBridge only on Chromium — Gecko throws on addJavascriptInterface.
+                if (BuildConfig.FLAVOR_backend.equalsIgnoreCase("chromium")) {
+                    if (mHomeBridge == null) {
+                        mHomeBridge = new com.thanford.glyphew.home.HomeBridge(
+                            mContext, this,
+                            new com.thanford.glyphew.home.HomePrefs(mContext),
+                            SessionStore.get().getBrowserIcons());
+                    }
                     mState.mSession.addJavascriptInterface(mHomeBridge, "gwHome");
-                    mState.mSession.loadUri(mHomePageDataUri, WSession.LOAD_FLAGS_NONE);
                 }
-                return;
-            } catch (java.io.IOException e) {
-                Log.e(LOGTAG, "loadHomePage: asset read failed", e);
+                mState.mSession.loadUri(mHomePageDataUri, WSession.LOAD_FLAGS_NONE);
             }
-        }
-        // Gecko path: resource:// URL resolves relative assets directly.
-        // Append ?m=4 or ?m=8 so the page knows the current combo mode without a bridge.
-        if (mState.mSession != null) {
-            String comboMode = new com.thanford.glyphew.home.HomePrefs(mContext).is4DirMode() ? "4" : "8";
-            mState.mSession.loadUri(
-                "resource://android/assets/glyphew/homepage.html?m=" + comboMode,
-                WSession.LOAD_FLAGS_NONE);
+        } catch (java.io.IOException e) {
+            Log.e(LOGTAG, "loadHomePage: asset read failed", e);
         }
     }
 
