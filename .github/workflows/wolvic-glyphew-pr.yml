@@ -1,0 +1,186 @@
+name: Glyphew PR Gate
+
+# Runs on every PR to the glyphew branch. All five jobs must pass before merge.
+# Branch protection: require status checks → glyphew-pr / native-tests,
+#   jvm-tests-chromium, jvm-tests-gecko, verify-design-exports, verify-app-assets.
+on:
+  pull_request:
+    branches: [glyphew]
+
+jobs:
+  # ── C++ unit tests (host build, no Android SDK needed) ────
+  native-tests:
+    name: C++ Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake
+        run: sudo apt-get install -y cmake
+
+      - name: Configure
+        working-directory: app/src/glyphew/tests
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build & Run
+        working-directory: app/src/glyphew/tests
+        run: cmake --build build && ./build/glyphew_tests --gtest_color=yes
+
+  # ── JVM unit tests — Gecko backend ────────────────────────
+  jvm-tests-gecko:
+    name: JVM Unit Tests (Gecko)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install SDK components
+        run: |
+          sdkmanager --install \
+            "platforms;android-35" \
+            "build-tools;34.0.0" \
+            "ndk;27.0.12077973" \
+            --sdk_root="$ANDROID_SDK_ROOT"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Write local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> local.properties
+
+      - name: Run Gecko JVM unit tests
+        run: |
+          ./gradlew testOculusvrArm64GeckoGenericDebugUnitTest \
+            -PskipDesignCheck=true \
+            --no-daemon
+
+  # ── JVM unit tests — Chromium flavor (no native AAR needed) ─
+  # Robolectric tests run on JVM. A fake empty directory satisfies
+  # isChromiumAvailable() so Chromium variants aren't filtered.
+  # This catches backend-specific Java divergence that Gecko tests miss.
+  jvm-tests-chromium:
+    name: JVM Unit Tests (Chromium flavor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install SDK components
+        run: |
+          sdkmanager --install \
+            "platforms;android-35" \
+            "build-tools;34.0.0" \
+            "ndk;27.0.12077973" \
+            --sdk_root="$ANDROID_SDK_ROOT"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Create fake Chromium AAR directory
+        run: mkdir -p /tmp/fake-chromium-aar
+
+      - name: Write local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> local.properties
+          echo "chromium_aar=/tmp/fake-chromium-aar" >> local.properties
+
+      - name: Run Chromium JVM unit tests
+        run: |
+          ./gradlew testOculusvrArm64ChromiumGenericDebugUnitTest \
+            -PskipDesignCheck=true \
+            --no-daemon
+
+  # ── Design-system export drift check ──────────────────────
+  # Verifies generated colors-gw*.xml and _design-vars.css match DESIGN.md tokens.
+  # Fails if someone edited DESIGN.md without running `npm run design:export`.
+  verify-design-exports:
+    name: Verify Design Exports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Clone glyphew planning repo
+        run: |
+          git clone --depth=1 --branch main \
+            https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/thanford7/glyphew.git \
+            ../glyphew
+
+      - name: Install dependencies
+        working-directory: ../glyphew
+        run: npm ci
+
+      - name: Check design export is up to date
+        working-directory: ../glyphew
+        run: |
+          node tools/design-export.mjs \
+            --wolvic-root ${{ github.workspace }} \
+            --check
+
+  # ── APK asset integrity check ──────────────────────────────
+  # Verifies logo, homepage, and cubemap assets haven't been silently replaced.
+  # Fails if any SHA-256 hash doesn't match tools/asset-hashes.json, or if
+  # homepage.html contains stale FingerDance tokens.
+  verify-app-assets:
+    name: Verify App Assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install SDK components
+        run: |
+          sdkmanager --install \
+            "platforms;android-35" \
+            "build-tools;34.0.0" \
+            --sdk_root="$ANDROID_SDK_ROOT"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Clone glyphew planning repo (for asset-hashes.json)
+        run: |
+          git clone --depth=1 --branch main \
+            https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/thanford7/glyphew.git \
+            ../glyphew
+
+      - name: Write local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
+
+      - name: Verify app assets
+        run: |
+          ./gradlew verifyAppAssets \
+            -PskipDesignCheck=true \
+            --no-daemon

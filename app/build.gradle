@@ -87,10 +87,19 @@ def getMKApiKey = { ->
 }
 
 def isChromiumAvailable = {
-    if (gradle.hasProperty("localProperties.chromium_aar")) {
-        return true
+    if (!gradle.hasProperty("localProperties.chromium_aar")) {
+        return false
     }
-    return false
+    def aarPath = gradle."localProperties.chromium_aar".toString()
+    def aarDir = new File(aarPath)
+    if (!aarDir.exists()) {
+        throw new GradleException(
+            "Chromium AAR directory not found: ${aarPath}\n" +
+            "Mount the Chromium build disk and retry:\n" +
+            "  sudo mount /mnt/chromium-build/chromium-aars\n" +
+            "Or remove 'chromium_aar' from local.properties to build the Gecko backend instead.")
+    }
+    return true
 }
 
 def isWebKitAvailable = {
@@ -126,11 +135,108 @@ if (!project.hasProperty('skipDesignCheck')) {
     }
     preBuild.dependsOn verifyDesignExports
 }
+
+// ── Backend config verification ────────────────────────────────────────────
+// Asserts applicationId contract and logs the resolved backend so it's visible
+// in every build output. Skip by passing -PskipBackendCheck=true to Gradle.
+if (!project.hasProperty('skipBackendCheck')) {
+    task verifyBackendConfig {
+        group = 'Glyphew'
+        description = 'Assert applicationId == com.thanford.glyphew and log the resolved backend.'
+        doLast {
+            def expectedAppId = 'com.thanford.glyphew'
+            def actualAppId = android.defaultConfig.applicationId
+            if (actualAppId != expectedAppId) {
+                throw new GradleException(
+                    "applicationId mismatch: expected '${expectedAppId}', got '${actualAppId}'.\n" +
+                    "Do not change applicationId without updating CLAUDE.md §4.5.")
+            }
+            def backend = isChromiumAvailable() ? 'chromium' : 'gecko'
+            logger.lifecycle("Glyphew backend: ${backend} | applicationId: ${actualAppId}")
+        }
+    }
+    preBuild.dependsOn verifyBackendConfig
+}
+
+// Verifies that signature assets (logo, homepage, cubemaps) match the golden SHA-256 hashes
+// stored in ../glyphew/tools/asset-hashes.json.  A mismatch means an asset was silently
+// replaced — either update the file in the same PR, or revert the accidental change.
+// Skip with -PskipAssetCheck=true (CI fake-AAR builds don't need asset verification).
+if (!project.hasProperty('skipAssetCheck')) {
+    task verifyAppAssets {
+        group = 'Glyphew'
+        description = 'Verify signature asset SHA-256 hashes against tools/asset-hashes.json.'
+        doLast {
+            def hashesFile = rootProject.file('../glyphew/tools/asset-hashes.json')
+            if (!hashesFile.exists()) {
+                throw new GradleException(
+                    "asset-hashes.json not found at ${hashesFile}.\n" +
+                    "Clone the glyphew planning repo alongside wolvic, or pass -PskipAssetCheck=true.")
+            }
+
+            def json = new groovy.json.JsonSlurper().parse(hashesFile)
+            def projectDir = rootProject.file('.')
+
+            def checkFile = { String label, String relPath, String expectedHash ->
+                def f = new File(projectDir, relPath)
+                if (!f.exists()) {
+                    throw new GradleException("verifyAppAssets: ${label} not found at ${f}")
+                }
+                def digest = java.security.MessageDigest.getInstance('SHA-256')
+                def actualHash = digest.digest(f.bytes).encodeHex().toString()
+                if (actualHash != expectedHash) {
+                    throw new GradleException(
+                        "verifyAppAssets: ${label} hash mismatch.\n" +
+                        "  file   : ${f}\n" +
+                        "  expected: ${expectedHash}\n" +
+                        "  actual  : ${actualHash}\n" +
+                        "If this is intentional, update tools/asset-hashes.json in the same PR.")
+                }
+                logger.info("verifyAppAssets: OK ${label}")
+            }
+
+            // Logo
+            checkFile('logo.png', json.logo.path as String, json.logo.sha256 as String)
+
+            // Homepage
+            def homepagePath = json.homepage.path as String
+            checkFile('homepage.html', homepagePath, json.homepage.sha256 as String)
+            def homepageText = new File(projectDir, homepagePath).text
+            (json.homepage.mustContain as List<String>).each { token ->
+                if (!homepageText.contains(token)) {
+                    throw new GradleException(
+                        "verifyAppAssets: homepage.html must contain '${token}' — Glyphew brand check failed.\n" +
+                        "If this is intentional (e.g. rebrand), update tools/asset-hashes.json.")
+                }
+            }
+            (json.homepage.mustNotContain as List<String>).each { token ->
+                if (homepageText.contains(token)) {
+                    throw new GradleException(
+                        "verifyAppAssets: homepage.html must NOT contain '${token}' — stale FingerDance brand token.\n" +
+                        "Remove all '${token}' occurrences from the homepage source.")
+                }
+            }
+
+            // Cubemap faces (oculusvr + pfdmxr)
+            def cubemapFaces = json.cubemap.faces as List
+            def cubemapSrcSets = json.cubemap.sourceSets as List<String>
+            cubemapSrcSets.each { srcSet ->
+                cubemapFaces.each { face ->
+                    checkFile("cubemap/${srcSet}/${face.name}", "${srcSet}/${face.name}", face.sha256 as String)
+                }
+            }
+        }
+    }
+}
+
 def CHROMIUM_RELEASE_VERSION_NAME = '1.3'
 
 android {
     namespace 'com.igalia.wolvic'
     compileSdkVersion 35
+    // Chromium is the canonical Glyphew dev/test backend (CLAUDE.md §4.4).
+    // Ensures `./gradlew assemble` targets Chromium, not Gecko, when Chromium is available.
+    defaultPublishConfig 'oculusvrArm64ChromiumGenericDebug'
     defaultConfig {
         applicationId "com.thanford.glyphew"
         minSdkVersion 24
