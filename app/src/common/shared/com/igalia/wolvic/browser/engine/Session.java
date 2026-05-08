@@ -999,7 +999,10 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
      *            4=left (prev page),   6=right (next page).
      */
     public void dispatchComboToHome(int direction) {
-        if (!mOnHomePage) return;
+        // Use the normalized URI instead of the mOnHomePage flag — the flag can be stale
+        // after an intermediate onLocationChange (e.g. about:blank) during data: URI loading.
+        // mState.mUri is reliably set to ABOUT_HOME after the home page finishes loading.
+        if (!com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(getCurrentUri())) return;
         final String script = "window.gwHome&&window.gwHome._onCombo(" + direction + ")";
         // ComboDispatcher runs on the UI thread; evaluateJavaScript requires it.
         if (Looper.myLooper() == Looper.getMainLooper()) {
