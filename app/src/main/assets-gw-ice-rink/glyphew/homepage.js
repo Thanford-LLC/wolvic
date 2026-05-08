@@ -918,14 +918,6 @@ window.gwHome._resolve = function(id, json) {
   if (_pendingResolvers[id]) _pendingResolvers[id](json);
 };
 
-window.gwHome._onCombo = function(direction) {
-  switch (direction) {
-    case 2: changeRow(-1);  break;
-    case 8: changeRow(1);   break;
-    case 4: changePage(-1); break;
-    case 6: changePage(1);  break;
-  }
-};
 
 // ── Bridge upgrade on load ─────────────────────────────────────────────────
 function tryBridgeUpgrade() {

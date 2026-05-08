@@ -183,15 +183,12 @@ public class ComboDispatcher {
                 // Push the new mode to all open tabs.
                 // Chromium: evaluateJavaScript works, JS updates hub in-place.
                 // Gecko: evaluateJavaScript throws (caught); reload home page so ?m= param updates.
-                boolean is8Dir = !prefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
-                String js = "window.__gwSetComboMode&&window.__gwSetComboMode(" + is8Dir + ")";
+                // Reload home page on all sessions currently showing it so they pick up the
+                // new is8Dir flag immediately. evaluateJavaScript(__gwSetComboMode) is unreliable
+                // on Chromium for data: URI pages; a full reload is clean and always correct.
                 SessionStore.get().getSessions(false).forEach(s -> {
-                    s.evaluateJavaScript(js);
-                    // isOnHomePage() can be stale after Gecko's intermediate about:blank event;
-                    // use the normalized URI instead (set to ABOUT_HOME after full load).
-                    if (com.igalia.wolvic.BuildConfig.FLAVOR_backend.equalsIgnoreCase("gecko")
-                            && com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(
-                                    s.getCurrentUri())) {
+                    if (com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(
+                            s.getCurrentUri())) {
                         s.loadHomePage();
                     }
                 });
@@ -809,20 +806,14 @@ public class ComboDispatcher {
     private void scroll(float deltaX, float deltaY) {
         WindowWidget win = focusedWindow();
         if (win == null) return;
-        // On home page, translate scroll combos into category/page nav via JS bridge.
-        Session session = focusedSession();
-        if (session != null && com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(
-                session.getCurrentUri())) {
-            // deltaY>0 = A_SCROLL_UP = AXIS_VSCROLL positive = prev category (dir 2)
-            // deltaY<0 = A_SCROLL_DOWN = next category (dir 8)
-            // deltaX<0 = A_SCROLL_LEFT = prev page (dir 4)
-            // deltaX>0 = A_SCROLL_RIGHT = next page (dir 6)
-            int dir;
-            if (deltaY != 0) dir = (deltaY > 0) ? 2 : 8;
-            else dir = (deltaX < 0) ? 4 : 6;
-            session.dispatchComboToHome(dir);
-            return;
-        }
+        // Dispatch the scroll event directly to the window for all pages including home.
+        // The homepage wheel listener (window.addEventListener('wheel', ...)) handles
+        // AXIS_VSCROLL/HSCROLL via Chromium's native scroll path — no evaluateJavaScript needed.
+        // Sign mapping (AXIS_VSCROLL > 0 = scroll-up → DOM deltaY < 0 → changeRow(-1)):
+        //   deltaY>0 (A_SCROLL_UP)    → prev category
+        //   deltaY<0 (A_SCROLL_DOWN)  → next category
+        //   deltaX<0 (A_SCROLL_LEFT)  → prev page
+        //   deltaX>0 (A_SCROLL_RIGHT) → next page
         MotionEventGenerator.dispatchScroll(win, 0, true, deltaX, deltaY);
     }
 

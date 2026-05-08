@@ -992,26 +992,6 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         return mOnHomePage;
     }
 
-    /**
-     * Called by ComboDispatcher when a scroll combo fires on the home page.
-     * Translates the combo direction into a window.gwHome._onCombo() call.
-     * direction: 2=up (prev category), 8=down (next category),
-     *            4=left (prev page),   6=right (next page).
-     */
-    public void dispatchComboToHome(int direction) {
-        // Use the normalized URI instead of the mOnHomePage flag — the flag can be stale
-        // after an intermediate onLocationChange (e.g. about:blank) during data: URI loading.
-        // mState.mUri is reliably set to ABOUT_HOME after the home page finishes loading.
-        if (!com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(getCurrentUri())) return;
-        final String script = "window.gwHome&&window.gwHome._onCombo(" + direction + ")";
-        // ComboDispatcher runs on the UI thread; evaluateJavaScript requires it.
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            evaluateJavaScript(script);
-        } else {
-            new Handler(Looper.getMainLooper()).post(() -> evaluateJavaScript(script));
-        }
-    }
-
     public void loadPrivateBrowsingPage() {
         if (mState.mSession != null) {
             mState.mSession.loadData(mPrivatePage, "text/html");
