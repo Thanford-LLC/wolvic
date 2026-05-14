@@ -53,6 +53,7 @@ import com.igalia.wolvic.telemetry.TelemetryService;
 import com.igalia.wolvic.ui.adapters.WebApp;
 import com.igalia.wolvic.utils.BitmapCache;
 import com.igalia.wolvic.utils.InternalPages;
+import com.thanford.glyphew.home.HomePrefs;
 import com.igalia.wolvic.utils.SystemUtils;
 import com.igalia.wolvic.utils.UrlUtils;
 
@@ -933,9 +934,12 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             }
         }
         // Gecko path: resource:// URL resolves relative assets directly.
+        // Append ?m=4 or ?m=8 so the page can read the current combo mode without a bridge.
         if (mState.mSession != null) {
-            mState.mSession.loadUri("resource://android/assets/glyphew/homepage.html",
-                                    WSession.LOAD_FLAGS_NONE);
+            String comboMode = new HomePrefs(mContext).is4DirMode() ? "4" : "8";
+            mState.mSession.loadUri(
+                "resource://android/assets/glyphew/homepage.html?m=" + comboMode,
+                WSession.LOAD_FLAGS_NONE);
         }
     }
 

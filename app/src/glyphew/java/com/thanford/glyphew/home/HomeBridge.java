@@ -75,6 +75,7 @@ public class HomeBridge {
             obj.put("hintSeen",     mPrefs.isHintSeen());
             obj.put("lastRowIndex", mPrefs.getLastRowIndex());
             obj.put("lastColIndex", mPrefs.getLastColIndex());
+            obj.put("is4DirMode",   mPrefs.is4DirMode());
         } catch (JSONException ignored) {}
         resolveOnUiThread(requestId, obj.toString());
     }

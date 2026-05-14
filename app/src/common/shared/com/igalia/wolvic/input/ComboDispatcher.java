@@ -180,6 +180,12 @@ public class ComboDispatcher {
             if (COMBO_MODE_4DIR_KEY.equals(key)) {
                 pushModeToNative();
                 stampBindingChange(null);
+                // Push the new mode to any open homepage tab so the hub updates without a reload.
+                boolean is8Dir = !prefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
+                String js = "window.__gwSetComboMode&&window.__gwSetComboMode(" + is8Dir + ")";
+                SessionStore.get().getSessions(false).forEach(s -> {
+                    if (s.isOnHomePage()) s.evaluateJavaScript(js);
+                });
             }
         };
         if (mDefaultPrefs != null) {
