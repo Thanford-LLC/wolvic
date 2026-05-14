@@ -149,6 +149,25 @@ public class ComboBindingStoreTest {
         assertTrue("blob with schema version > supported must be ignored", result.isEmpty());
     }
 
+    @Test
+    public void load_illegalPositionKey_loadSucceedsAndKeyPathIsEmpty() {
+        // Pins the "import with illegal position like positiona" scenario.
+        // parseBindings preserves the key; buildTables calls keyToPath("positiona")
+        // which returns int[0], triggering the "if (p.length == 0) continue" guard.
+        // Net result: the illegal key is silently skipped, valid bindings survive.
+        SharedPreferences prefs = mCtx.getSharedPreferences(
+                ComboBindingStore.PREFS_FILE, Context.MODE_PRIVATE);
+        prefs.edit().putString(ComboBindingStore.KEY_BLOB,
+                "{\"version\":1,\"bindings\":"
+                + "{\"positiona\":{\"action\":3},\"2,4\":{\"action\":1}}}").commit();
+
+        Map<String, Binding> result = mStore.load();
+        assertTrue("valid binding '2,4' must survive alongside illegal key",
+                result.containsKey("2,4"));
+        assertEquals("keyToPath for illegal position key must return empty array (buildTables skips it)",
+                0, ComboBindingStore.keyToPath("positiona").length);
+    }
+
     // ── Static path-key helpers ───────────────────────────────────────────────
 
     @Test
