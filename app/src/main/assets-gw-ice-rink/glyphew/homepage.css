@@ -1,0 +1,766 @@
+/* Glyphew homepage v2 — 3×3 combo-navigable grid · 1280×720 VR quad
+ * Consumes only canonical variables from _design-vars.css.
+ * Colors not in _design-vars.css that come from DESIGN.md tokens:
+ *   surface hover = #2A2DA3  (colors.surface.hover)
+ *   border strong = #4B4FC7  (colors.surface.borderStrong)
+ *   accent pressed = #D9BE00 (colors.accent.pressed)
+ *   text disabled  = #3A3D6F (colors.text.disabled) */
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+}
+
+/* Soft brand wash — radial glow that reads on dark bg */
+#app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(253,222,10,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 80%, rgba(75,79,199,0.12) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Screen header (top center) ─────────────────────────────────────────── */
+#screen-header {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+  pointer-events: none;
+  text-align: center;
+}
+
+#header-kind {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+#header-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  transition: opacity 220ms cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Page dots */
+#header-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.page-dot {
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--text-dim);
+  opacity: 0.6;
+  transition: background 200ms, transform 200ms, opacity 200ms;
+}
+.page-dot.on {
+  background: var(--accent);
+  opacity: 1;
+  transform: scale(1.35);
+}
+
+/* ── Row rail (left side) ───────────────────────────────────────────────── */
+#row-rail {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.45;
+  transition: opacity 200ms;
+  cursor: default;
+}
+.rail-item.on { opacity: 1; }
+
+.rail-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius);
+  background: var(--hud-label-pill);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.rail-item.on .rail-icon {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.rail-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: color 200ms;
+}
+.rail-item.on .rail-label { color: var(--text); }
+
+/* ── Chevrons (top/bottom nav hints) ────────────────────────────────────── */
+.chevron {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  color: var(--accent);
+  opacity: 0.8;
+  z-index: 10;
+  pointer-events: none;
+  transition: opacity 200ms;
+}
+#chevron-n { top: 8px; }
+#chevron-s { bottom: 8px; }
+.chevron.hidden { opacity: 0; pointer-events: none; }
+
+/* ── Grid viewport + canvas ────────────────────────────────────────────── */
+#grid-viewport {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 5;
+}
+
+#grid-canvas {
+  display: grid;
+  grid-template-columns: repeat(3, 156px);
+  grid-template-rows: repeat(3, 136px);
+  gap: 14px;
+  transition: opacity 220ms cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Cross-fade transition on row/page change */
+#grid-canvas.fading { opacity: 0; }
+
+/* Rim flash on transition: brief yellow pulse on all cell tiles */
+#grid-canvas.pulsing .cell-tile {
+  animation: rimFlash 380ms cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes rimFlash {
+  0%   { box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+  25%  { box-shadow: 0 0 0 3px var(--accent-bright), 0 0 32px var(--accent-glow); }
+  100% { box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+}
+
+/* ── Cell slot (3×3 grid item) ──────────────────────────────────────────── */
+.cell-slot {
+  width: 156px; height: 136px;
+  display: grid;
+  place-items: center;
+}
+
+/* ── Site cell (outer 8 slots) ──────────────────────────────────────────── */
+.cell {
+  width: 136px; height: 116px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cell-tile {
+  width: 72px; height: 72px;
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  overflow: hidden;
+  position: relative;
+  transition:
+    transform 120ms cubic-bezier(0.16,1,0.3,1),
+    box-shadow 120ms,
+    background 120ms;
+}
+
+.cell-favicon {
+  width: 44px; height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+.cell-glyph {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+}
+
+/* Brand-color dot — content tier, never accent */
+.brand-dot {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(7,8,37,0.55);
+  opacity: 0.85;
+}
+
+.cell-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 136px;
+  transition: color 120ms;
+}
+
+/* Hover state — cursor-ray highlight */
+.cell:hover .cell-tile {
+  transform: scale(1.04);
+  background: var(--surface-hi);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(253,222,10,0.45),
+    0 0 14px rgba(253,222,10,0.1),
+    0 6px 20px rgba(0,0,0,0.3);
+}
+
+/* Focus state — inset ring avoids all border/overflow/radius clipping issues */
+.cell.focused .cell-tile {
+  transform: scale(1.08);
+  background: var(--surface-hi);
+  box-shadow:
+    inset 0 0 0 2px #FDDE0A,
+    0 0 22px rgba(253,222,10,0.35),
+    0 10px 28px rgba(0,0,0,0.4);
+}
+.cell.focused .cell-label { color: #FDDE0A; }
+
+/* Trigger flash — 80ms accent-bright pulse before navigation */
+.cell.triggered .cell-tile {
+  animation: triggerFlash 80ms ease forwards;
+}
+@keyframes triggerFlash {
+  0%   { box-shadow: inset 0 0 0 2px #FDDE0A, 0 0 22px rgba(253,222,10,0.35), 0 10px 28px rgba(0,0,0,0.4); }
+  50%  { box-shadow: inset 0 0 0 3px #FFE84D, 0 0 32px rgba(253,222,10,0.6),   0 10px 28px rgba(0,0,0,0.4); }
+  100% { box-shadow: inset 0 0 0 2px #FDDE0A, 0 0 22px rgba(253,222,10,0.35), 0 10px 28px rgba(0,0,0,0.4); }
+}
+
+/* Empty cell */
+.cell-empty .cell-tile {
+  background: transparent;
+  border: 1.5px dashed var(--border);
+  box-shadow: none;
+  opacity: 0.25;
+}
+.cell-empty .cell-label { display: none; }
+
+/* ── Center hub ─────────────────────────────────────────────────────────── */
+.center-slot {
+  width: 156px; height: 136px;
+  display: grid;
+  place-items: center;
+}
+
+.hub {
+  width: 116px; height: 116px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--surface-hi) 0%, var(--surface) 70%);
+  border: 1.5px solid var(--border);
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle accent ring inside hub */
+.hub::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+/* ── Hub slide system (logo → combo demos) ──────────────────────────────── */
+
+/* Slide container — fills the hub, centered, fades between slides */
+.hub-inner {
+  position: relative;
+  width: 116px; height: 116px;
+  display: grid;
+  place-items: center;
+  transition: opacity 200ms ease;
+}
+
+
+/* Brand glyph shown during logo slide */
+.hub-logo-svg {
+  width: 68px; height: 76px;
+  color: var(--accent);
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(253,222,10,0.4));
+}
+
+/* Combo disc — fills the hub circle, matches ComboPathView visual vocab */
+.combo-disc-svg {
+  position: absolute;
+  inset: 0;
+  width: 116px; height: 116px;
+}
+
+/* Animated thumb cap — flicks to target direction then returns */
+.hub-cap {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 18px; height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff8cc, #fdde0a 45%, #c9a800 82%);
+  box-shadow: 0 0 10px 4px rgba(253,222,10,0.5), 0 2px 4px rgba(0,0,0,0.5);
+  z-index: 2;
+}
+/* Center dimple */
+.hub-cap::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(122,104,0,0.55);
+  margin: -1.5px 0 0 -1.5px;
+}
+
+/* Cap animations — one play per slide, no loop */
+.hub-cap.to-n   { animation: capToN   2s ease; }
+.hub-cap.to-s   { animation: capToS   2s ease; }
+.hub-cap.to-w   { animation: capToW   2s ease; }
+.hub-cap.to-e   { animation: capToE   2s ease; }
+.hub-cap.to-n2  { animation: capToN2  2s ease; }
+.hub-cap.to-s2  { animation: capToS2  2s ease; }
+.hub-cap.to-w2  { animation: capToW2  2s ease; }
+.hub-cap.to-e2  { animation: capToE2  2s ease; }
+.hub-cap.to-ns  { animation: capToNS  2s ease; }
+.hub-cap.to-we  { animation: capToWE  2s ease; }
+.hub-cap.to-sn  { animation: capToSN  2s ease; }
+.hub-cap.to-n3  { animation: capToN3  2s ease; }
+.hub-cap.to-s3  { animation: capToS3  2s ease; }
+.hub-cap.to-w3  { animation: capToW3  2s ease; }
+.hub-cap.to-e3  { animation: capToE3  2s ease; }
+.hub-cap.to-e4  { animation: capToE4  2.5s ease; }
+.hub-cap.to-ne  { animation: capToNE  2s ease; }
+.hub-cap.to-nw  { animation: capToNW  2s ease; }
+.hub-cap.to-es  { animation: capToES  2s ease; }
+.hub-cap.to-ws  { animation: capToWS  2s ease; }
+.hub-cap.to-nes { animation: capToNES 2s ease; }
+/* 8-dir diagonal single + double push */
+.hub-cap.to-ne1   { animation: capToNE1   2s ease; }
+.hub-cap.to-nw1   { animation: capToNW1   2s ease; }
+.hub-cap.to-se1   { animation: capToSE1   2s ease; }
+.hub-cap.to-sw1   { animation: capToSW1   2s ease; }
+.hub-cap.to-ne1-2 { animation: capToNE1D2 2s ease; }
+
+/* Single-node (flick → hold → return) */
+@keyframes capToN {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(0,-38px); animation-timing-function: steps(1,end); }
+  60%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToS {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(0,38px); animation-timing-function: steps(1,end); }
+  60%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToW {
+  0%   { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(-38px,0);  animation-timing-function: steps(1,end); }
+  60%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToE {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  30%  { transform: translate(38px,0);  animation-timing-function: steps(1,end); }
+  60%  { transform: translate(38px,0);  animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+
+/* Double-tap same direction (X→X) */
+@keyframes capToN2 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToS2 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToW2 {
+  0%   { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToE2 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(38px,0);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(38px,0);  animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* Cross paths (A→B where A≠B) */
+@keyframes capToNS {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,38px);  animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToSN {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(0,38px);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToWE {
+  0%   { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  18%  { transform: translate(-38px,0);  animation-timing-function: ease-in; }
+  30%  { transform: translate(0,0);      animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  48%  { transform: translate(38px,0);   animation-timing-function: ease-in; }
+  65%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* Triple-tap (X→X→X) */
+@keyframes capToN3 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(0,-38px); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToS3 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(0,38px); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* Triple west: ←←← (4-4-4) */
+@keyframes capToW3 {
+  0%   { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(-38px,0); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(-38px,0); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);     animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(-38px,0); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* Triple east: →→→ (6-6-6) */
+@keyframes capToE3 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  22%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  45%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  58%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  70%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* Quad east: →→→→ (6-6-6-6) */
+@keyframes capToE4 {
+  0%   { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  10%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  18%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  28%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  36%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  46%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  54%  { transform: translate(0,0);    animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  64%  { transform: translate(38px,0); animation-timing-function: ease-in; }
+  72%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* North-East cross: ↑→ (2-6) */
+/* Arc-tracing: cap sweeps the ring arc instead of returning to center.
+ * Intermediate points at 45° diagonals (±27px = 38·sin45°). */
+@keyframes capToNE {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(0,-38px);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(27px,-27px);    animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(38px,0);        animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToNW {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(0,-38px);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(-27px,-27px);   animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(-38px,0);       animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToES {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(38px,0);        animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(27px,27px);     animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(0,38px);        animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToWS {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  15%  { transform: translate(-38px,0);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  33%  { transform: translate(-27px,27px);    animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  50%  { transform: translate(0,38px);        animation-timing-function: ease-in; }
+  66%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+/* Full right-semicircle sweep: N → NE arc → E → SE arc → S */
+@keyframes capToNES {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  12%  { transform: translate(0,-38px);       animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  25%  { transform: translate(27px,-27px);    animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  38%  { transform: translate(38px,0);        animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  51%  { transform: translate(27px,27px);     animation-timing-function: cubic-bezier(0.4,0,0.6,1); }
+  64%  { transform: translate(0,38px);        animation-timing-function: ease-in; }
+  78%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* 8-dir diagonal single push (node at ±27px, ±27px) */
+@keyframes capToNE1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(27px,-27px);    animation-timing-function: steps(1,end); }
+  60%  { transform: translate(27px,-27px);    animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToNW1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(-27px,-27px);   animation-timing-function: steps(1,end); }
+  60%  { transform: translate(-27px,-27px);   animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToSE1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(27px,27px);     animation-timing-function: steps(1,end); }
+  60%  { transform: translate(27px,27px);     animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+@keyframes capToSW1 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  35%  { transform: translate(-27px,27px);    animation-timing-function: steps(1,end); }
+  60%  { transform: translate(-27px,27px);    animation-timing-function: ease-in; }
+  100% { transform: translate(0,0); }
+}
+/* 8-dir NE double push (3→3): flick-return-flick-return */
+@keyframes capToNE1D2 {
+  0%   { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  20%  { transform: translate(27px,-27px);    animation-timing-function: ease-in; }
+  36%  { transform: translate(0,0);           animation-timing-function: cubic-bezier(0.1,0.7,0.1,1); }
+  56%  { transform: translate(27px,-27px);    animation-timing-function: ease-in; }
+  72%  { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+/* Long-press hold indicator — pulsing center rings */
+.lp-ring {
+  transform-origin: 58px 58px;
+  animation: lpRing 1.4s ease-out infinite;
+}
+@keyframes lpRing {
+  0%   { transform: scale(0.6); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.lp-fill {
+  transform-origin: 58px 58px;
+  animation: lpFill 1.4s ease-in-out infinite;
+}
+@keyframes lpFill {
+  0%, 100% { transform: scale(0.85); opacity: 0.65; }
+  50%       { transform: scale(1.0);  opacity: 1; }
+}
+.hub-cap.lp-cap {
+  box-shadow: 0 0 14px 6px rgba(253,222,10,0.6), 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Stripe tip — yellow pill at bottom center, dark navy text on accent */
+#stripe-tip {
+  position: absolute;
+  bottom: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #070825;
+  border-radius: 100px;
+  padding: 7px 22px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 11;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+  text-align: center;
+  opacity: 0.82;
+}
+#stripe-tip[data-combo] {
+  font-size: 16px;
+  opacity: 1;
+}
+/* Per-arrow spans inside #stripe-tip for lockstep lighting */
+.s-arrow {
+  display: inline-block;
+  opacity: 0.3;
+  transition: opacity 180ms ease;
+}
+.s-arrow.lit  { opacity: 1; }
+.s-arrow.done { opacity: 0.55; }
+
+/* ── Gradient veils (edge bleed) ────────────────────────────────────────── */
+.veil {
+  position: absolute;
+  z-index: 8;
+  pointer-events: none;
+  transition: opacity 200ms;
+}
+#veil-n {
+  top: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+}
+#veil-s {
+  bottom: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+}
+#veil-e {
+  top: 0; bottom: 0; right: 0;
+  width: 120px;
+  background: linear-gradient(to right, transparent 0%, var(--bg) 100%);
+}
+#veil-w {
+  top: 0; bottom: 0; left: 0;
+  width: 120px;
+  background: linear-gradient(to left, transparent 0%, var(--bg) 100%);
+}
+/* Grip held — veils brighten and collapse to 80px to signal scroll mode armed */
+body.grip-held #veil-n { height: 80px; }
+body.grip-held #veil-s { height: 80px; }
+body.grip-held #veil-e { width: 80px; }
+body.grip-held #veil-w { width: 80px; }
+
+/* ── Ghost peek columns (adjacent-page peek behind E/W veils) ────────────── */
+/* z-index 3 = below main grid (5) and veils (8); veils fade them naturally */
+.ghost-col {
+  position: absolute;
+  top: 142px;   /* aligns with grid-canvas top */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.18;
+  transition: opacity 200ms;
+}
+.ghost-col:empty { display: none; }
+#ghost-prev { left: 110px; }
+#ghost-next { right: 110px; }
+.ghost-cell {
+  width: 72px;
+  height: 136px;
+  display: grid;
+  place-items: center;
+}
+.ghost-tile {
+  width: 64px; height: 64px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.ghost-favicon {
+  width: 38px; height: 38px;
+  object-fit: contain;
+  display: block;
+}
+.ghost-glyph {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+/* First-launch hint uses #stripe-tip (same element / style as combo tips) */
+
+/* ── Focus ring (accessibility, not VR-primary) ─────────────────────────── */
+*:focus { outline: none; }
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--accent-glow);
+}

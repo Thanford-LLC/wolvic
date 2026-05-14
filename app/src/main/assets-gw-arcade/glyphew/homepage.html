@@ -2,348 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=1280, height=720, user-scalable=no">
   <title>Glyphew</title>
   <link rel="stylesheet" href="_design-vars.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 36px;
-    }
-
-    /* ── Header ─────────────────────────────────────────── */
-    header { text-align: center; }
-
-    .logo {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      color: var(--accent);
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .search-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      background: var(--surface);
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 18px;
-      width: 500px;
-      gap: 12px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      overflow: hidden;
-    }
-
-    /* Arcade signature: subtle 4% opacity scanline overlay on surfaces — CRT memory */
-    .search-wrap::after,
-    .cell::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: repeating-linear-gradient(
-        to bottom,
-        rgba(255, 255, 255, 0.04) 0,
-        rgba(255, 255, 255, 0.04) 1px,
-        transparent 1px,
-        transparent 3px
-      );
-      pointer-events: none;
-      border-radius: inherit;
-    }
-
-    .search-wrap:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 4px var(--accent-glow);
-    }
-
-    .search-wrap svg { flex-shrink: 0; opacity: 0.5; }
-
-    #search {
-      flex: 1;
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 20px;
-      outline: none;
-      position: relative;
-      z-index: 1;
-    }
-
-    #search::placeholder { color: var(--text-muted); }
-
-    /* ── Shortcut grid ──────────────────────────────────── */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 156px);
-      grid-template-rows: repeat(3, 136px);
-      gap: 14px;
-    }
-
-    .cell {
-      position: relative;
-      background: var(--surface);
-      border: 2px solid var(--border);
-      border-radius: var(--radius);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
-      outline: none;
-      overflow: hidden;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .cell .icon {
-      font-size: 34px;
-      line-height: 1;
-      position: relative;
-      z-index: 1;
-    }
-
-    .cell .label {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-muted);
-      transition: color 0.15s;
-      position: relative;
-      z-index: 1;
-    }
-
-    .cell.focused,
-    .cell:hover {
-      border-color: var(--accent);
-      background: var(--surface-hi);
-      transform: scale(1.05);
-      box-shadow: 0 0 24px var(--accent-glow);
-    }
-
-    .cell.focused .label,
-    .cell:hover .label {
-      color: var(--text);
-    }
-
-    [data-action="new-tab"] .icon {
-      font-size: 40px;
-      font-weight: 300;
-      color: var(--accent);
-    }
-
-    /* ── Footer hint ────────────────────────────────────── */
-    footer {
-      color: var(--text-muted);
-      font-size: 13px;
-      text-align: center;
-      line-height: 1.8;
-    }
-
-    footer kbd {
-      display: inline-block;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      padding: 1px 7px;
-      font-size: 12px;
-      color: var(--accent);
-      font-family: inherit;
-    }
-  </style>
+  <link rel="stylesheet" href="homepage.css">
 </head>
 <body>
+  <div id="app">
 
-  <header>
-    <div class="logo">Glyphew</div>
-    <div class="search-wrap">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="8.5" cy="8.5" r="5.5" stroke="var(--accent)" stroke-width="2"/>
-        <path d="M13 13l4 4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <input id="search" type="text" placeholder="Search or enter address" autocomplete="off" spellcheck="false">
-    </div>
-  </header>
+    <!-- Brand glyph as inline symbol — works under both Chromium data: URIs and Gecko resource:// -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <symbol id="gw-glyph" viewBox="0 0 604 677">
+          <g transform="translate(-119.176506,768.731228) scale(0.1,-0.1)" fill="currentColor">
+            <path d="M3405 7680 c-224 -45 -436 -330 -358 -480 35 -69 82 -49 140 60 54 101 164 94 220 -13 16 -33 28 -762 13 -803 -53 -139 -198 57 -230 310 -21 168 -113 317 -164 266 -35 -35 -18 -572 24 -775 25 -121 38 -418 21 -480 -24 -91 -164 -181 -397 -259 -45 -15 -111 -45 -148 -67 -36 -22 -105 -53 -153 -70 -49 -17 -104 -39 -123 -49 -19 -9 -77 -29 -127 -43 -51 -15 -124 -43 -163 -62 -38 -19 -105 -47 -147 -60 -43 -14 -112 -48 -155 -76 -78 -52 -237 -123 -341 -153 -179 -52 -164 -176 32 -275 207 -103 334 -94 501 38 179 140 301 214 399 240 45 12 141 53 218 93 362 185 448 228 482 239 20 7 72 31 116 54 94 49 252 84 308 68 70 -20 75 -41 70 -320 -6 -333 -4 -327 -168 -512 -27 -31 -95 -123 -149 -206 -55 -82 -130 -186 -166 -230 -37 -44 -80 -100 -95 -125 -15 -25 -51 -70 -79 -101 -49 -54 -110 -126 -181 -219 -20 -25 -51 -77 -69 -116 -19 -39 -47 -87 -63 -105 -16 -19 -40 -50 -53 -69 -13 -19 -40 -53 -60 -76 -20 -22 -50 -62 -65 -90 -16 -27 -43 -69 -60 -94 -18 -25 -43 -65 -55 -90 -24 -47 -101 -151 -156 -210 -198 -211 -193 -438 13 -535 125 -59 236 -117 268 -141 170 -125 168 -76 -3 94 -201 199 -215 250 -99 363 39 38 69 81 148 214 9 17 23 50 29 75 7 25 27 73 46 106 19 34 41 85 50 115 10 32 28 65 48 83 17 17 68 65 112 107 66 62 83 84 94 124 16 57 122 218 162 246 15 11 46 51 67 88 22 37 47 74 57 82 9 7 38 45 64 84 185 274 387 286 360 23 -22 -222 25 -2250 55 -2386 39 -173 -241 -277 -356 -131 -83 105 -272 279 -303 279 -42 0 -35 -42 17 -98 24 -26 61 -73 81 -105 21 -31 65 -79 98 -105 34 -26 77 -71 97 -101 22 -34 53 -65 81 -81 38 -22 47 -34 60 -75 25 -84 183 -225 251 -225 102 0 107 25 103 505 -6 648 -10 766 -34 930 -28 189 -39 886 -20 1290 7 138 13 293 15 345 1 66 7 107 20 135 14 31 20 80 26 218 12 279 18 291 359 647 174 182 333 352 415 443 44 49 98 102 121 118 23 16 62 57 87 91 61 85 142 160 213 196 44 23 78 52 134 116 41 48 96 100 122 117 25 16 52 37 59 45 7 9 38 28 68 44 56 28 163 111 256 200 28 26 91 76 140 111 50 35 109 80 133 101 24 20 66 44 94 54 34 11 66 32 97 64 52 53 166 129 250 166 30 14 69 35 85 48 160 121 341 119 376 -4 21 -73 -33 -438 -78 -533 -22 -45 -47 -102 -56 -127 -9 -25 -34 -67 -55 -93 -22 -26 -49 -73 -61 -105 -12 -31 -38 -84 -60 -117 -150 -237 -163 -351 -37 -330 139 23 282 167 317 318 29 125 55 168 183 305 60 64 128 142 151 172 22 30 83 100 134 155 248 266 197 534 -143 757 -166 108 -406 90 -582 -44 -32 -25 -101 -75 -153 -113 -52 -38 -111 -83 -130 -101 -19 -17 -57 -43 -85 -57 -27 -14 -104 -69 -170 -122 -66 -53 -131 -103 -145 -110 -14 -7 -36 -25 -50 -40 -14 -15 -54 -47 -90 -71 -107 -73 -192 -144 -335 -283 -75 -72 -167 -154 -204 -181 -38 -28 -71 -56 -74 -64 -3 -8 -32 -32 -64 -54 -58 -40 -118 -99 -164 -160 -14 -18 -48 -47 -76 -65 -107 -68 -215 -151 -241 -186 -55 -74 -196 -218 -266 -270 -39 -29 -113 -94 -164 -143 -121 -117 -202 -120 -248 -11 -23 53 -19 307 6 402 49 188 60 259 60 372 0 63 7 186 15 274 8 88 19 248 24 355 8 164 15 216 42 330 55 227 50 325 -24 465 -110 207 -242 289 -412 255z m127 -6555 c13 -30 -11 -75 -42 -75 -30 0 -53 41 -41 74 14 36 66 37 83 1z"/>
+          </g>
+        </symbol>
+      </defs>
+    </svg>
 
-  <div class="grid" id="grid" role="list" aria-label="Shortcuts">
-    <div class="cell" tabindex="0" role="listitem" data-url="https://www.google.com" aria-label="Google">
-      <div class="icon">🌐</div>
-      <div class="label">Google</div>
+    <!-- Screen header: kind label + row title + page dots (populated by JS) -->
+    <div id="screen-header" aria-live="polite">
+      <span id="header-kind"></span>
+      <span id="header-title"></span>
+      <div id="header-dots"></div>
     </div>
-    <div class="cell focused" tabindex="0" role="listitem" data-action="focus-search" aria-label="Search">
-      <div class="icon">🔍</div>
-      <div class="label">Search</div>
+
+    <!-- Left rail: category + bookmark folder tabs (populated by JS) -->
+    <nav id="row-rail" aria-label="Categories"></nav>
+
+    <!-- Vertical nav chevrons — JS hides them at extents -->
+    <div id="chevron-n" class="chevron" aria-hidden="true">▲</div>
+    <div id="chevron-s" class="chevron" aria-hidden="true">▼</div>
+
+    <!-- Ghost peek columns — adjacent-page tiles behind E/W veils (populated by JS) -->
+    <div id="ghost-prev" class="ghost-col" aria-hidden="true"></div>
+    <div id="ghost-next" class="ghost-col" aria-hidden="true"></div>
+
+    <!-- 3×3 grid viewport — JS swaps #grid-canvas content on row/page change -->
+    <div id="grid-viewport">
+      <div id="grid-canvas"></div>
     </div>
-    <div class="cell" tabindex="0" role="listitem" data-url="about:bookmarks" aria-label="Bookmarks">
-      <div class="icon">⭐</div>
-      <div class="label">Bookmarks</div>
-    </div>
-    <div class="cell" tabindex="0" role="listitem" data-url="https://www.youtube.com" aria-label="YouTube">
-      <div class="icon">▶️</div>
-      <div class="label">YouTube</div>
-    </div>
-    <div class="cell" tabindex="0" role="listitem" data-action="new-tab" aria-label="New Tab">
-      <div class="icon">+</div>
-      <div class="label">New Tab</div>
-    </div>
-    <div class="cell" tabindex="0" role="listitem" data-url="about:history" aria-label="History">
-      <div class="icon">🕐</div>
-      <div class="label">History</div>
-    </div>
-    <div class="cell" tabindex="0" role="listitem" data-url="https://www.reddit.com" aria-label="Reddit">
-      <div class="icon">📰</div>
-      <div class="label">Reddit</div>
-    </div>
-    <div class="cell" tabindex="0" role="listitem" data-url="about:settings" aria-label="Settings">
-      <div class="icon">⚙️</div>
-      <div class="label">Settings</div>
-    </div>
-    <div class="cell" tabindex="0" role="listitem" data-url="https://github.com" aria-label="GitHub">
-      <div class="icon">🐙</div>
-      <div class="label">GitHub</div>
-    </div>
+
+    <!-- 4 edge gradient veils — 120px, collapse to 80px when body.grip-held -->
+    <div id="veil-n" class="veil" aria-hidden="true"></div>
+    <div id="veil-s" class="veil" aria-hidden="true"></div>
+    <div id="veil-e" class="veil" aria-hidden="true"></div>
+    <div id="veil-w" class="veil" aria-hidden="true"></div>
+
+    <!-- Stripe tip — combo/hint label at VR subtitle zone (populated by JS) -->
+    <span id="stripe-tip"></span>
+
+    <!-- First-launch hint shown via #stripe-tip (same element as combo tips) -->
+
   </div>
-
-  <footer>
-    <kbd>Joystick</kbd> to navigate grid &nbsp;·&nbsp;
-    <kbd>Grip + pattern</kbd> for browser combos &nbsp;·&nbsp;
-    <kbd>Click</kbd> to open
-  </footer>
-
-  <script>
-    'use strict';
-
-    const COLS = 3;
-    const grid = document.getElementById('grid');
-    const cells = Array.from(grid.querySelectorAll('.cell'));
-    let focused = cells.findIndex(c => c.classList.contains('focused'));
-    if (focused < 0) focused = 1;
-
-    function setFocus(idx) {
-      const next = Math.max(0, Math.min(cells.length - 1, idx));
-      if (next === focused) return;
-      cells[focused].classList.remove('focused');
-      focused = next;
-      cells[focused].classList.add('focused');
-    }
-
-    const SCROLL_THRESHOLD = 36;
-    let accumX = 0, accumY = 0;
-
-    window.addEventListener('wheel', e => {
-      e.preventDefault();
-
-      accumX += e.deltaX;
-      accumY += e.deltaY;
-
-      const row = Math.floor(focused / COLS);
-      const col = focused % COLS;
-
-      if (accumY >= SCROLL_THRESHOLD) {
-        accumY = 0;
-        setFocus((Math.min(2, row + 1)) * COLS + col);
-      } else if (accumY <= -SCROLL_THRESHOLD) {
-        accumY = 0;
-        setFocus((Math.max(0, row - 1)) * COLS + col);
-      }
-
-      if (accumX >= SCROLL_THRESHOLD) {
-        accumX = 0;
-        setFocus(row * COLS + Math.min(2, col + 1));
-      } else if (accumX <= -SCROLL_THRESHOLD) {
-        accumX = 0;
-        setFocus(row * COLS + Math.max(0, col - 1));
-      }
-    }, { passive: false });
-
-    window.addEventListener('keydown', e => {
-      if (document.activeElement === document.getElementById('search')) return;
-
-      const row = Math.floor(focused / COLS);
-      const col = focused % COLS;
-
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault();
-          setFocus(Math.max(0, row - 1) * COLS + col);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setFocus(Math.min(2, row + 1) * COLS + col);
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          setFocus(row * COLS + Math.max(0, col - 1));
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          setFocus(row * COLS + Math.min(2, col + 1));
-          break;
-        case 'Enter':
-        case ' ':
-          e.preventDefault();
-          activate(cells[focused]);
-          break;
-      }
-    });
-
-    cells.forEach((cell, i) => {
-      cell.addEventListener('pointerdown', () => setFocus(i));
-      cell.addEventListener('click', () => activate(cell));
-      cell.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(cell); }
-      });
-    });
-
-    function activate(cell) {
-      const url    = cell.dataset.url;
-      const action = cell.dataset.action;
-
-      if (action === 'focus-search') {
-        document.getElementById('search').focus();
-        document.getElementById('search').select();
-      } else if (action === 'new-tab') {
-        window.open('about:blank', '_blank');
-      } else if (url) {
-        window.location.href = url;
-      }
-    }
-
-    const searchInput = document.getElementById('search');
-
-    searchInput.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        searchInput.blur();
-        return;
-      }
-      if (e.key !== 'Enter') return;
-
-      const raw = searchInput.value.trim();
-      if (!raw) return;
-
-      const looksLikeUrl = /^[a-z][a-z0-9+\-.]*:\/\//i.test(raw) ||
-                           (/\.\S+/.test(raw) && !/\s/.test(raw));
-
-      window.location.href = looksLikeUrl
-        ? (raw.startsWith('http') ? raw : 'https://' + raw)
-        : 'https://www.google.com/search?q=' + encodeURIComponent(raw);
-    });
-  </script>
+  <!-- __GW_MODE__ -->
+  <script src="homepage.js"></script>
 </body>
 </html>

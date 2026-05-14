@@ -180,11 +180,14 @@ public class ComboDispatcher {
             if (COMBO_MODE_4DIR_KEY.equals(key)) {
                 pushModeToNative();
                 stampBindingChange(null);
-                // Push the new mode to any open homepage tab so the hub updates without a reload.
-                boolean is8Dir = !prefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
-                String js = "window.__gwSetComboMode&&window.__gwSetComboMode(" + is8Dir + ")";
+                // Reload home page on all sessions currently showing it so they pick up the
+                // new is8Dir flag immediately. evaluateJavaScript(__gwSetComboMode) is unreliable
+                // on Chromium for data: URI pages; a full reload is clean and always correct.
                 SessionStore.get().getSessions(false).forEach(s -> {
-                    if (s.isOnHomePage()) s.evaluateJavaScript(js);
+                    if (com.igalia.wolvic.utils.UrlUtils.ABOUT_HOME.equalsIgnoreCase(
+                            s.getCurrentUri())) {
+                        s.loadHomePage();
+                    }
                 });
             }
         };
@@ -800,6 +803,14 @@ public class ComboDispatcher {
     private void scroll(float deltaX, float deltaY) {
         WindowWidget win = focusedWindow();
         if (win == null) return;
+        // Dispatch the scroll event directly to the window for all pages including home.
+        // The homepage wheel listener (window.addEventListener('wheel', ...)) handles
+        // AXIS_VSCROLL/HSCROLL via Chromium's native scroll path — no evaluateJavaScript needed.
+        // Sign mapping (AXIS_VSCROLL > 0 = scroll-up → DOM deltaY < 0 → changeRow(-1)):
+        //   deltaY>0 (A_SCROLL_UP)    → prev category
+        //   deltaY<0 (A_SCROLL_DOWN)  → next category
+        //   deltaX<0 (A_SCROLL_LEFT)  → prev page
+        //   deltaX>0 (A_SCROLL_RIGHT) → next page
         MotionEventGenerator.dispatchScroll(win, 0, true, deltaX, deltaY);
     }
 

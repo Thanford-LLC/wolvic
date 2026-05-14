@@ -195,7 +195,8 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     // (committed path, dispatcher bindings); both are invalidated via version
     // bumps. drawGhostLayer reads mGhostScratch[0..mGhostCount) per frame with
     // zero allocation.
-    private static final int GHOST_CAP = 5;
+    // 8 directions + 1 possible re-strike = 9 max in 8-dir mode.
+    private static final int GHOST_CAP = 9;
     private final GhostEntry[] mGhostScratch = new GhostEntry[GHOST_CAP];
     private int mGhostCount = 0;
     private int mGhostCommittedPathVersion = 0;

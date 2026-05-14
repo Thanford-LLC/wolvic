@@ -29,7 +29,7 @@ public class HomePrefs {
     private static final String KEY_LAST_ROW       = "last_row_index";
     private static final String KEY_LAST_COL       = "last_col_index";
 
-    // ComboDispatcher stores this in the default SharedPreferences (PreferenceManager).
+    // ComboDispatcher stores this in the default (PreferenceManager) prefs, not a named file.
     private static final String KEY_4DIR_MODE = "glyphew_combo_4dir_mode";
 
     private final SharedPreferences mPrefs;
