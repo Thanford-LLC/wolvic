@@ -31,7 +31,20 @@ Same Gradle flow as upstream Wolvic. The combo engine is pulled into `app/CMakeL
 ./gradlew :app:assembleOculusvrArm64ChromiumGenericDebug
 ```
 
-Chromium backend is the default for Glyphew dev/test builds — its WebXR + immersive-session handling is more current than GeckoView (Mozilla's GV WebXR work has been largely frozen).
+Chromium backend is the default for Glyphew dev/test builds (`defaultPublishConfig` in `app/build.gradle`). Its WebXR + immersive-session handling is more current than GeckoView.
+
+**Chromium requires a local AAR.** The AAR lives on a mounted disk image:
+
+```bash
+# If the build fails with "Chromium AAR directory not found":
+sudo mount /mnt/chromium-build/chromium-aars
+```
+
+The build will fail with a clear error message if `chromium_aar` is set in `local.properties` but the directory doesn't exist (e.g., after a reboot without remounting). To build Gecko instead (no AAR needed), remove the `chromium_aar` line from `local.properties`.
+
+**`verifyBackendConfig`** runs on every build and asserts:
+- `applicationId == "com.thanford.glyphew"` — fails loudly on any identity drift.
+- Logs the resolved backend (chromium/gecko) so you can confirm which variant you're building.
 
 ### 2.2 Install
 ```bash
