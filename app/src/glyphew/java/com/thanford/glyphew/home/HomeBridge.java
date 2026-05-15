@@ -42,7 +42,7 @@ import java.util.Locale;
  *   @JavascriptInterface methods run on the JS-binder thread.
  *   All Session/WSession calls are marshalled via mHandler to the UI thread.
  */
-public class HomeBridge {
+public class HomeBridge implements BookmarksStore.BookmarkListener {
 
     private static final Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -50,6 +50,8 @@ public class HomeBridge {
     private final Context            mContext;
     private final HomePrefs          mPrefs;
     private final BrowserIconsHelper mIcons;
+    /** Non-null when a BookmarksStore is available; holds the listener registration. */
+    private @Nullable BookmarksStore mRegisteredStore;
 
     public HomeBridge(@NonNull Context context, @NonNull Session session,
                       @NonNull HomePrefs prefs, @NonNull BrowserIconsHelper icons) {
@@ -57,11 +59,38 @@ public class HomeBridge {
         mSession = session;
         mPrefs   = prefs;
         mIcons   = icons;
+        final BookmarksStore store = session.getBookmarksStore();
+        if (store != null) {
+            store.addListener(this);
+            mRegisteredStore = store;
+        }
     }
 
     /** Called when navigating away from the homepage. Nulls the Session ref. */
     public void detach() {
         mSession = null;
+        if (mRegisteredStore != null) {
+            mRegisteredStore.removeListener(this);
+            mRegisteredStore = null;
+        }
+    }
+
+    // ── BookmarksStore.BookmarkListener ─────────────────────────────────────
+
+    @Override
+    public void onBookmarksUpdated() { pushRefresh(); }
+
+    @Override
+    public void onBookmarkAdded() { pushRefresh(); }
+
+    private void pushRefresh() {
+        mHandler.post(() -> {
+            final Session s = mSession;
+            if (s != null) {
+                s.evaluateJavaScript(
+                        "window.__gwRefreshBookmarks && window.__gwRefreshBookmarks();");
+            }
+        });
     }
 
     // ── Sync methods ───────────────────────────────────────────────────────
@@ -128,6 +157,65 @@ public class HomeBridge {
     }
 
     // ── Async methods ──────────────────────────────────────────────────────
+
+    /**
+     * Returns two bookmark categories as a JSON array: Combo Bookmarks (if non-empty) then
+     * Standard Bookmarks (if non-empty). Each category uses the same page structure as the
+     * static catalog — an array of pages, each page up to 8 tile objects.
+     *
+     * <p>Replaces {@link #getFolders(String)} which is now removed from the public JS API.
+     */
+    @JavascriptInterface
+    public void getBookmarkCategories(final String requestId) {
+        final Session s = mSession;
+        if (s == null) { resolveOnUiThread(requestId, "[]"); return; }
+
+        final BookmarksStore store = s.getBookmarksStore();
+        if (store == null) { resolveOnUiThread(requestId, "[]"); return; }
+
+        store.ensureComboBookmarksFolder().thenCompose(comboGuid -> {
+            // Fetch combo items and mobile root items in parallel, then merge.
+            java.util.concurrent.CompletableFuture<java.util.List<BookmarkNode>> comboFuture =
+                    store.getBookmarks(comboGuid)
+                         .thenApply(nodes -> nodes != null ? nodes : java.util.Collections.<BookmarkNode>emptyList());
+
+            java.util.concurrent.CompletableFuture<java.util.List<BookmarkNode>> mobileFuture =
+                    store.getBookmarks(mozilla.appservices.places.BookmarkRoot.Mobile.getId())
+                         .thenApply(nodes -> nodes != null ? nodes : java.util.Collections.<BookmarkNode>emptyList());
+
+            return comboFuture.thenCombine(mobileFuture, (comboItems, mobileItems) -> {
+                try {
+                    JSONArray result = new JSONArray();
+
+                    // Combo Bookmarks — only if non-empty
+                    if (!comboItems.isEmpty()) {
+                        JSONArray serialized = serializeBookmarkItems(comboItems);
+                        result.put(buildBookmarkCategory(
+                                "combo-bookmarks", BookmarksStore.COMBO_BOOKMARKS_TITLE,
+                                serialized, true));
+                    }
+
+                    // Standard Bookmarks — Mobile root ITEMs only, excluding the combo subfolder
+                    java.util.List<BookmarkNode> standard = new java.util.ArrayList<>();
+                    for (BookmarkNode node : mobileItems) {
+                        if (node == null) continue;
+                        if (node.getType() != BookmarkNodeType.ITEM) continue;
+                        standard.add(node);
+                    }
+                    if (!standard.isEmpty()) {
+                        JSONArray serialized = serializeBookmarkItems(standard);
+                        result.put(buildBookmarkCategory(
+                                "bookmarks", "Bookmarks", serialized, false));
+                    }
+
+                    return result.toString();
+                } catch (JSONException e) {
+                    return "[]";
+                }
+            });
+        }).thenAccept(json -> resolveOnUiThread(requestId, json))
+          .exceptionally(e -> { resolveOnUiThread(requestId, "[]"); return null; });
+    }
 
     @JavascriptInterface
     public void getFolders(final String requestId) {
@@ -221,6 +309,59 @@ public class HomeBridge {
     }
 
     // ── Serialization ──────────────────────────────────────────────────────
+
+    /**
+     * Builds a category JSON object for the homepage catalog from bookmark items.
+     * Each page holds up to 8 tiles; items overflow into additional pages.
+     *
+     * <p>Package-visible so tests can exercise pagination without Android context.
+     */
+    @NonNull
+    static JSONObject buildBookmarkCategory(
+            @NonNull String id, @NonNull String title,
+            @NonNull JSONArray items, boolean isCombo) throws JSONException {
+        final int PAGE_SIZE = 8;
+        final JSONObject cat = new JSONObject();
+        cat.put("id",    id);
+        cat.put("title", title);
+        cat.put("icon",  "★");
+        cat.put("kind",  isCombo ? "combo_bookmark" : "user");
+
+        final JSONArray pages = new JSONArray();
+        JSONArray currentPage = null;
+        for (int i = 0; i < items.length(); i++) {
+            if (currentPage == null || currentPage.length() >= PAGE_SIZE) {
+                currentPage = new JSONArray();
+                pages.put(currentPage);
+            }
+            currentPage.put(items.getJSONObject(i));
+        }
+        cat.put("pages", pages);
+        return cat;
+    }
+
+    @NonNull
+    private static JSONArray serializeBookmarkItems(@NonNull List<BookmarkNode> nodes)
+            throws JSONException {
+        final JSONArray result = new JSONArray();
+        for (BookmarkNode node : nodes) {
+            if (node == null) continue;
+            final JSONObject tile = new JSONObject();
+            final String url   = node.getUrl()   != null ? node.getUrl()   : "";
+            final String titleStr = node.getTitle() != null ? node.getTitle() : "";
+            tile.put("url",    url);
+            tile.put("title",  titleStr);
+            tile.put("guid",   node.getGuid() != null ? node.getGuid() : "");
+            tile.put("name",   titleStr.isEmpty() ? url : titleStr);
+            tile.put("domain", url.replaceFirst("^https?://", "").split("/")[0]);
+            tile.put("icon",   (Object) null); // async favicon loaded by homepage.js
+            tile.put("color",  (Object) null);
+            tile.put("letter", titleStr.isEmpty() ? "B"
+                    : String.valueOf(titleStr.charAt(0)).toUpperCase(Locale.ROOT));
+            result.put(tile);
+        }
+        return result;
+    }
 
     @NonNull
     private static String serializeFolders(@Nullable List<BookmarkNode> nodes) {

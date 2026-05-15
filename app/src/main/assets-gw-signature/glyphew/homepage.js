@@ -388,18 +388,38 @@ function makeSiteCell(site, outerIdx) {
   var img = document.createElement('img');
   img.className = 'cell-favicon';
   img.alt = site.name;
-  img.src = 'icons/' + site.icon;
-  img.addEventListener('error', function() {
-    if (window.gwHome && typeof window.gwHome.getIcon === 'function') {
-      var dataUrl = window.gwHome.getIcon(site.icon);
-      if (dataUrl) { img.src = dataUrl; return; }
-    }
+
+  function showGlyph() {
     img.style.display = 'none';
     var glyph = document.createElement('div');
     glyph.className = 'cell-glyph';
     glyph.textContent = site.letter || site.name[0];
     tile.insertBefore(glyph, tile.firstChild);
-  });
+  }
+
+  if (!site.icon && site.url && window.gwHome && typeof window.gwHome.getFavicon === 'function') {
+    // Async favicon for user bookmarks (no bundled icon file)
+    var reqId = 'fav' + Date.now() + Math.random();
+    img.src = '';
+    img.style.display = 'none';
+    window['__gwFavicon_' + reqId] = function(dataUrl) {
+      delete window['__gwFavicon_' + reqId];
+      if (dataUrl) { img.src = dataUrl; img.style.display = ''; }
+      else showGlyph();
+    };
+    bridgeCall('getFavicon', site.url).then(function(dataUrl) {
+      if (window['__gwFavicon_' + reqId]) window['__gwFavicon_' + reqId](dataUrl || '');
+    });
+  } else {
+    img.src = 'icons/' + site.icon;
+    img.addEventListener('error', function() {
+      if (window.gwHome && typeof window.gwHome.getIcon === 'function') {
+        var dataUrl = window.gwHome.getIcon(site.icon);
+        if (dataUrl) { img.src = dataUrl; return; }
+      }
+      showGlyph();
+    });
+  }
   tile.appendChild(img);
   cell.appendChild(tile);
 
@@ -921,7 +941,7 @@ window.gwHome._resolve = function(id, json) {
 
 // ── Bridge upgrade on load ─────────────────────────────────────────────────
 function tryBridgeUpgrade() {
-  if (!window.gwHome || typeof window.gwHome.getFolders !== 'function') return;
+  if (!window.gwHome || typeof window.gwHome.getBookmarkCategories !== 'function') return;
 
   bridgeCall('getPrefs').then(function(prefs) {
     if (!prefs) return;
@@ -946,33 +966,30 @@ function tryBridgeUpgrade() {
     render({});
   });
 
-  bridgeCall('getFolders').then(function(folders) {
-    if (!folders || !folders.length) return;
-    var userRows = folders.map(function(f) {
+  bridgeCall('getBookmarkCategories').then(function(categories) {
+    if (!categories || !categories.length) return;
+    // Bridge already returns properly-paginated pages arrays (8 tiles/page).
+    // Map to the catalog entry format used by the static catalog.
+    var userRows = categories.map(function(cat) {
       return {
-        id:    'bm-' + (f.guid || f.title),
-        title: f.title || 'Bookmarks',
-        kind:  'user',
-        icon:  '★',
-        pages: [
-          (f.items || []).slice(0, 8).map(function(item) {
-            return {
-              name:   item.title || item.url,
-              domain: (item.url || '').replace(/^https?:\/\//, '').split('/')[0],
-              icon:   null,
-              color:  null,
-              letter: (item.title || 'B')[0].toUpperCase(),
-              url:    item.url,
-            };
-          }),
-        ],
+        id:    cat.id,
+        title: cat.title,
+        kind:  cat.kind || 'user',
+        icon:  cat.icon || '★',
+        pages: (cat.pages || []),
       };
     });
     state.catalog = userRows.concat(STATIC_CATALOG);
-    state.rowIndex = userRows.length;
+    state.rowIndex = 0; // land on first user row (Combo Bookmarks or Standard Bookmarks)
     render({});
   });
 }
+
+// Called by HomeBridge via evaluateJavaScript when bookmarks change while the homepage is visible.
+window.__gwRefreshBookmarks = function() {
+  tryBridgeUpgrade();
+  render({});
+};
 
 // Called by ComboDispatcher via evaluateJavaScript when the mode is toggled at runtime.
 window.__gwSetComboMode = function(is8Dir) {
