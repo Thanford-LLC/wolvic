@@ -242,6 +242,11 @@ const state = {
 var _hubSlideIdx   = 0;
 var _hubTipIdx     = 0;
 var _hubSlideTimer = null;
+
+// Position saved before site navigation so the homepage restores its row/page on back.
+// -1 means no saved position; getBookmarkCategories reads and clears these.
+var _savedRow  = -1;
+var _savedPage = 0;
 var _slideQueue    = [];  // shuffled index queue for random combo order
 var _stepTimers    = [];  // setTimeout IDs for per-arrow stripe lighting
 
@@ -810,6 +815,9 @@ function activateOuter(outerIdx) {
 
   setTimeout(function() {
     var url = site.url || ('https://' + site.domain);
+    if (window.gwHome && typeof window.gwHome.setLastPosition === 'function') {
+      window.gwHome.setLastPosition(String(state.rowIndex), String(state.pageIndex));
+    }
     window.location.href = url;
   }, 80);
 }
@@ -942,12 +950,11 @@ function tryBridgeUpgrade() {
   bridgeCall('getPrefs').then(function(prefs) {
     if (!prefs) return;
     if (prefs.hintSeen) dismissHint();
-    if (typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex < state.catalog.length) {
-      state.rowIndex = prefs.lastRowIndex;
-    }
-    if (typeof prefs.lastColIndex === 'number') {
-      var pages = currentRow().pages.length;
-      state.pageIndex = Math.min(prefs.lastColIndex, pages - 1);
+    // Capture saved position for getBookmarkCategories (which runs concurrently and fires last,
+    // so it would overwrite any rowIndex set here). Only capture when saved position is real.
+    if (typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex >= 0) {
+      _savedRow  = prefs.lastRowIndex;
+      _savedPage = typeof prefs.lastColIndex === 'number' ? prefs.lastColIndex : 0;
     }
     // Switch hub slide set based on combo mode pref
     if (typeof prefs.is4DirMode === 'boolean') {
@@ -976,7 +983,24 @@ function tryBridgeUpgrade() {
       };
     });
     state.catalog = userRows.concat(STATIC_CATALOG);
-    state.rowIndex = 0; // land on first user row (Combo Bookmarks or Standard Bookmarks)
+
+    // Restore saved position if valid; otherwise prefer Standard Bookmarks over
+    // Combo Bookmarks (combo bookmarks are always reachable via combos, so Standard
+    // Bookmarks is the more useful default landing row).
+    if (_savedRow >= 0 && _savedRow < state.catalog.length) {
+      state.rowIndex  = _savedRow;
+      var maxPage = state.catalog[_savedRow].pages.length - 1;
+      state.pageIndex = Math.min(_savedPage, maxPage < 0 ? 0 : maxPage);
+    } else {
+      var bookmarksIdx = -1;
+      for (var i = 0; i < userRows.length; i++) {
+        if (userRows[i].id === 'bookmarks') { bookmarksIdx = i; break; }
+      }
+      state.rowIndex  = bookmarksIdx >= 0 ? bookmarksIdx : 0;
+      state.pageIndex = 0;
+    }
+    _savedRow  = -1;
+    _savedPage = 0;
     render({});
   });
 }

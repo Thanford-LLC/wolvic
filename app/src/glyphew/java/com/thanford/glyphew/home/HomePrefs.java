@@ -80,7 +80,7 @@ public class HomePrefs {
     }
 
     public int getLastRowIndex() {
-        return mPrefs.getInt(KEY_LAST_ROW, 0);
+        return mPrefs.getInt(KEY_LAST_ROW, -1);
     }
 
     public int getLastColIndex() {
