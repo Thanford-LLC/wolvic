@@ -36,6 +36,8 @@ class BookmarksStore constructor(val context: Context) {
                 BookmarkRoot.Menu.id
         )
 
+        const val COMBO_BOOKMARKS_TITLE = "Combo Bookmarks"
+
         @JvmStatic
         fun allowDeletion(guid: String): Boolean {
             return coreRoots.contains(guid)
@@ -177,6 +179,36 @@ class BookmarksStore constructor(val context: Context) {
 
     fun searchBookmarks(query: String, limit: Int): CompletableFuture<List<BookmarkNode>> = GlobalScope.future {
         storage.searchBookmarks(query, limit)
+    }
+
+    // ── Phase 8b: Combo Bookmarks ─────────────────────────────────────────────
+
+    /**
+     * Returns the GUID of the Combo Bookmarks subfolder under Mobile root,
+     * creating it at position 0 if it does not yet exist. Idempotent.
+     */
+    fun ensureComboBookmarksFolder(): CompletableFuture<String> = GlobalScope.future {
+        val mobile = storage.getTree(BookmarkRoot.Mobile.id, recursive = false)
+        val existing = mobile?.children?.firstOrNull {
+            it.type == BookmarkNodeType.FOLDER && it.title == COMBO_BOOKMARKS_TITLE
+        }
+        existing?.guid ?: storage.addFolder(BookmarkRoot.Mobile.id, COMBO_BOOKMARKS_TITLE, 0u)
+    }
+
+    /**
+     * Adds a bookmark under [parentGuid] and returns its GUID. Unlike [addBookmark],
+     * this does not discard the GUID — callers need it to persist as [Binding.param].
+     */
+    @OptIn(ExperimentalUnsignedTypes::class)
+    fun addBookmarkReturningGuid(parentGuid: String, url: String, title: String): CompletableFuture<String> = GlobalScope.future {
+        val guid = storage.addItem(parentGuid, url, title, null)
+        notifyAddedListeners()
+        guid
+    }
+
+    /** Returns the [BookmarkNode] for [guid], or null if it has been deleted. */
+    fun getBookmarkByGuid(guid: String): CompletableFuture<BookmarkNode?> = GlobalScope.future {
+        storage.getBookmark(guid)
     }
 
     private suspend fun getBookmarkByUrl(aURL: String): BookmarkNode? {

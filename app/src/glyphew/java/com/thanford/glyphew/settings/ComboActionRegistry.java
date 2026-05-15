@@ -67,6 +67,10 @@ public final class ComboActionRegistry {
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_HUD,          ComboActionCategory.SPECIAL);
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_MODE,         ComboActionCategory.SPECIAL);
         CATEGORY_FOR_ACTION.put(ComboDispatcher.A_TOGGLE_GHOST_ROUTES, ComboActionCategory.SPECIAL);
+
+        // Phase 8b: Combo Bookmarks — born from FROM_CAPTURE on a non-Homepage URL,
+        // not from the generic action picker. Hidden from ActionPickerView.
+        CATEGORY_FOR_ACTION.put(ComboDispatcher.A_GOTO_BOOKMARK, ComboActionCategory.LIBRARY);
     }
 
     @StringRes
@@ -86,5 +90,13 @@ public final class ComboActionRegistry {
             ids[i] = CATEGORY_FOR_ACTION.keyAt(i);
         }
         return ids;
+    }
+
+    /** Actions excluded from ActionPickerView's generic picker (have dedicated capture flows). */
+    private static final java.util.Set<Integer> HIDDEN_FROM_GENERIC_PICKER =
+            new java.util.HashSet<>(java.util.Arrays.asList(ComboDispatcher.A_GOTO_BOOKMARK));
+
+    public static boolean isHiddenFromGenericPicker(int actionInt) {
+        return HIDDEN_FROM_GENERIC_PICKER.contains(actionInt);
     }
 }

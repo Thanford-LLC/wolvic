@@ -580,7 +580,7 @@ public class ComboDispatcher {
         }
         mPendingAXCapture = false; // Bound path found — discard any pending capture intent.
         if (mHapticController != null) mHapticController.fireLegalCombo();
-        runAction(action);
+        runAction(action, binding != null ? binding.param : null);
     }
 
     public boolean isCombo4DirMode() {
@@ -764,7 +764,7 @@ public class ComboDispatcher {
         return win != null ? win.getContext() : null;
     }
 
-    private void runAction(int action) {
+    private void runAction(int action, @Nullable String param) {
         switch (action) {
             case A_SCROLL_UP:      scroll(0,  SCROLL_DELTA);  break;
             case A_SCROLL_DOWN:    scroll(0, -SCROLL_DELTA);  break;
@@ -792,6 +792,23 @@ public class ComboDispatcher {
             case A_TOGGLE_HUD:          toggleHudVisible();     break;
             case A_TOGGLE_MODE:         toggleComboMode();      break;
             case A_TOGGLE_GHOST_ROUTES: toggleGhostRoutes();    break;
+            case A_GOTO_BOOKMARK: {
+                if (param == null) break; // unbound parametric — should never happen post-validation
+                SessionStore ss = SessionStore.get();
+                if (ss == null) break;
+                ss.getBookmarkStore().getBookmarkByGuid(param).thenAccept(node -> {
+                    if (node == null) {
+                        // Stale binding — purge silently; the listener in ComboBookmarkSync
+                        // will fire a reconcile pass on the next onBookmarksUpdated event.
+                        return;
+                    }
+                    mMainHandler.post(() -> {
+                        WindowWidget win = focusedWindow();
+                        if (win != null) win.getSession().loadUri(node.getUrl());
+                    });
+                });
+                break;
+            }
             default:               Log.d(LOGTAG, "No handler for action " + action); break;
         }
     }
