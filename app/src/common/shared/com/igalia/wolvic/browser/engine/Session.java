@@ -935,11 +935,20 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             // ~100 KB total across 64 PNGs → ~136 KB base64 — negligible page-size cost.
             String iconScript = buildIconMapScript();
             html = html.replace("<!-- __GW_ICONS__ -->", iconScript);
-            // Inject combo mode before the main script so init() reads it immediately.
-            boolean is8Dir = !new com.thanford.glyphew.home.HomePrefs(mContext).is4DirMode();
+            // Inject combo mode and last position before the main script so init() reads them
+            // immediately. Position is read from SharedPreferences in Java to avoid the async-IPC
+            // race where setLastPosition() may not have committed before loadHomePage() runs.
+            com.thanford.glyphew.home.HomePrefs gp =
+                new com.thanford.glyphew.home.HomePrefs(mContext);
+            boolean is8Dir = !gp.is4DirMode();
+            int lastRow = gp.getLastRowIndex();
+            int lastCol = gp.getLastColIndex();
+            Log.i(LOGTAG, "loadHomePage: injecting lastRow=" + lastRow + " lastCol=" + lastCol + " is8Dir=" + is8Dir);
             html = html.replace(
                 "<!-- __GW_MODE__ -->",
-                "<script>window.__gwIs8Dir=" + is8Dir + ";</script>");
+                "<script>window.__gwIs8Dir=" + is8Dir +
+                ";window.__gwLastRow=" + lastRow +
+                ";window.__gwLastCol=" + lastCol + ";</script>");
             html = html.replace(
                 "<script src=\"homepage.js\"></script>",
                 "<script>\n" + js + "\n</script>");
@@ -1005,17 +1014,6 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         } catch (java.io.IOException e) {
             Log.w(LOGTAG, "buildIconMapScript: failed", e);
             return "";
-        }
-    }
-
-    /** Convenience overload for evaluateJavaScript without a result callback. */
-    public void evaluateJavaScript(String script) {
-        try {
-            if (mState.mSession != null) {
-                mState.mSession.evaluateJavaScript(script, null);
-            }
-        } catch (UnsupportedOperationException ignored) {
-            // Gecko does not support evaluateJavaScript; silently skip.
         }
     }
 

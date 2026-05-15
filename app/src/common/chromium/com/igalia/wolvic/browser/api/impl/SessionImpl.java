@@ -57,6 +57,8 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
     private ReadyCallback mReadyCallback = new ReadyCallback();
     private UrlUtilsVisitor mUrlUtilsVisitor;
     private WSession.GetSessionFinderCallback mGetSessionFinderCallback;
+    // Interfaces queued before the Tab/WebContents is ready — applied in onReady().
+    private final Map<String, Object> mQueuedInterfaces = new java.util.LinkedHashMap<>();
 
     private void createSessionFinderIfNeeded() {
         if (mSessionFinder != null)
@@ -74,6 +76,14 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
                 createSessionFinderIfNeeded();
                 mGetSessionFinderCallback.onFinderAvailable(mSessionFinder);
                 mGetSessionFinderCallback = null;
+            }
+            // Register any queued JS interfaces before loading the initial URL so the
+            // bridge is available when the page scripts run.
+            if (!mQueuedInterfaces.isEmpty()) {
+                for (Map.Entry<String, Object> e : mQueuedInterfaces.entrySet()) {
+                    doAddJavascriptInterface(e.getValue(), e.getKey());
+                }
+                mQueuedInterfaces.clear();
             }
             if (mInitialUri != null) {
                 assert mWebContents == null;
@@ -540,16 +550,26 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
     public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {
         WebContents wc = resolveWebContents();
         if (wc == null) {
-            android.util.Log.w("SessionImpl", "addJavascriptInterface: wc null, " + name + " NOT registered");
+            android.util.Log.d("SessionImpl", "addJavascriptInterface: queuing " + name + " (wc not ready)");
+            mQueuedInterfaces.put(name, obj);
             return;
         }
-        android.util.Log.d("SessionImpl", "addJavascriptInterface: registering " + name);
+        doAddJavascriptInterface(obj, name);
+    }
+
+    private void doAddJavascriptInterface(@NonNull Object obj, @NonNull String name) {
+        WebContents wc = resolveWebContents();
+        if (wc == null) {
+            android.util.Log.w("SessionImpl", "doAddJavascriptInterface: wc null, " + name + " lost");
+            return;
+        }
+        android.util.Log.d("SessionImpl", "doAddJavascriptInterface: registering " + name);
         try {
             org.chromium.content_public.browser.JavascriptInjector injector =
                 org.chromium.content_public.browser.JavascriptInjector.fromWebContents(wc, false);
             injector.addPossiblyUnsafeInterface(obj, name, android.webkit.JavascriptInterface.class);
         } catch (Exception e) {
-            android.util.Log.e("SessionImpl", "addJavascriptInterface failed: " + e.getMessage());
+            android.util.Log.e("SessionImpl", "doAddJavascriptInterface failed: " + e.getMessage());
         }
     }
 

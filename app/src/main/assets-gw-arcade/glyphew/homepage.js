@@ -801,8 +801,16 @@ function applyFocus(outerIdx) {
 
 // ── Activation ─────────────────────────────────────────────────────────────
 function savePosition() {
-  if (window.gwHome && window.gwHome.setLastPosition) {
+  var hasGwHome = !!(window.gwHome);
+  var hasSetLast = !!(window.gwHome && window.gwHome.setLastPosition);
+  var hasDebug   = !!(window.gwHome && window.gwHome.debugLog);
+  var typeofSet  = window.gwHome ? typeof window.gwHome.setLastPosition : 'N/A';
+  if (hasDebug) {
+    window.gwHome.debugLog('savePosition row=' + state.rowIndex + ' hasGwHome=' + hasGwHome + ' hasSetLast=' + hasSetLast + ' typeof=' + typeofSet);
+  }
+  if (hasSetLast) {
     window.gwHome.setLastPosition(String(state.rowIndex), String(state.pageIndex));
+    if (hasDebug) window.gwHome.debugLog('setLastPosition called row=' + state.rowIndex);
   }
 }
 
@@ -811,7 +819,8 @@ function activateOuter(outerIdx) {
   var site = sites[outerIdx];
   if (!site) return;
 
-  // Save position before any async delay so it persists regardless of navigation mechanism.
+  // Sync globals immediately (Java polls them) and also fire the bridge call.
+  syncPositionGlobals();
   savePosition();
 
   var cells = gridCanvas.querySelectorAll('.cell');
@@ -856,6 +865,15 @@ function moveFocus(dir) {
   if (newOuter !== undefined) setFocus(newOuter);
 }
 
+// Globals read by HomeBridge.mPositionPoller via evaluateJavaScript every 2s.
+// Updated whenever position changes. -1 = not yet set (init before catalog loads).
+window.__gwRowIndex  = -1;
+window.__gwPageIndex = 0;
+function syncPositionGlobals() {
+  window.__gwRowIndex  = state.rowIndex;
+  window.__gwPageIndex = state.pageIndex;
+}
+
 // ── Row / page switching ───────────────────────────────────────────────────
 function changeRow(delta) {
   var len = state.catalog.length;
@@ -865,6 +883,7 @@ function changeRow(delta) {
   if (state.pageIndex >= pages) state.pageIndex = 0;
   dismissHint();
   render({ animate: true });
+  syncPositionGlobals();
   savePosition();
 }
 
@@ -875,6 +894,7 @@ function changePage(delta) {
   state.pageIndex = ((state.pageIndex + delta) % pages + pages) % pages;
   dismissHint();
   render({ animate: true });
+  syncPositionGlobals();
   savePosition();
 }
 
@@ -954,23 +974,13 @@ if (typeof window.gwHome === 'undefined') {
 // ── Bridge upgrade on load ─────────────────────────────────────────────────
 function tryBridgeUpgrade() {
   if (!window.gwHome || !window.gwHome.getBookmarkCategories) return;
+  if (window.gwHome.debugLog) {
+    window.gwHome.debugLog('tryBridgeUpgrade: __gwLastRow=' + window.__gwLastRow + ' _savedRow=' + _savedRow + ' rowIndex=' + state.rowIndex + ' hasSetLast=' + !!(window.gwHome.setLastPosition));
+  }
 
   bridgeCall('getPrefs').then(function(prefs) {
     if (!prefs) return;
     if (prefs.hintSeen) dismissHint();
-    // Capture saved position and apply it immediately. getBookmarkCategories also reads
-    // _savedRow after rebuilding the catalog (it fires last when bookmarks exist).
-    // Applying here covers the no-bookmarks path where getBookmarkCategories returns early.
-    if (typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex >= 0) {
-      _savedRow  = prefs.lastRowIndex;
-      _savedPage = typeof prefs.lastColIndex === 'number' ? prefs.lastColIndex : 0;
-      if (_savedRow < state.catalog.length) {
-        state.rowIndex  = _savedRow;
-        var maxPage = state.catalog[_savedRow].pages.length - 1;
-        state.pageIndex = Math.min(_savedPage, maxPage < 0 ? 0 : maxPage);
-      }
-    }
-    // Switch hub slide set based on combo mode pref
     if (typeof prefs.is4DirMode === 'boolean') {
       var newIs8Dir = !prefs.is4DirMode;
       if (newIs8Dir !== state.is8Dir) {
@@ -980,32 +990,47 @@ function tryBridgeUpgrade() {
         _slideQueue = [];
       }
     }
+    // Fallback: init() only gets valid position when loadHomePage() re-injected __gwLastRow.
+    // On history-cache navigation (returning home without a fresh loadHomePage call), __gwLastRow
+    // is stale (-1). Read live prefs from the bridge instead so restore always works.
+    if (_savedRow < 0 && typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex >= 0) {
+      _savedRow  = prefs.lastRowIndex;
+      _savedPage = typeof prefs.lastColIndex === 'number' ? prefs.lastColIndex : 0;
+      if (_savedRow < state.catalog.length) {
+        state.rowIndex  = _savedRow;
+        var maxPage = state.catalog[_savedRow].pages.length - 1;
+        state.pageIndex = Math.min(_savedPage, maxPage < 0 ? 0 : maxPage);
+        syncPositionGlobals();
+      }
+    }
     render({});
   });
 
   bridgeCall('getBookmarkCategories').then(function(categories) {
-    if (!categories || !categories.length) return;
-    // Bridge already returns properly-paginated pages arrays (8 tiles/page).
-    // Map to the catalog entry format used by the static catalog.
-    var userRows = categories.map(function(cat) {
-      return {
-        id:    cat.id,
-        title: cat.title,
-        kind:  cat.kind || 'user',
-        icon:  cat.icon || '★',
-        pages: (cat.pages || []),
-      };
-    });
-    state.catalog = userRows.concat(STATIC_CATALOG);
+    var userRows = [];
+    if (categories && categories.length) {
+      // Bridge already returns properly-paginated pages arrays (8 tiles/page).
+      // Map to the catalog entry format used by the static catalog.
+      userRows = categories.map(function(cat) {
+        return {
+          id:    cat.id,
+          title: cat.title,
+          kind:  cat.kind || 'user',
+          icon:  cat.icon || '★',
+          pages: (cat.pages || []),
+        };
+      });
+      state.catalog = userRows.concat(STATIC_CATALOG);
+    }
 
-    // Restore saved position if valid; otherwise prefer Standard Bookmarks over
-    // Combo Bookmarks (combo bookmarks are always reachable via combos, so Standard
-    // Bookmarks is the more useful default landing row).
+    // Restore saved position if valid. Runs whether or not bookmark categories exist so that
+    // history-cache navigation (no fresh loadHomePage injection) still lands on the right row.
     if (_savedRow >= 0 && _savedRow < state.catalog.length) {
       state.rowIndex  = _savedRow;
       var maxPage = state.catalog[_savedRow].pages.length - 1;
       state.pageIndex = Math.min(_savedPage, maxPage < 0 ? 0 : maxPage);
-    } else {
+    } else if (userRows.length > 0) {
+      // Prefer Standard Bookmarks row as default landing when no saved position.
       var bookmarksIdx = -1;
       for (var i = 0; i < userRows.length; i++) {
         if (userRows[i].id === 'bookmarks') { bookmarksIdx = i; break; }
@@ -1015,6 +1040,7 @@ function tryBridgeUpgrade() {
     }
     _savedRow  = -1;
     _savedPage = 0;
+    syncPositionGlobals();
     render({});
   });
 }
@@ -1053,10 +1079,22 @@ window.__gwSetComboMode = function(is8Dir) {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (function init() {
-  // Session.java injects window.__gwIs8Dir before this script runs (both Chromium and Gecko).
+  // Session.java injects window.__gwIs8Dir, window.__gwLastRow, window.__gwLastCol before this
+  // script runs (Chromium only; Gecko falls back to bridge-less defaults).
   if (window.__gwIs8Dir) {
     state.is8Dir = true;
     HUB_SLIDES = HUB_SLIDES_8DIR;
+  }
+  // Restore last position from Java-injected values (read from SharedPreferences synchronously in
+  // Java before the page builds — avoids the async-IPC race with void setLastPosition calls).
+  if (typeof window.__gwLastRow === 'number' && window.__gwLastRow >= 0) {
+    _savedRow  = window.__gwLastRow;
+    _savedPage = typeof window.__gwLastCol === 'number' ? window.__gwLastCol : 0;
+    if (_savedRow < state.catalog.length) {
+      state.rowIndex  = _savedRow;
+      var maxPage = state.catalog[_savedRow].pages.length - 1;
+      state.pageIndex = Math.min(_savedPage, maxPage < 0 ? 0 : maxPage);
+    }
   }
 
   stripeTip.textContent = HUB_TIPS[0];

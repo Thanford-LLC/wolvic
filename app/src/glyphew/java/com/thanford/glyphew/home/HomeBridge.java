@@ -136,48 +136,74 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
         resolveOnUiThread(requestId, obj.toString());
     }
 
+    /** Diagnostic: logs a message to logcat from JS. Remove before shipping.
+     *  Returns "" so Chromium's bridge dispatches the call to Java (void methods are silently dropped). */
     @JavascriptInterface
-    public void markHintSeen() {
+    @NonNull
+    public String debugLog(@Nullable String msg) {
+        android.util.Log.i("HomeBridge", "[JS] " + (msg != null ? msg : "null"));
+        return "";
+    }
+
+    /** Returns "" — non-void so Chromium dispatches the call to Java. */
+    @JavascriptInterface
+    @NonNull
+    public String markHintSeen() {
         mPrefs.markHintSeen();
+        return "";
     }
 
+    /** Returns "" — non-void so Chromium dispatches the call to Java. */
     @JavascriptInterface
-    public void setCategoryOrder(@Nullable String jsonArray) {
+    @NonNull
+    public String setCategoryOrder(@Nullable String jsonArray) {
         if (jsonArray != null) mPrefs.setCategoryOrder(jsonArray);
+        return "";
     }
 
+    /** Returns "" — non-void so Chromium dispatches the call to Java. */
     @JavascriptInterface
-    public void setFolderOrder(@Nullable String jsonArray) {
+    @NonNull
+    public String setFolderOrder(@Nullable String jsonArray) {
         if (jsonArray != null) mPrefs.setFolderOrder(jsonArray);
+        return "";
     }
 
+    /** Returns "" — non-void so Chromium dispatches the call to Java. */
     @JavascriptInterface
-    public void setLastPosition(@Nullable String rowStr, @Nullable String colStr) {
+    @NonNull
+    public String setLastPosition(@Nullable String rowStr, @Nullable String colStr) {
         try {
             int row = Integer.parseInt(rowStr != null ? rowStr : "0");
             int col = Integer.parseInt(colStr != null ? colStr : "0");
+            android.util.Log.i("HomeBridge", "setLastPosition: row=" + row + " col=" + col);
             mPrefs.setLastPosition(row, col);
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+            android.util.Log.w("HomeBridge", "setLastPosition: parse failed rowStr=" + rowStr + " colStr=" + colStr);
+        }
+        return "";
     }
 
     /**
      * Navigate to a URL. Only http(s) schemes accepted.
-     * Validated and marshalled to the UI thread before calling Session.loadUri.
+     * Returns "" — non-void so Chromium dispatches the call to Java.
      */
     @JavascriptInterface
-    public void openUrl(@Nullable String url) {
-        if (url == null) return;
+    @NonNull
+    public String openUrl(@Nullable String url) {
+        if (url == null) return "";
         final String trimmed = url.trim();
         final Uri uri;
-        try { uri = Uri.parse(trimmed); } catch (Exception e) { return; }
+        try { uri = Uri.parse(trimmed); } catch (Exception e) { return ""; }
         final String scheme = uri.getScheme();
-        if (scheme == null) return;
+        if (scheme == null) return "";
         final String lower = scheme.toLowerCase(Locale.ROOT);
-        if (!"http".equals(lower) && !"https".equals(lower)) return;
+        if (!"http".equals(lower) && !"https".equals(lower)) return "";
         mHandler.post(() -> {
             final Session s = mSession;
             if (s != null) s.loadUri(trimmed);
         });
+        return "";
     }
 
     // ── Async methods ──────────────────────────────────────────────────────
