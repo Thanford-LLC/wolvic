@@ -234,6 +234,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     Windows mWindows;
     com.igalia.wolvic.input.ComboDispatcher mComboDispatcher;
     com.igalia.wolvic.ui.widgets.ComboHUDWidget mHUDWidget;
+    com.thanford.glyphew.dispatch.ComboBookmarkSync mComboBookmarkSync;
     boolean mHUDEnabled = true;  // Glyphew: thumbstick press toggles HUD visibility
     // Glyphew (Phase 6): stable id for the one-shot long-press onboarding
     // hint. Kept FD-namespaced so it cannot collide with Wolvic's own
@@ -455,6 +456,9 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         mWindows = new Windows(this);
         mComboDispatcher = new com.igalia.wolvic.input.ComboDispatcher(mWindows, this);
         mHUDWidget.attachDispatcher(mComboDispatcher);
+        mComboBookmarkSync = new com.thanford.glyphew.dispatch.ComboBookmarkSync(
+                getApplicationContext(), mComboDispatcher);
+        mComboBookmarkSync.register();
         mWindows.setDelegate(new Windows.Delegate() {
             @Override
             public void onFocusedWindowChanged(@NonNull WindowWidget aFocusedWindow, @Nullable WindowWidget aPrevFocusedWindow) {
@@ -752,6 +756,8 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         }
 
         mTray.removeListeners(mWindows);
+
+        if (mComboBookmarkSync != null) mComboBookmarkSync.unregister();
 
         // Remove all widget listeners
         mWindows.onDestroy();

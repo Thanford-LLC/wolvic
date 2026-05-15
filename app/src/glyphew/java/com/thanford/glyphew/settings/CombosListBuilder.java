@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat;
 import com.igalia.wolvic.R;
 import com.igalia.wolvic.input.ComboDispatcher;
 import com.igalia.wolvic.ui.widgets.UIWidget;
+import com.thanford.glyphew.settings.Binding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +78,7 @@ public final class CombosListBuilder {
 
         addSystemGesturesSection(inflater, container);
         addActionSections(ctx, inflater, container, activeTable, fourDirTable, is4DirMode, dispatcher);
+        addComboBookmarksExplainerSection(inflater, container);
     }
 
     // ── System gestures (info-only rows, unchanged) ───────────────────────────
@@ -110,11 +112,16 @@ public final class CombosListBuilder {
         int[] actionIds = ComboActionRegistry.knownActions();
 
         // Main sections: show ALL actions for the category (bound and unbound).
+        // Actions with dedicated capture flows (isHiddenFromGenericPicker) are excluded
+        // from the grid — they appear in their own explainer section below.
         for (int i = 0; i < DISPLAY_ORDER.length; i++) {
             ComboActionCategory cat = DISPLAY_ORDER[i];
             List<Integer> sectionActions = new ArrayList<>();
             for (int id : actionIds) {
-                if (ComboActionRegistry.categoryFor(id) == cat) sectionActions.add(id);
+                if (ComboActionRegistry.categoryFor(id) == cat
+                        && !ComboActionRegistry.isHiddenFromGenericPicker(id)) {
+                    sectionActions.add(id);
+                }
             }
             if (sectionActions.isEmpty()) continue;
             LinearLayout content = addExpandableSection(inflater, container,
@@ -321,9 +328,15 @@ public final class CombosListBuilder {
         xView.setContentDescription(ctx.getString(R.string.combos_chip_delete_content_desc));
         xView.setClickable(true);
         xView.setFocusable(true);
-        xView.setOnClickListener(v ->
-                new ComboUnbindConfirmDialog(ctx, dispatcher, path, actionId)
-                        .show(UIWidget.REQUEST_FOCUS));
+        xView.setOnClickListener(v -> {
+            // For A_GOTO_BOOKMARK, pass the bookmark GUID so the dialog can delete
+            // the associated bookmark on confirm (inverse cascade — plan §6).
+            Binding binding = dispatcher.getBindingForPath(path);
+            String bookmarkGuid = (binding != null && binding.action == ComboDispatcher.A_GOTO_BOOKMARK)
+                    ? binding.param : null;
+            new ComboUnbindConfirmDialog(ctx, dispatcher, path, actionId, bookmarkGuid)
+                    .show(UIWidget.REQUEST_FOCUS);
+        });
         return xView;
     }
 
@@ -381,6 +394,18 @@ public final class CombosListBuilder {
             chevron.animate().rotation(nowExpanded ? 0f : -90f).setDuration(150).start();
         });
         return content;
+    }
+
+    // ── Combo Bookmarks explainer section ────────────────────────────────────
+
+    private static void addComboBookmarksExplainerSection(@NonNull LayoutInflater inflater,
+                                                          @NonNull LinearLayout container) {
+        LinearLayout content = addExpandableSection(inflater, container,
+                R.string.gw_combos_combo_bookmarks_header, /* startExpanded= */ true);
+        // Reuse the system-gesture row layout — label = empty, action = body copy.
+        addSystemGestureRow(inflater, content,
+                R.string.gw_combos_combo_bookmarks_header,
+                R.string.gw_combos_combo_bookmarks_body);
     }
 
     private static void addSystemGestureRow(@NonNull LayoutInflater inflater,

@@ -550,10 +550,24 @@ public class ComboDispatcher {
                 Log.d(LOGTAG, "FROM_CAPTURE triggered: path=" + Arrays.toString(capturedPath));
                 mMainHandler.post(() -> {
                     if (!(mWidgetManager instanceof Context)) return;
-                    com.thanford.glyphew.settings.ActionPickerView picker =
-                            new com.thanford.glyphew.settings.ActionPickerView(
-                                    (Context) mWidgetManager, this, capturedPath);
-                    picker.show(com.igalia.wolvic.ui.widgets.UIWidget.REQUEST_FOCUS);
+                    Context ctx = (Context) mWidgetManager;
+                    // Homepage → generic ActionPickerView; real site → Combo Bookmark confirm.
+                    Session capSession = focusedSession();
+                    String capUri = capSession != null ? capSession.getCurrentUri() : null;
+                    boolean isHome = com.igalia.wolvic.utils.UrlUtils.isHomeUri(ctx, capUri);
+                    if (isHome || capUri == null || capUri.isEmpty()) {
+                        com.thanford.glyphew.settings.ActionPickerView picker =
+                                new com.thanford.glyphew.settings.ActionPickerView(
+                                        ctx, this, capturedPath);
+                        picker.show(com.igalia.wolvic.ui.widgets.UIWidget.REQUEST_FOCUS);
+                    } else {
+                        String capTitle = capSession.getCurrentTitle();
+                        com.thanford.glyphew.settings.ComboBookmarkConfirmView confirm =
+                                new com.thanford.glyphew.settings.ComboBookmarkConfirmView(
+                                        ctx, this, capturedPath, capUri,
+                                        capTitle != null ? capTitle : capUri);
+                        confirm.show(com.igalia.wolvic.ui.widgets.UIWidget.REQUEST_FOCUS);
+                    }
                 });
                 return;
             }
@@ -662,6 +676,17 @@ public class ComboDispatcher {
      */
     public java.util.Map<String, Binding> get4DirBindings() {
         return java.util.Collections.unmodifiableMap(mTable4Dir);
+    }
+
+    /**
+     * Returns the full {@link Binding} for the exact path in the active table,
+     * or null if unbound. Needed by CombosListBuilder to access binding.param
+     * (e.g. bookmark GUID for A_GOTO_BOOKMARK) at unbind-confirm time.
+     */
+    @Nullable
+    public Binding getBindingForPath(int[] path) {
+        if (path == null) return null;
+        return currentTable().get(key(path));
     }
 
     /**

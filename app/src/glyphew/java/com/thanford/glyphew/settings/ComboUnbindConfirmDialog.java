@@ -13,7 +13,10 @@ import android.text.SpannableStringBuilder;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
+import androidx.annotation.Nullable;
+
 import com.igalia.wolvic.R;
+import com.igalia.wolvic.browser.engine.SessionStore;
 import com.igalia.wolvic.input.ComboDispatcher;
 import com.igalia.wolvic.ui.widgets.combo.ComboTipBuilder;
 import com.igalia.wolvic.ui.widgets.dialogs.PromptDialogWidget;
@@ -37,15 +40,19 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
     private final ComboDispatcher mDispatcher;
     private final int[] mPath;
     private final int mActionInt;
+    /** Non-null for A_GOTO_BOOKMARK: GUID of the bookmark to delete on confirm (inverse cascade). */
+    @Nullable private final String mBookmarkGuid;
 
     public ComboUnbindConfirmDialog(@NonNull Context ctx,
                                     @NonNull ComboDispatcher dispatcher,
                                     @NonNull int[] path,
-                                    int actionInt) {
+                                    int actionInt,
+                                    @Nullable String bookmarkGuid) {
         super(ctx);
         mDispatcher = dispatcher;
         mPath = path;
         mActionInt = actionInt;
+        mBookmarkGuid = bookmarkGuid;
         // Matches ClearUserDataDialogWidget / ComboResetConfirmDialog pattern:
         // super(ctx) fires the first updateUI() (fields not set yet, body skipped).
         // Fields are now set; initialize(ctx) fires the second updateUI() with them.
@@ -64,6 +71,11 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
         setButtonsDelegate((index, isChecked) -> {
             if (index == PromptDialogWidget.POSITIVE && mDispatcher != null && mPath != null) {
                 mDispatcher.removeBinding(mPath);
+                // Inverse cascade: A_GOTO_BOOKMARK born-together-deleted-together invariant.
+                if (mBookmarkGuid != null) {
+                    final SessionStore ss = SessionStore.get();
+                    if (ss != null) ss.getBookmarkStore().deleteBookmarkById(mBookmarkGuid);
+                }
             }
             onDismiss();
         });

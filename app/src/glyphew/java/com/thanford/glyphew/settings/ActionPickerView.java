@@ -110,10 +110,11 @@ public class ActionPickerView extends PromptDialogWidget {
             if (b.action > 0) assigned.add(b.action);
         }
 
-        // Radio rows — unassigned actions only.
+        // Radio rows — unassigned actions only (hidden-from-picker actions excluded).
         boolean first = true;
         for (int actionId : ComboActionRegistry.knownActions()) {
             if (assigned.contains(actionId)) continue;
+            if (ComboActionRegistry.isHiddenFromGenericPicker(actionId)) continue;
             if (!first) sb.append("\n");
             first = false;
 
