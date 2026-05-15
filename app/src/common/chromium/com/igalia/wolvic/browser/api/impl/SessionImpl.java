@@ -530,12 +530,23 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
 
     // ── Glyphew JS bridge (MPL diff) ──────────────────────────────────
 
+    /** mWebContents is null after onReady(); always prefer mTab.getActiveWebContents(). */
+    private WebContents resolveWebContents() {
+        if (mWebContents != null) return mWebContents;
+        return mTab != null ? mTab.getActiveWebContents() : null;
+    }
+
     @Override
     public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {
-        if (mWebContents == null) return;
+        WebContents wc = resolveWebContents();
+        if (wc == null) {
+            android.util.Log.w("SessionImpl", "addJavascriptInterface: wc null, " + name + " NOT registered");
+            return;
+        }
+        android.util.Log.d("SessionImpl", "addJavascriptInterface: registering " + name);
         try {
             org.chromium.content_public.browser.JavascriptInjector injector =
-                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(mWebContents, false);
+                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(wc, false);
             injector.addPossiblyUnsafeInterface(obj, name, android.webkit.JavascriptInterface.class);
         } catch (Exception e) {
             android.util.Log.e("SessionImpl", "addJavascriptInterface failed: " + e.getMessage());
@@ -544,10 +555,11 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
 
     @Override
     public void removeJavascriptInterface(@NonNull String name) {
-        if (mWebContents == null) return;
+        WebContents wc = resolveWebContents();
+        if (wc == null) return;
         try {
             org.chromium.content_public.browser.JavascriptInjector injector =
-                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(mWebContents, false);
+                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(wc, false);
             injector.removeInterface(name);
         } catch (Exception e) {
             android.util.Log.e("SessionImpl", "removeJavascriptInterface failed: " + e.getMessage());
@@ -557,7 +569,8 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
     @Override
     public void evaluateJavaScript(@NonNull String script,
                                    @Nullable android.webkit.ValueCallback<String> callback) {
-        if (mWebContents == null) return;
-        mWebContents.evaluateJavaScript(script, callback != null ? callback::onReceiveValue : null);
+        WebContents wc = resolveWebContents();
+        if (wc == null) return;
+        wc.evaluateJavaScript(script, callback != null ? callback::onReceiveValue : null);
     }
 }

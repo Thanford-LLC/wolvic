@@ -53,6 +53,13 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
     /** Non-null when a BookmarksStore is available; holds the listener registration. */
     private @Nullable BookmarksStore mRegisteredStore;
 
+    /** Async bridge results keyed by requestId — JS polls via pollResult(). */
+    private final java.util.concurrent.ConcurrentHashMap<String, String> mPendingResults =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    /** Set when bookmarks change; JS polls via checkRefreshPending(). */
+    private final java.util.concurrent.atomic.AtomicBoolean mRefreshPending =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
     public HomeBridge(@NonNull Context context, @NonNull Session session,
                       @NonNull HomePrefs prefs, @NonNull BrowserIconsHelper icons) {
         mContext = context;
@@ -84,13 +91,30 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
     public void onBookmarkAdded() { pushRefresh(); }
 
     private void pushRefresh() {
-        mHandler.post(() -> {
-            final Session s = mSession;
-            if (s != null) {
-                s.evaluateJavaScript(
-                        "window.__gwRefreshBookmarks && window.__gwRefreshBookmarks();");
-            }
-        });
+        mRefreshPending.set(true);
+    }
+
+    // ── Polling bridge ─────────────────────────────────────────────────────
+
+    /**
+     * JS polls this (every ~20 ms) until the result for a given requestId arrives.
+     * Returns the JSON string when ready, "" when still pending.
+     * Called from the JS-binder thread — always safe regardless of renderer state.
+     */
+    @JavascriptInterface
+    @NonNull
+    public String pollResult(@NonNull String requestId) {
+        String result = mPendingResults.remove(requestId);
+        return result != null ? result : "";
+    }
+
+    /**
+     * Returns true (and clears the flag) if bookmarks changed while the homepage was not
+     * visible. JS polls this periodically to decide whether to re-run tryBridgeUpgrade().
+     */
+    @JavascriptInterface
+    public boolean checkRefreshPending() {
+        return mRefreshPending.getAndSet(false);
     }
 
     // ── Sync methods ───────────────────────────────────────────────────────
@@ -168,12 +192,22 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
     @JavascriptInterface
     public void getBookmarkCategories(final String requestId) {
         final Session s = mSession;
-        if (s == null) { resolveOnUiThread(requestId, "[]"); return; }
+        if (s == null) {
+            android.util.Log.w("HomeBridge", "getBookmarkCategories: mSession is null");
+            resolveOnUiThread(requestId, "[]"); return;
+        }
 
         final BookmarksStore store = s.getBookmarksStore();
-        if (store == null) { resolveOnUiThread(requestId, "[]"); return; }
+        if (store == null) {
+            android.util.Log.w("HomeBridge", "getBookmarkCategories: getBookmarksStore() returned null");
+            resolveOnUiThread(requestId, "[]"); return;
+        }
+
+        android.util.Log.d("HomeBridge", "getBookmarkCategories: starting chain");
 
         store.ensureComboBookmarksFolder().thenCompose(comboGuid -> {
+            android.util.Log.d("HomeBridge", "getBookmarkCategories: comboGuid=" + comboGuid);
+
             // Fetch combo items and mobile root items in parallel, then merge.
             java.util.concurrent.CompletableFuture<java.util.List<BookmarkNode>> comboFuture =
                     store.getBookmarks(comboGuid)
@@ -184,6 +218,8 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
                          .thenApply(nodes -> nodes != null ? nodes : java.util.Collections.<BookmarkNode>emptyList());
 
             return comboFuture.thenCombine(mobileFuture, (comboItems, mobileItems) -> {
+                android.util.Log.d("HomeBridge", "getBookmarkCategories: comboItems=" + comboItems.size()
+                        + " mobileItems=" + mobileItems.size());
                 try {
                     JSONArray result = new JSONArray();
 
@@ -208,13 +244,21 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
                                 "bookmarks", "Bookmarks", serialized, false));
                     }
 
+                    android.util.Log.d("HomeBridge", "getBookmarkCategories: result categories=" + result.length());
                     return result.toString();
-                } catch (JSONException e) {
+                } catch (Exception e) {
+                    android.util.Log.e("HomeBridge", "getBookmarkCategories: serialize failed", e);
                     return "[]";
                 }
             });
-        }).thenAccept(json -> resolveOnUiThread(requestId, json))
-          .exceptionally(e -> { resolveOnUiThread(requestId, "[]"); return null; });
+        }).thenAccept(json -> {
+            android.util.Log.d("HomeBridge", "getBookmarkCategories: resolving len=" + json.length());
+            resolveOnUiThread(requestId, json);
+        }).exceptionally(e -> {
+            android.util.Log.e("HomeBridge", "getBookmarkCategories: chain failed", e);
+            resolveOnUiThread(requestId, "[]");
+            return null;
+        });
     }
 
     @JavascriptInterface
@@ -299,13 +343,9 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
 
     // ── Resolve helper ─────────────────────────────────────────────────────
 
+    /** Stores the result for JS to pick up via pollResult(). Thread-safe; no evaluateJavaScript. */
     private void resolveOnUiThread(@NonNull String requestId, @NonNull String json) {
-        final String escaped = json.replace("\\", "\\\\").replace("'", "\\'");
-        final String script = "window.gwHome._resolve('" + requestId + "','" + escaped + "')";
-        mHandler.post(() -> {
-            final Session s = mSession;
-            if (s != null) s.evaluateJavaScript(script);
-        });
+        mPendingResults.put(requestId, json);
     }
 
     // ── Serialization ──────────────────────────────────────────────────────
@@ -354,8 +394,8 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
             tile.put("guid",   node.getGuid() != null ? node.getGuid() : "");
             tile.put("name",   titleStr.isEmpty() ? url : titleStr);
             tile.put("domain", url.replaceFirst("^https?://", "").split("/")[0]);
-            tile.put("icon",   (Object) null); // async favicon loaded by homepage.js
-            tile.put("color",  (Object) null);
+            tile.put("icon",   JSONObject.NULL); // async favicon loaded by homepage.js
+            tile.put("color",  JSONObject.NULL);
             tile.put("letter", titleStr.isEmpty() ? "B"
                     : String.valueOf(titleStr.charAt(0)).toUpperCase(Locale.ROOT));
             result.put(tile);

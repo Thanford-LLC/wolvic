@@ -917,26 +917,28 @@ window.addEventListener('keydown', function(e) {
 });
 
 // ── Native JS bridge (window.gwHome) ──────────────────────────────────────
-var _pendingResolvers = {};
-
 function bridgeCall(method) {
   var args = Array.prototype.slice.call(arguments, 1);
   return new Promise(function(resolve) {
     var id = 'r' + Date.now() + Math.random();
-    _pendingResolvers[id] = function(json) {
-      delete _pendingResolvers[id];
-      try { resolve(JSON.parse(json)); } catch (_) { resolve(null); }
-    };
     window.gwHome[method].apply(window.gwHome, [id].concat(args));
+    var attempts = 0;
+    var poll = function() {
+      if (attempts++ > 250) { resolve(null); return; } // 5 s timeout
+      var result = window.gwHome.pollResult(id);
+      if (result !== '') {
+        try { resolve(JSON.parse(result)); } catch (_) { resolve(null); }
+      } else {
+        setTimeout(poll, 20);
+      }
+    };
+    setTimeout(poll, 0);
   });
 }
 
 if (typeof window.gwHome === 'undefined') {
   window.gwHome = {};
 }
-window.gwHome._resolve = function(id, json) {
-  if (_pendingResolvers[id]) _pendingResolvers[id](json);
-};
 
 
 // ── Bridge upgrade on load ─────────────────────────────────────────────────
@@ -985,11 +987,17 @@ function tryBridgeUpgrade() {
   });
 }
 
-// Called by HomeBridge via evaluateJavaScript when bookmarks change while the homepage is visible.
-window.__gwRefreshBookmarks = function() {
-  tryBridgeUpgrade();
-  render({});
-};
+// Poll for bookmark changes (replaces evaluateJavaScript push; avoids renderer-state crashes).
+function startRefreshPoll() {
+  setInterval(function() {
+    if (window.gwHome && typeof window.gwHome.checkRefreshPending === 'function') {
+      if (window.gwHome.checkRefreshPending()) {
+        tryBridgeUpgrade();
+        render({});
+      }
+    }
+  }, 500);
+}
 
 // Called by ComboDispatcher via evaluateJavaScript when the mode is toggled at runtime.
 window.__gwSetComboMode = function(is8Dir) {
@@ -1025,4 +1033,5 @@ window.__gwSetComboMode = function(is8Dir) {
   render({});
   scheduleNextSlide();
   setTimeout(tryBridgeUpgrade, 0);
+  startRefreshPoll();
 }());
