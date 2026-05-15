@@ -950,11 +950,17 @@ function tryBridgeUpgrade() {
   bridgeCall('getPrefs').then(function(prefs) {
     if (!prefs) return;
     if (prefs.hintSeen) dismissHint();
-    // Capture saved position for getBookmarkCategories (which runs concurrently and fires last,
-    // so it would overwrite any rowIndex set here). Only capture when saved position is real.
+    // Capture saved position and apply it immediately. getBookmarkCategories also reads
+    // _savedRow after rebuilding the catalog (it fires last when bookmarks exist).
+    // Applying here covers the no-bookmarks path where getBookmarkCategories returns early.
     if (typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex >= 0) {
       _savedRow  = prefs.lastRowIndex;
       _savedPage = typeof prefs.lastColIndex === 'number' ? prefs.lastColIndex : 0;
+      if (_savedRow < state.catalog.length) {
+        state.rowIndex  = _savedRow;
+        var maxPage = state.catalog[_savedRow].pages.length - 1;
+        state.pageIndex = Math.min(_savedPage, maxPage < 0 ? 0 : maxPage);
+      }
     }
     // Switch hub slide set based on combo mode pref
     if (typeof prefs.is4DirMode === 'boolean') {
