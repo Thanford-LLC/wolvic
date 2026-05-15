@@ -369,6 +369,21 @@ function renderGrid() {
   applyFocus(state.focusIdx);
 }
 
+// Resolve the icon src for any site tile — catalog or user bookmark.
+//   1. Bundled base64 from __gwIcons (catalog sites — instant, zero network)
+//   2. Live Google favicon URL (bookmark/runtime sites — browser-cached HTTP GET)
+//   3. Empty string — triggers the error-listener letter-glyph fallback
+function resolveIconSrc(site) {
+  if (site && site.icon && window.__gwIcons && window.__gwIcons[site.icon]) {
+    return window.__gwIcons[site.icon];
+  }
+  if (site && site.domain) {
+    var host = String(site.domain).split('/')[0];
+    return 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=128';
+  }
+  return '';
+}
+
 function makeSiteCell(site, outerIdx) {
   if (!site) {
     var empty = document.createElement('div');
@@ -384,42 +399,20 @@ function makeSiteCell(site, outerIdx) {
 
   var tile = document.createElement('div');
   tile.className = 'cell-tile';
+  if (site.color) tile.style.setProperty('--brand', site.color);
 
   var img = document.createElement('img');
   img.className = 'cell-favicon';
   img.alt = site.name;
 
-  function showGlyph() {
+  img.addEventListener('error', function() {
     img.style.display = 'none';
     var glyph = document.createElement('div');
     glyph.className = 'cell-glyph';
     glyph.textContent = site.letter || site.name[0];
     tile.insertBefore(glyph, tile.firstChild);
-  }
-
-  if (!site.icon && site.url && window.gwHome && typeof window.gwHome.getFavicon === 'function') {
-    // Async favicon for user bookmarks (no bundled icon file)
-    var reqId = 'fav' + Date.now() + Math.random();
-    img.src = '';
-    img.style.display = 'none';
-    window['__gwFavicon_' + reqId] = function(dataUrl) {
-      delete window['__gwFavicon_' + reqId];
-      if (dataUrl) { img.src = dataUrl; img.style.display = ''; }
-      else showGlyph();
-    };
-    bridgeCall('getFavicon', site.url).then(function(dataUrl) {
-      if (window['__gwFavicon_' + reqId]) window['__gwFavicon_' + reqId](dataUrl || '');
-    });
-  } else {
-    img.src = 'icons/' + site.icon;
-    img.addEventListener('error', function() {
-      if (window.gwHome && typeof window.gwHome.getIcon === 'function') {
-        var dataUrl = window.gwHome.getIcon(site.icon);
-        if (dataUrl) { img.src = dataUrl; return; }
-      }
-      showGlyph();
-    });
-  }
+  });
+  img.src = resolveIconSrc(site);
   tile.appendChild(img);
   cell.appendChild(tile);
 
@@ -442,10 +435,10 @@ function makeGhostCell(site) {
   var tile = document.createElement('div');
   tile.className = 'ghost-tile';
   if (site) {
+    if (site.color) tile.style.setProperty('--brand', site.color);
     var img = document.createElement('img');
     img.className = 'ghost-favicon';
     img.alt = site.name || '';
-    img.src = 'icons/' + (site.icon || '');
     img.addEventListener('error', function() {
       img.style.display = 'none';
       var glyph = document.createElement('div');
@@ -453,6 +446,7 @@ function makeGhostCell(site) {
       glyph.textContent = site.letter || (site.name ? site.name[0] : '?');
       tile.insertBefore(glyph, tile.firstChild);
     });
+    img.src = resolveIconSrc(site);
     tile.appendChild(img);
   }
   cell.appendChild(tile);

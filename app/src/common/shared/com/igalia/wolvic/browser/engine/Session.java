@@ -930,6 +930,11 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             html = html.replace(
                 "<link rel=\"stylesheet\" href=\"homepage.css\">",
                 "<style>\n" + css + "\n</style>");
+            // Inline all bundled icons as base64 data-URLs so they resolve from a data: URI page.
+            // Relative paths (icons/youtube.png) have no base URL in data: context and always fail.
+            // ~100 KB total across 64 PNGs → ~136 KB base64 — negligible page-size cost.
+            String iconScript = buildIconMapScript();
+            html = html.replace("<!-- __GW_ICONS__ -->", iconScript);
             // Inject combo mode before the main script so init() reads it immediately.
             boolean is8Dir = !new com.thanford.glyphew.home.HomePrefs(mContext).is4DirMode();
             html = html.replace(
@@ -970,6 +975,36 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             return buf.toString(StandardCharsets.UTF_8.name());
         } finally {
             is.close();
+        }
+    }
+
+    /**
+     * Reads every PNG in glyphew/icons/ and returns a {@code <script>} block that sets
+     * {@code window.__gwIcons} to a filename→data-URL map. Used by loadHomePage() so the
+     * homepage can display icons without relative-URL resolution (which fails on data: URIs).
+     * Returns an empty string on any failure so the page still loads without icons.
+     */
+    private String buildIconMapScript() {
+        try {
+            String[] files = mContext.getAssets().list("glyphew/icons");
+            if (files == null || files.length == 0) return "";
+            StringBuilder sb = new StringBuilder("<script>window.__gwIcons={");
+            for (String f : files) {
+                if (!f.endsWith(".png")) continue;
+                InputStream is = mContext.getAssets().open("glyphew/icons/" + f);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] chunk = new byte[4096];
+                int n;
+                while ((n = is.read(chunk)) != -1) baos.write(chunk, 0, n);
+                is.close();
+                String b64 = android.util.Base64.encodeToString(baos.toByteArray(), android.util.Base64.NO_WRAP);
+                sb.append("'").append(f).append("':'data:image/png;base64,").append(b64).append("',");
+            }
+            sb.append("};</script>");
+            return sb.toString();
+        } catch (java.io.IOException e) {
+            Log.w(LOGTAG, "buildIconMapScript: failed", e);
+            return "";
         }
     }
 

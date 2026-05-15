@@ -206,7 +206,7 @@ html, body {
   border-radius: var(--radius);
   display: grid;
   place-items: center;
-  background: var(--surface);
+  background: var(--brand-tile, var(--surface));
   border: none;
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   overflow: hidden;
@@ -217,27 +217,25 @@ html, body {
     background 120ms;
 }
 
+/* Per-site brand color — the site's brand IS the tile background.
+ * Favicon fills the full tile; transparent favicon areas show the brand hue.
+ * --brand is set by JS only for catalog sites with a brand color. */
+.cell-tile[style*="--brand"] {
+  --brand-tile: var(--brand);
+}
+
 .cell-favicon {
-  width: 44px; height: 44px;
-  object-fit: contain;
+  width: 72px; height: 72px;
+  object-fit: cover;
   display: block;
+  border-radius: inherit;
 }
 
 .cell-glyph {
-  font-size: 32px;
+  font-size: 40px;
   font-weight: 800;
   line-height: 1;
   color: var(--text);
-}
-
-/* Brand-color dot — content tier, never accent */
-.brand-dot {
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 7px; height: 7px;
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px rgba(7,8,37,0.55);
-  opacity: 0.85;
 }
 
 .cell-label {
@@ -273,6 +271,14 @@ html, body {
     0 10px 28px rgba(0,0,0,0.4);
 }
 .cell.focused .cell-label { color: #FDDE0A; }
+
+/* Brand-brightened hover/focus — keep brand color, add a light lift */
+.cell:hover .cell-tile[style*="--brand"] {
+  background: color-mix(in oklch, white 18%, var(--brand));
+}
+.cell.focused .cell-tile[style*="--brand"] {
+  background: color-mix(in oklch, white 18%, var(--brand));
+}
 
 /* Trigger flash — 80ms accent-bright pulse before navigation */
 .cell.triggered .cell-tile {
@@ -743,13 +749,17 @@ body.grip-held #veil-w { width: 80px; }
   place-items: center;
   overflow: hidden;
 }
+.ghost-tile[style*="--brand"] {
+  background: var(--brand);
+}
 .ghost-favicon {
-  width: 38px; height: 38px;
-  object-fit: contain;
+  width: 64px; height: 64px;
+  object-fit: cover;
   display: block;
+  border-radius: inherit;
 }
 .ghost-glyph {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 800;
   color: var(--text-muted);
   line-height: 1;
