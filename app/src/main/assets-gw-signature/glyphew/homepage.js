@@ -800,10 +800,19 @@ function applyFocus(outerIdx) {
 }
 
 // ── Activation ─────────────────────────────────────────────────────────────
+function savePosition() {
+  if (window.gwHome && window.gwHome.setLastPosition) {
+    window.gwHome.setLastPosition(String(state.rowIndex), String(state.pageIndex));
+  }
+}
+
 function activateOuter(outerIdx) {
   var sites = currentPage();
   var site = sites[outerIdx];
   if (!site) return;
+
+  // Save position before any async delay so it persists regardless of navigation mechanism.
+  savePosition();
 
   var cells = gridCanvas.querySelectorAll('.cell');
   cells.forEach(function(cell) {
@@ -815,9 +824,6 @@ function activateOuter(outerIdx) {
 
   setTimeout(function() {
     var url = site.url || ('https://' + site.domain);
-    if (window.gwHome && typeof window.gwHome.setLastPosition === 'function') {
-      window.gwHome.setLastPosition(String(state.rowIndex), String(state.pageIndex));
-    }
     window.location.href = url;
   }, 80);
 }
@@ -859,6 +865,7 @@ function changeRow(delta) {
   if (state.pageIndex >= pages) state.pageIndex = 0;
   dismissHint();
   render({ animate: true });
+  savePosition();
 }
 
 function changePage(delta) {
@@ -868,13 +875,14 @@ function changePage(delta) {
   state.pageIndex = ((state.pageIndex + delta) % pages + pages) % pages;
   dismissHint();
   render({ animate: true });
+  savePosition();
 }
 
 // ── Hint toast ────────────────────────────────────────────────────────────
 function dismissHint() {
   if (state.hintDismissed) return;
   state.hintDismissed = true;
-  if (window.gwHome && typeof window.gwHome.markHintSeen === 'function') {
+  if (window.gwHome && window.gwHome.markHintSeen) {
     window.gwHome.markHintSeen();
   }
 }
@@ -945,7 +953,7 @@ if (typeof window.gwHome === 'undefined') {
 
 // ── Bridge upgrade on load ─────────────────────────────────────────────────
 function tryBridgeUpgrade() {
-  if (!window.gwHome || typeof window.gwHome.getBookmarkCategories !== 'function') return;
+  if (!window.gwHome || !window.gwHome.getBookmarkCategories) return;
 
   bridgeCall('getPrefs').then(function(prefs) {
     if (!prefs) return;
@@ -1014,7 +1022,7 @@ function tryBridgeUpgrade() {
 // Poll for bookmark changes (replaces evaluateJavaScript push; avoids renderer-state crashes).
 function startRefreshPoll() {
   setInterval(function() {
-    if (window.gwHome && typeof window.gwHome.checkRefreshPending === 'function') {
+    if (window.gwHome && window.gwHome.checkRefreshPending) {
       if (window.gwHome.checkRefreshPending()) {
         tryBridgeUpgrade();
         render({});
