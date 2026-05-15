@@ -133,6 +133,7 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
             obj.put("lastColIndex", mPrefs.getLastColIndex());
             obj.put("is4DirMode",   mPrefs.is4DirMode());
         } catch (JSONException ignored) {}
+        android.util.Log.d("HomeBridge", "getPrefs: lastRowIndex=" + mPrefs.getLastRowIndex());
         resolveOnUiThread(requestId, obj.toString());
     }
 
