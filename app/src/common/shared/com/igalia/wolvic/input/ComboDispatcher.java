@@ -211,6 +211,8 @@ public class ComboDispatcher {
 
         buildTables();
         pushModeToNative();
+        boolean bootIs4Dir = mDefaultPrefs == null || mDefaultPrefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
+        Log.d(LOGTAG, "boot: 4dirMode=" + bootIs4Dir);
     }
 
     /**

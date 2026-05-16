@@ -110,7 +110,9 @@ public final class ComboBindingStore {
             if (migrated != null) {
                 return migrated;
             }
-            return parseBindings(root);
+            Map<String, Binding> result = parseBindings(root);
+            Log.d(TAG, "load: " + result.size() + " binding overrides");
+            return result;
         } catch (JSONException e) {
             Log.w(TAG, "corrupt bindings blob, restoring defaults", e);
             backupCorruptBlob(blob);

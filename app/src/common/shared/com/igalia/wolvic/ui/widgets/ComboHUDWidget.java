@@ -415,6 +415,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // Settings won't see it resurrected on the next grip press.
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
         mVisiblePref = prefs.getBoolean(PREF_HUD_VISIBLE, true);
+        android.util.Log.d("Glyphew", "HUD init: visiblePref=" + mVisiblePref);
         mGhostsVisiblePref = prefs.getBoolean(PREF_GHOST_VISIBLE, true);
 
         // React to pref writes from CombosSettingsView (cross-package).
