@@ -996,6 +996,9 @@ function tryBridgeUpgrade() {
     if (_savedRow < 0 && typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex >= 0) {
       _savedRow  = prefs.lastRowIndex;
       _savedPage = typeof prefs.lastColIndex === 'number' ? prefs.lastColIndex : 0;
+      if (window.gwHome && window.gwHome.debugLog) {
+        window.gwHome.debugLog('position-fallback: row=' + _savedRow);
+      }
       if (_savedRow < state.catalog.length) {
         state.rowIndex  = _savedRow;
         var maxPage = state.catalog[_savedRow].pages.length - 1;
