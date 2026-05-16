@@ -46,7 +46,15 @@ The build will fail with a clear error message if `chromium_aar` is set in `loca
 - `applicationId == "com.thanford.glyphew"` — fails loudly on any identity drift.
 - Logs the resolved backend (chromium/gecko) so you can confirm which variant you're building.
 
-### 2.2 Install
+### 2.2 Git hooks
+
+Run once per clone to install the pre-push hook (surfaces branch pairing, blocks accidental pushes to protected branches):
+
+```bash
+bash scripts/install-hooks.sh
+```
+
+### 2.3 Install
 ```bash
 ~/Android/Sdk/platform-tools/adb -s <device>:5555 install -r \
   app/build/outputs/apk/oculusvrArm64ChromiumGeneric/debug/Wolvic-oculusvr-arm64-chromium-generic-debug.apk

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# pre-push hook for wolvic repo.
+# Installed by: bash scripts/install-hooks.sh
+# (Re-run that command after every fresh clone.)
+#
+# Purpose: surface the cross-repo branch pairing before every push so drift
+# between the wolvic and glyphew repos is caught early. Blocks pushes to
+# `main` or `glyphew` (protected bases) without manual confirmation.
+
+WOLVIC_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+GLYPHEW_DIR=~/Project/glyphew
+GLYPHEW_BRANCH=$(git -C "$GLYPHEW_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+
+echo ""
+echo "pre-push branch check:"
+echo "  wolvic  → $WOLVIC_BRANCH"
+echo "  glyphew → $GLYPHEW_BRANCH"
+echo ""
+
+# Block pushes to protected bases (main, glyphew upstream base).
+if [ "$WOLVIC_BRANCH" = "main" ] || [ "$WOLVIC_BRANCH" = "glyphew" ]; then
+  echo "WARNING: pushing directly to protected branch '$WOLVIC_BRANCH'." >&2
+  echo "Press Enter to continue or Ctrl-C to abort." >&2
+  exec < /dev/tty
+  read -r
+fi
