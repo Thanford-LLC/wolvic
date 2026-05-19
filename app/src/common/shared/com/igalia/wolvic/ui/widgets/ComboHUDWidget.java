@@ -91,6 +91,9 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
     private static final long TIP_ROTATION_INTERVAL_MS = 4000L;
     private static final long TIP_FADE_MS = 150L;
 
+    // Section 3.1 — combo-fire confirmation strip flash.
+    public static final long FIRE_FLASH_DURATION_MS = 1400L;
+
     // Ordered wedge nodes starting from right (0 degrees), going CCW.
     private static final int[] WEDGE_NODES_8 = { 6, 3, 2, 1, 4, 7, 8, 9 };
     // 4-dir layout: cardinals only, 90° wedges.
@@ -283,6 +286,12 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     // Interpolated accent level [0,1] for tip-strip color fade (~96ms at 16ms tick).
     private float mStripAccentAlpha = 0f;
+
+    // Section 3.1 — fire-flash state. Non-zero while a flash is in progress.
+    private int   mFiredActionInt    = ComboDispatcher.A_NONE;
+    private long  mFiredFlashStartMs = 0L;
+    // Pill background pop: 1.0 on fire, decays to 0 over ~300 ms (×0.72/frame at 16 ms).
+    private float mFireFlashPillAlpha = 0f;
 
     // Tip-strip StaticLayout cache — avoids per-frame StaticLayout construction
     // on the hot path (§5.2 zero-heap). StaticLayout is the only Canvas-friendly
@@ -507,11 +516,32 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
      */
     public void attachDispatcher(@NonNull ComboDispatcher dispatcher) {
         if (mDispatcher == dispatcher) return;
-        if (mDispatcher != null) mDispatcher.removeBindingsListener(this);
+        if (mDispatcher != null) {
+            mDispatcher.removeBindingsListener(this);
+            mDispatcher.setFireFlashListener(null);
+        }
         mDispatcher = dispatcher;
         mDispatcher.addBindingsListener(this);
+        mDispatcher.setFireFlashListener(this::showFireFlash);
         refreshModeFlag();
         rebuildTipPool();
+    }
+
+    /**
+     * Section 3.1 — combo-fire confirmation.
+     * Called by ComboDispatcher immediately after a combo dispatches. If the HUD
+     * is visible, starts a flash on the bottom strip showing "✓ [icon] [name]"
+     * for FIRE_FLASH_DURATION_MS, then clears. No-op when PREF_HUD_VISIBLE is false.
+     */
+    public void showFireFlash(int actionInt) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        if (!prefs.getBoolean(PREF_HUD_VISIBLE, true)) return;
+        mFiredActionInt     = actionInt;
+        mFiredFlashStartMs  = android.os.SystemClock.uptimeMillis();
+        mFireFlashPillAlpha = 1f;
+        invalidate();
+        // Chain invalidate() calls until the flash window expires.
+        postDelayed(this::invalidate, FIRE_FLASH_DURATION_MS + 32L);
     }
 
     /**
@@ -872,6 +902,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         stopGhostAnimTick();
         if (mDispatcher != null) {
             mDispatcher.removeBindingsListener(this);
+            mDispatcher.setFireFlashListener(null);
             mDispatcher = null;
         }
         if (mPrefListener != null) {
@@ -889,6 +920,7 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         stopGhostAnimTick();
         if (mDispatcher != null) {
             mDispatcher.removeBindingsListener(this);
+            mDispatcher.setFireFlashListener(null);
         }
         mTintedIconCache.clear();
         super.onDetachedFromWindow();
@@ -1552,8 +1584,13 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // Center the layout vertically inside the 60px strip (dialH .. dialH+tipStripPx).
         float yOffset = dialH + (tipStripPx - mTipStripLayout.getHeight()) * 0.5f;
         // Pill background ensures tip text is readable on any page color.
+        // Section 3.1: during a fire-flash the pill pops to accent and eases back over ~300 ms.
+        mFireFlashPillAlpha *= 0.72f; // decay ~14 frames at 16 ms ≈ 225 ms to reach < 0.01
+        int pillColor = (mFireFlashPillAlpha > 0.01f)
+                ? interpolateColor(mColorLabelPill, mColorAccent, mFireFlashPillAlpha)
+                : mColorLabelPill;
         mPillRect.set(0f, yOffset - 6f, w, yOffset + mTipStripLayout.getHeight() + 6f);
-        mPillPaint.setColor(mColorLabelPill);
+        mPillPaint.setColor(pillColor);
         canvas.drawRoundRect(mPillRect, 12f, 12f, mPillPaint);
         int save = canvas.save();
         canvas.translate(8f, yOffset);
@@ -1563,6 +1600,17 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
 
     @Nullable
     private CharSequence pickStripText() {
+        // Section 3.1 — fire-flash overrides the grip-held gate for FIRE_FLASH_DURATION_MS.
+        if (mFiredActionInt != ComboDispatcher.A_NONE) {
+            long elapsed = android.os.SystemClock.uptimeMillis() - mFiredFlashStartMs;
+            if (elapsed < FIRE_FLASH_DURATION_MS) {
+                mCurrentStripIsAccent = true;
+                return composeFireFlashLabel(mFiredActionInt);
+            }
+            mFiredActionInt     = ComboDispatcher.A_NONE;
+            mFireFlashPillAlpha = 0f; // pill pop already decayed; snap clean
+        }
+
         if (!mGripHeld) return null;
 
         // Highest priority: "Release to fire: [icon] [name]" whenever the user
@@ -1673,5 +1721,12 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         // shown in the ghost pill for the aimed zone, so the strip doesn't
         // need to repeat it.
         return ComboTipBuilder.renderReleaseToFireTip(getContext(), action);
+    }
+
+    // Section 3.1 — fire-flash label: "✓ {Action Name}".
+    private CharSequence composeFireFlashLabel(int actionInt) {
+        int nameRes = com.igalia.wolvic.ui.widgets.combo.ComboActionNames.nameFor(actionInt);
+        String name = (nameRes != 0) ? getContext().getString(nameRes) : "";
+        return "✓ " + name;
     }
 }

@@ -92,6 +92,22 @@ public class ComboDispatcher {
     }
 
     /**
+     * Section 3.1 — combo-fire confirmation. Called immediately after a
+     * recognized combo dispatches successfully. ComboHUDWidget implements this
+     * to flash the bottom strip with "✓ [icon] [action]" for ~1500 ms.
+     * The HUD widget decides internally whether to render (gated by PREF_HUD_VISIBLE).
+     */
+    public interface FireFlashListener {
+        void onComboFired(int actionInt);
+    }
+
+    private volatile FireFlashListener mFireFlashListener = null;
+
+    public void setFireFlashListener(@Nullable FireFlashListener listener) {
+        mFireFlashListener = listener;
+    }
+
+    /**
      * Phase 5 — capture-mode listener. When the user is drawing a combo in
      * {@code BindComboView} (FROM_SETTINGS flow), the dispatcher routes emitted
      * paths to the active listener INSTEAD of firing an action. Callbacks are
@@ -597,6 +613,8 @@ public class ComboDispatcher {
         mPendingAXCapture = false; // Bound path found — discard any pending capture intent.
         if (mHapticController != null) mHapticController.fireLegalCombo();
         runAction(action, binding != null ? binding.param : null);
+        FireFlashListener flashListener = mFireFlashListener;
+        if (flashListener != null) flashListener.onComboFired(action);
     }
 
     public boolean isCombo4DirMode() {
@@ -984,17 +1002,14 @@ public class ComboDispatcher {
     }
 
     private void toggleGhostRoutes() {
-        if (mDefaultPrefs == null || mAppContext == null) return;
+        if (mDefaultPrefs == null) return;
         boolean nowVisible = mDefaultPrefs.getBoolean(
                 com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_GHOST_VISIBLE, true);
-        boolean nextVisible = !nowVisible;
         mDefaultPrefs.edit()
                 .putBoolean(com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_GHOST_VISIBLE,
-                        nextVisible)
+                        !nowVisible)
                 .apply();
-        Toast.makeText(mAppContext,
-                nextVisible ? "Ghost routes shown" : "Ghost routes hidden",
-                Toast.LENGTH_SHORT).show();
+        // Fire-flash in the HUD strip (Section 3.1) provides the visual confirmation.
     }
 
     private void toggleHudVisible() {
@@ -1006,22 +1021,22 @@ public class ComboDispatcher {
                 .putBoolean(com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_HUD_VISIBLE,
                         nextVisible)
                 .apply();
-        Toast.makeText(mAppContext,
-                nextVisible ? "HUD shown" : "HUD hidden",
-                Toast.LENGTH_SHORT).show();
+        if (!nextVisible) {
+            // HUD is now hidden — fire-flash can't render, so use a Toast as the sole
+            // acknowledged exception (Section 3.1 plan: keep toggleHudVisible(false) Toast).
+            Toast.makeText(mAppContext, "HUD hidden", Toast.LENGTH_SHORT).show();
+        }
+        // HUD shown: fire-flash in the strip provides the visual confirmation.
     }
 
     private void toggleComboMode() {
-        if (mDefaultPrefs == null || mAppContext == null) return;
+        if (mDefaultPrefs == null) return;
         boolean was4Dir = mDefaultPrefs.getBoolean(COMBO_MODE_4DIR_KEY, true);
-        boolean now4Dir = !was4Dir;
         // Writing the pref fires mDefaultPrefListener synchronously on the main
         // thread, which calls pushModeToNative() + stampBindingChange() — no
         // explicit call needed here.
-        mDefaultPrefs.edit().putBoolean(COMBO_MODE_4DIR_KEY, now4Dir).apply();
-        Toast.makeText(mAppContext,
-                now4Dir ? "Switched to 4-dir mode" : "Switched to 8-dir mode",
-                Toast.LENGTH_SHORT).show();
+        mDefaultPrefs.edit().putBoolean(COMBO_MODE_4DIR_KEY, !was4Dir).apply();
+        // Fire-flash in the HUD strip (Section 3.1) provides the visual confirmation.
     }
 
     private void toggleReaderMode() {
@@ -1036,7 +1051,7 @@ public class ComboDispatcher {
     // ---------------------------------------------------------------------------
 
     private WindowWidget focusedWindow() {
-        return mWindows.getFocusedWindow();
+        return mWindows != null ? mWindows.getFocusedWindow() : null;
     }
 
     private Session focusedSession() {

@@ -7,10 +7,13 @@ package com.igalia.wolvic.ui.widgets.combo;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+
+import java.lang.reflect.Method;
 
 import androidx.preference.PreferenceManager;
 import androidx.test.core.app.ApplicationProvider;
@@ -102,6 +105,27 @@ public class ComboHUDWidgetTest {
         // changes the default it silently hides the HUD for all new users.
         assertTrue("default for PREF_HUD_VISIBLE must be true",
                 mDefaultPrefs.getBoolean(ComboHUDWidget.PREF_HUD_VISIBLE, true));
+    }
+
+    // ── Section 3.1 RED: showFireFlash API contract ───────────────────────────
+
+    @Test
+    public void showFireFlash_isPublicVoidMethod() throws NoSuchMethodException {
+        // Pins the method signature. A rename or visibility change silently breaks
+        // the ComboDispatcher → HUD notification contract.
+        Method m = ComboHUDWidget.class.getMethod("showFireFlash", int.class);
+        assertNotNull("showFireFlash(int) must be public on ComboHUDWidget", m);
+        assertEquals("showFireFlash must return void", void.class, m.getReturnType());
+    }
+
+    @Test
+    public void fireFlashDurationMs_isInExpectedRange() {
+        // Pins the flash window: long enough to read (≥1200 ms), short enough
+        // not to linger into the next combo (≤1600 ms).
+        assertTrue("FIRE_FLASH_DURATION_MS must be >= 1200",
+                ComboHUDWidget.FIRE_FLASH_DURATION_MS >= 1200);
+        assertTrue("FIRE_FLASH_DURATION_MS must be <= 1600",
+                ComboHUDWidget.FIRE_FLASH_DURATION_MS <= 1600);
     }
 
     // ── BindingsListener registration via ComboDispatcher ────────────────────
