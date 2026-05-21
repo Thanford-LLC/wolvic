@@ -125,11 +125,12 @@ public class BindComboView extends PromptDialogWidget
                 + " action=" + mActionInt);
         mCapturedPath = path.clone();
         renderBody();
-        setBindEnabled(hasCapturedPath() && !isSameActionCollision());
+        // Bind is only enabled when the path is completely free (no collision of any kind).
+        setBindEnabled(hasCapturedPath() && exactPathConflictAction() == ComboDispatcher.A_NONE);
     }
 
     private void onBindClicked() {
-        if (!hasCapturedPath() || isSameActionCollision()) {
+        if (!hasCapturedPath() || exactPathConflictAction() != ComboDispatcher.A_NONE) {
             return;
         }
         mDispatcher.setBinding(mCapturedPath, Binding.of(mActionInt));
@@ -162,11 +163,8 @@ public class BindComboView extends PromptDialogWidget
             int otherLabelRes = ComboActionRegistry.labelFor(conflictActionId);
             String otherLabel = (otherLabelRes != 0)
                     ? ctx.getString(otherLabelRes) : "";
-            sb.append(ctx.getString(
-                    R.string.combos_bind_conflict_warning, otherLabel));
+            sb.append(ctx.getString(R.string.gw_combo_path_conflict_hint, otherLabel));
         }
-        // Prefix-collision note removed: combos fire on grip-release only, so
-        // a shorter path sharing a prefix never "fires first" in practice.
         setBody(sb);
     }
 

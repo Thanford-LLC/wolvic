@@ -99,11 +99,14 @@ public class ComboBookmarkConfirmView extends PromptDialogWidget {
         BookmarksStore store = ss.getBookmarkStore();
         if (store == null) return;
 
+        // Create the bookmark entry (for Library visibility) and bind the combo to the
+        // URL directly. The binding param is the URL — portable across devices, so it
+        // survives export/import without GUID remapping.
         store.ensureComboBookmarksFolder()
                 .thenCompose(folderGuid ->
                         store.addBookmarkReturningGuid(folderGuid, mCurrentUrl, mCurrentTitle))
                 .thenAccept(bookmarkGuid -> {
-                    Binding binding = Binding.of(ComboDispatcher.A_GOTO_BOOKMARK, bookmarkGuid);
+                    Binding binding = Binding.of(ComboDispatcher.A_GOTO_BOOKMARK, mCurrentUrl);
                     mDispatcher.setBinding(mCapturedPath, binding);
                 });
     }

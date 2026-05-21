@@ -2652,7 +2652,7 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="gw_toast_combo_bookmark_saved">Combo Bookmark saved</string>
     <string name="gw_toast_combo_bookmark_deleted">Combo Bookmark deleted</string>
     <string name="gw_combos_combo_bookmarks_header">Combo Bookmarks</string>
-    <string name="gw_combos_combo_bookmarks_body">Hold grip, draw a path, and press A/X while visiting any website to save it as a Combo Bookmark. Manage your Combo Bookmarks in Library → Bookmarks → Combo Bookmarks.</string>
+    <string name="gw_combos_combo_bookmarks_body">• Hold grip + draw a path on any website\n• Press A/X to save it as a Combo Bookmark\n• Manage: Library → Bookmarks → Combo Bookmarks</string>
     <string name="gw_combo_bookmark_confirm_title">Save as Combo Bookmark?</string>
     <string name="gw_combo_bookmark_confirm_save">Save</string>
 

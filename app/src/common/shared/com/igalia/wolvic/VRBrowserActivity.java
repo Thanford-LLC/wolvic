@@ -534,6 +534,9 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         // appears above the Tray. Gated inside the helper so repeat launches
         // are no-ops.
         mTray.postDelayed(this::maybeShowLongPressOnboardingHint, 3000L);
+
+        // Glyphew (Section 3.4): offer import on first launch if export files exist.
+        mTray.postDelayed(this::maybeOfferFirstRunImport, 3500L);
     }
 
     private void onPresentingImmersiveChange(boolean presenting) {
@@ -1437,6 +1440,27 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         com.igalia.wolvic.ui.widgets.NotificationManager.show(
                 FD_LONGPRESS_ONBOARDING_NOTIFICATION_ID, hint);
         store.markLongPressHintSeen();
+    }
+
+    // Glyphew (Section 3.4): one-shot first-run import offer.
+    // Shows the import picker if export files exist and the pref has not been set.
+    // Marks the pref immediately (before showing) so a process kill mid-show
+    // doesn't re-prompt on the next launch.
+    private void maybeOfferFirstRunImport() {
+        if (mComboDispatcher == null) return;
+        android.content.SharedPreferences prefs =
+                android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean(com.thanford.glyphew.settings.ComboExportImport.PREF_IMPORT_OFFERED,
+                false)) {
+            return;
+        }
+        prefs.edit().putBoolean(
+                com.thanford.glyphew.settings.ComboExportImport.PREF_IMPORT_OFFERED,
+                true).apply();
+        if (!com.thanford.glyphew.settings.ComboExportImport.listExportEntries(this, 1).isEmpty()) {
+            new com.thanford.glyphew.settings.ComboImportPickerView(this, mComboDispatcher)
+                    .showWithFocus();
+        }
     }
 
     // Glyphew (Phase 3b): which controller hand owns the active combo grip.

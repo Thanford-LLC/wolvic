@@ -211,6 +211,26 @@ class BookmarksStore constructor(val context: Context) {
         storage.getBookmark(guid)
     }
 
+    /**
+     * Deletes the bookmark with [url] from the Combo Bookmarks folder only. Plain bookmarks
+     * elsewhere with the same URL are left untouched. Used by the combo-unbind inverse
+     * cascade so removing a combo never deletes an unrelated bookmark the user kept.
+     */
+    @OptIn(ExperimentalUnsignedTypes::class)
+    fun deleteComboBookmarkByURL(url: String) = GlobalScope.future {
+        val mobile = storage.getTree(BookmarkRoot.Mobile.id, recursive = true)
+        val comboFolder = mobile?.children?.firstOrNull {
+            it.type == BookmarkNodeType.FOLDER && it.title == COMBO_BOOKMARKS_TITLE
+        }
+        val match = comboFolder?.children?.firstOrNull {
+            it.type == BookmarkNodeType.ITEM && it.url == url
+        }
+        if (match != null) {
+            storage.deleteNode(match.guid)
+            notifyListeners()
+        }
+    }
+
     private suspend fun getBookmarkByUrl(aURL: String): BookmarkNode? {
         val bookmarks: List<BookmarkNode>? = storage.getBookmarksWithUrl(aURL)
         if (bookmarks == null || bookmarks.isEmpty()) {

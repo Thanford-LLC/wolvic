@@ -54,4 +54,15 @@ public class BookmarksStoreComboTest {
         assert CompletableFuture.class.isAssignableFrom(m.getReturnType())
                 : "getBookmarkByGuid() must return CompletableFuture";
     }
+
+    @Test
+    public void bookmarksStore_hasDeleteComboBookmarkByURLMethod() throws NoSuchMethodException {
+        // The combo unbind inverse cascade must delete only from the Combo Bookmarks folder,
+        // never a plain bookmark that happens to share the same URL — hence a dedicated method
+        // distinct from the general deleteBookmarkByURL.
+        Method m = BookmarksStore.class.getMethod("deleteComboBookmarkByURL", String.class);
+        assertNotNull("deleteComboBookmarkByURL(url) must exist on BookmarksStore", m);
+        assert CompletableFuture.class.isAssignableFrom(m.getReturnType())
+                : "deleteComboBookmarkByURL() must return CompletableFuture";
+    }
 }

@@ -23,7 +23,7 @@ import java.util.Map;
  *
  * <p>Listens for {@link BookmarksStore.BookmarkListener#onBookmarksUpdated()} and
  * reconciles every {@link ComboDispatcher#A_GOTO_BOOKMARK} binding against the
- * live bookmark store. Any binding whose bookmark GUID no longer exists is purged
+ * live bookmark store. Any binding whose bookmark URL is no longer bookmarked is purged
  * (the user deleted the bookmark directly in Bookmark Manager).
  *
  * <p>Register in {@code VRBrowserActivity.onCreate} after ComboDispatcher boots.
@@ -76,12 +76,13 @@ public final class ComboBookmarkSync implements BookmarksStore.BookmarkListener 
             final Binding b = entry.getValue();
             if (b.action != ComboDispatcher.A_GOTO_BOOKMARK || b.param == null) continue;
 
-            final String guid = b.param;
-            store.getBookmarkByGuid(guid).thenAccept(node -> {
-                if (node == null) {
-                    // Stale binding — purge it.
+            // param is the bookmark URL. If the URL is no longer bookmarked anywhere
+            // (user deleted the Combo Bookmark in the Bookmark Manager), purge the binding.
+            final String url = b.param;
+            store.isBookmarked(url).thenAccept(exists -> {
+                if (!exists) {
                     new ComboBindingStore(mAppContext).purgeBookmarkBindings(
-                            ComboDispatcher.A_GOTO_BOOKMARK, guid);
+                            ComboDispatcher.A_GOTO_BOOKMARK, url);
                     mDispatcher.reloadBindings();
                 }
             });

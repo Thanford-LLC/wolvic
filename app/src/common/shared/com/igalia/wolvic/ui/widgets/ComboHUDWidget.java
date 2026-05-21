@@ -539,9 +539,12 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         mFiredActionInt     = actionInt;
         mFiredFlashStartMs  = android.os.SystemClock.uptimeMillis();
         mFireFlashPillAlpha = 1f;
-        invalidate();
-        // Chain invalidate() calls until the flash window expires.
-        postDelayed(this::invalidate, FIRE_FLASH_DURATION_MS + 32L);
+        // mCanvasView is the actual drawing surface — invalidate() on 'this' has no effect.
+        if (mCanvasView != null) mCanvasView.postInvalidate();
+        // Schedule a cleanup draw after the flash window expires.
+        mMainHandler.postDelayed(() -> {
+            if (mCanvasView != null) mCanvasView.invalidate();
+        }, FIRE_FLASH_DURATION_MS + 32L);
     }
 
     /**
@@ -1596,6 +1599,10 @@ public class ComboHUDWidget extends UIWidget implements ComboDispatcher.Bindings
         canvas.translate(8f, yOffset);
         mTipStripLayout.draw(canvas);
         canvas.restoreToCount(save);
+        // Keep redrawing each frame while the pill pop is still animating.
+        if (mFireFlashPillAlpha > 0.01f) {
+            mCanvasView.postInvalidateOnAnimation();
+        }
     }
 
     @Nullable

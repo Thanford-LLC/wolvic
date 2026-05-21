@@ -40,19 +40,19 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
     private final ComboDispatcher mDispatcher;
     private final int[] mPath;
     private final int mActionInt;
-    /** Non-null for A_GOTO_BOOKMARK: GUID of the bookmark to delete on confirm (inverse cascade). */
-    @Nullable private final String mBookmarkGuid;
+    /** Non-null for A_GOTO_BOOKMARK: URL of the bookmark to delete on confirm (inverse cascade). */
+    @Nullable private final String mBookmarkUrl;
 
     public ComboUnbindConfirmDialog(@NonNull Context ctx,
                                     @NonNull ComboDispatcher dispatcher,
                                     @NonNull int[] path,
                                     int actionInt,
-                                    @Nullable String bookmarkGuid) {
+                                    @Nullable String bookmarkUrl) {
         super(ctx);
         mDispatcher = dispatcher;
         mPath = path;
         mActionInt = actionInt;
-        mBookmarkGuid = bookmarkGuid;
+        mBookmarkUrl = bookmarkUrl;
         // Matches ClearUserDataDialogWidget / ComboResetConfirmDialog pattern:
         // super(ctx) fires the first updateUI() (fields not set yet, body skipped).
         // Fields are now set; initialize(ctx) fires the second updateUI() with them.
@@ -72,9 +72,11 @@ public class ComboUnbindConfirmDialog extends PromptDialogWidget {
             if (index == PromptDialogWidget.POSITIVE && mDispatcher != null && mPath != null) {
                 mDispatcher.removeBinding(mPath);
                 // Inverse cascade: A_GOTO_BOOKMARK born-together-deleted-together invariant.
-                if (mBookmarkGuid != null) {
+                // Scoped to the Combo Bookmarks folder so a plain bookmark sharing the same
+                // URL is never removed.
+                if (mBookmarkUrl != null) {
                     final SessionStore ss = SessionStore.get();
-                    if (ss != null) ss.getBookmarkStore().deleteBookmarkById(mBookmarkGuid);
+                    if (ss != null) ss.getBookmarkStore().deleteComboBookmarkByURL(mBookmarkUrl);
                 }
             }
             onDismiss();

@@ -838,19 +838,13 @@ public class ComboDispatcher {
             case A_TOGGLE_MODE:         toggleComboMode();      break;
             case A_TOGGLE_GHOST_ROUTES: toggleGhostRoutes();    break;
             case A_GOTO_BOOKMARK: {
+                // param is the bookmark URL (portable across devices). Navigate directly —
+                // no BookmarksStore GUID lookup needed.
                 if (param == null) break; // unbound parametric — should never happen post-validation
-                SessionStore ss = SessionStore.get();
-                if (ss == null) break;
-                ss.getBookmarkStore().getBookmarkByGuid(param).thenAccept(node -> {
-                    if (node == null) {
-                        // Stale binding — purge silently; the listener in ComboBookmarkSync
-                        // will fire a reconcile pass on the next onBookmarksUpdated event.
-                        return;
-                    }
-                    mMainHandler.post(() -> {
-                        WindowWidget win = focusedWindow();
-                        if (win != null) win.getSession().loadUri(node.getUrl());
-                    });
+                final String bookmarkUrl = param;
+                mMainHandler.post(() -> {
+                    WindowWidget win = focusedWindow();
+                    if (win != null) win.getSession().loadUri(bookmarkUrl);
                 });
                 break;
             }

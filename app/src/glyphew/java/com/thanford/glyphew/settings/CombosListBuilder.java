@@ -14,6 +14,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -78,7 +79,8 @@ public final class CombosListBuilder {
 
         addSystemGesturesSection(inflater, container);
         addActionSections(ctx, inflater, container, activeTable, fourDirTable, is4DirMode, dispatcher);
-        addComboBookmarksExplainerSection(inflater, container);
+        addComboBookmarksSection(ctx, inflater, container, activeTable, dispatcher);
+        addDataSection(ctx, inflater, container, dispatcher);
     }
 
     // ── System gestures (info-only rows, unchanged) ───────────────────────────
@@ -329,12 +331,12 @@ public final class CombosListBuilder {
         xView.setClickable(true);
         xView.setFocusable(true);
         xView.setOnClickListener(v -> {
-            // For A_GOTO_BOOKMARK, pass the bookmark GUID so the dialog can delete
+            // For A_GOTO_BOOKMARK, pass the bookmark URL so the dialog can delete
             // the associated bookmark on confirm (inverse cascade — plan §6).
             Binding binding = dispatcher.getBindingForPath(path);
-            String bookmarkGuid = (binding != null && binding.action == ComboDispatcher.A_GOTO_BOOKMARK)
+            String bookmarkUrl = (binding != null && binding.action == ComboDispatcher.A_GOTO_BOOKMARK)
                     ? binding.param : null;
-            new ComboUnbindConfirmDialog(ctx, dispatcher, path, actionId, bookmarkGuid)
+            new ComboUnbindConfirmDialog(ctx, dispatcher, path, actionId, bookmarkUrl)
                     .show(UIWidget.REQUEST_FOCUS);
         });
         return xView;
@@ -396,16 +398,173 @@ public final class CombosListBuilder {
         return content;
     }
 
-    // ── Combo Bookmarks explainer section ────────────────────────────────────
+    // ── Data section (Export / Import) ────────────────────────────────────────
 
-    private static void addComboBookmarksExplainerSection(@NonNull LayoutInflater inflater,
-                                                          @NonNull LinearLayout container) {
+    private static void addDataSection(@NonNull Context ctx,
+                                       @NonNull LayoutInflater inflater,
+                                       @NonNull LinearLayout container,
+                                       @NonNull ComboDispatcher dispatcher) {
+        LinearLayout content = addExpandableSection(inflater, container,
+                R.string.gw_combos_data_section, /* startExpanded= */ true);
+
+        float density = ctx.getResources().getDisplayMetrics().density;
+        int padH = (int) (16f * density);
+        int padV = (int) (10f * density);
+        int btnMargin = (int) (6f * density);
+        int sectionPad = (int) (8f * density);
+
+        content.setPadding(0, sectionPad, 0, sectionPad);
+
+        // Export — combos + bookmarks combined.
+        // Notification is in-panel (button text changes) since VR compositor
+        // doesn't surface Android system Toasts into the headset lens view.
+        String exportLabel = ctx.getString(R.string.gw_backup_export_button);
+        content.addView(makeDataButton(ctx, exportLabel, padH, padV, density, btnMargin, v -> {
+            TextView btn = (TextView) v;
+            btn.setClickable(false);
+            btn.setText(R.string.gw_backup_exporting);
+            ComboExportImport.exportAsync(ctx, dispatcher, (displayName, clipOk) -> {
+                if ("".equals(displayName)) {
+                    btn.setText(R.string.gw_backup_export_uptodate);
+                } else if (displayName != null) {
+                    btn.setText(R.string.gw_backup_export_saved);
+                } else {
+                    btn.setText(R.string.gw_backup_export_clipboard);
+                }
+                btn.postDelayed(() -> {
+                    btn.setText(exportLabel);
+                    btn.setClickable(true);
+                }, 2500);
+            });
+        }));
+
+        // Import — opens combined backup picker.
+        content.addView(makeDataButton(ctx,
+                ctx.getString(R.string.gw_backup_import_button),
+                padH, padV, density, btnMargin, v ->
+                    new ComboImportPickerView(ctx, dispatcher).showWithFocus()));
+    }
+
+    private static View makeDataButton(@NonNull Context ctx,
+                                       @NonNull String label,
+                                       int padH, int padV, float density, int bottomMargin,
+                                       View.OnClickListener listener) {
+        android.graphics.drawable.GradientDrawable normalBg =
+                new android.graphics.drawable.GradientDrawable();
+        normalBg.setColor(0xFF1C1F7E);
+        normalBg.setStroke((int) density, 0xFF32369E);
+        normalBg.setCornerRadius(6f * density);
+
+        android.graphics.drawable.GradientDrawable focusedBg =
+                new android.graphics.drawable.GradientDrawable();
+        focusedBg.setColor(0xFF252AA0);
+        focusedBg.setStroke((int) (2f * density), 0xCCFDDE0A);
+        focusedBg.setCornerRadius(6f * density);
+
+        android.graphics.drawable.StateListDrawable sld =
+                new android.graphics.drawable.StateListDrawable();
+        sld.addState(new int[]{ android.R.attr.state_focused }, focusedBg);
+        sld.addState(new int[]{ android.R.attr.state_hovered }, focusedBg);
+        sld.addState(new int[]{}, normalBg);
+
+        TextView btn = new TextView(ctx);
+        btn.setBackground(sld);
+        btn.setPadding(padH, padV, padH, padV);
+        btn.setTextSize(14f);
+        btn.setText(label);
+        btn.setTextColor(ContextCompat.getColor(ctx, R.color.fog));
+        btn.setClickable(true);
+        btn.setFocusable(true);
+        btn.setOnClickListener(listener);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, bottomMargin);
+        btn.setLayoutParams(lp);
+        return btn;
+    }
+
+    // ── Combo Bookmarks section ──────────────────────────────────────────────
+
+    private static void addComboBookmarksSection(@NonNull Context ctx,
+                                                 @NonNull LayoutInflater inflater,
+                                                 @NonNull LinearLayout container,
+                                                 @NonNull Map<String, Binding> activeBindings,
+                                                 @NonNull ComboDispatcher dispatcher) {
         LinearLayout content = addExpandableSection(inflater, container,
                 R.string.gw_combos_combo_bookmarks_header, /* startExpanded= */ true);
-        // Reuse the system-gesture row layout — label = empty, action = body copy.
+        // Explainer copy at the top (reuses the system-gesture row layout).
         addSystemGestureRow(inflater, content,
                 R.string.gw_combos_combo_bookmarks_header,
                 R.string.gw_combos_combo_bookmarks_body);
+
+        // List each bound combo bookmark: path arrows → site host, with an unbind button.
+        // binding.param is the bookmark URL, so the host is shown directly with no async lookup.
+        for (Map.Entry<String, Binding> e : activeBindings.entrySet()) {
+            Binding b = e.getValue();
+            if (b.action != ComboDispatcher.A_GOTO_BOOKMARK || b.param == null) continue;
+            int[] path = parsePathKey(e.getKey());
+            if (path.length == 0) continue;
+            content.addView(makeComboBookmarkRow(ctx, dispatcher, path, b.param));
+        }
+    }
+
+    /**
+     * Row showing "↑→  example.com" plus an Unbind button for one combo bookmark.
+     * Styling follows DESIGN.md tokens: accent-yellow combo arrows (matching the grid
+     * path_tip), gw_text host label at settings body size, gw_* spacing dimens.
+     */
+    private static View makeComboBookmarkRow(@NonNull Context ctx,
+                                             @NonNull ComboDispatcher dispatcher,
+                                             @NonNull int[] path,
+                                             @NonNull String url) {
+        android.content.res.Resources res = ctx.getResources();
+        int padH = res.getDimensionPixelSize(R.dimen.gw_pad_row_h);
+        int padV = res.getDimensionPixelSize(R.dimen.gw_pad_row_v_system);
+        int gap  = res.getDimensionPixelSize(R.dimen.gw_pad_gesture_action_start);
+
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setPadding(padH, padV, padH, padV);
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        // Combo path arrows — accent yellow, matching the grid's path_tip (18sp).
+        TextView arrows = new TextView(ctx);
+        arrows.setText(pathToArrows(path));
+        arrows.setTextColor(ContextCompat.getColor(ctx, R.color.gw_accent));
+        arrows.setTextSize(18f);
+        arrows.setIncludeFontPadding(false);
+        LinearLayout.LayoutParams arrowsLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        arrowsLp.setMarginEnd(gap);
+        arrows.setLayoutParams(arrowsLp);
+        row.addView(arrows);
+
+        // Site host — default text color at settings body size.
+        String host;
+        try {
+            android.net.Uri u = android.net.Uri.parse(url);
+            host = (u.getHost() != null) ? u.getHost() : url;
+        } catch (Exception ex) {
+            host = url;
+        }
+        TextView label = new TextView(ctx);
+        label.setText(host);
+        label.setTextColor(ContextCompat.getColor(ctx, R.color.gw_text));
+        label.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
+                res.getDimension(R.dimen.settings_text_size));
+        LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        label.setLayoutParams(labelLp);
+        row.addView(label);
+
+        row.addView(makeDeleteButton(ctx, dispatcher, path, ComboDispatcher.A_GOTO_BOOKMARK));
+        return row;
     }
 
     private static void addSystemGestureRow(@NonNull LayoutInflater inflater,

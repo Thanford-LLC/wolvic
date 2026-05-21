@@ -109,4 +109,46 @@
          long-press-for-Settings gesture. Settings discovery is a second-order
          concern solved by the Tray honeycomb and accidental long-presses. -->
     <string name="combos_longpress_onboarding_hint">Tip: Hold grip and push the joystick to start a combo</string>
+
+    <!-- Section 3.2 — conflict detection on save (refuse-and-hint). -->
+    <string name="gw_combo_path_conflict_hint">Already bound to %1$s — unbind it first.</string>
+
+    <!-- Section 3.3 / 3.4 — Export and Import data section. -->
+    <string name="gw_combos_data_section">Data</string>
+    <string name="gw_combos_export_button">Export combos</string>
+    <string name="gw_combos_export_success">Combos exported — %1$s</string>
+    <string name="gw_combos_import_button">Import combos</string>
+    <string name="gw_combos_import_title">Import combos</string>
+    <string name="gw_combos_import_no_files">No export files found in Downloads/Glyphew/.</string>
+    <string name="gw_combos_import_clipboard_row">Clipboard (just now)</string>
+    <string name="gw_combos_import_success">Combos imported successfully.</string>
+    <string name="gw_combos_import_error_version">Unsupported file version — export from a newer build.</string>
+    <string name="gw_combos_import_error_conflict">Import blocked: %1$s is already bound to %2$s. Unbind it first.</string>
+    <string name="gw_combos_import_error_parse">File could not be read — it may be corrupt.</string>
+    <!-- first-run one-shot gate (string value used as SharedPrefs key) -->
+    <string name="gw_combos_import_first_run_pref">gw_import_offered_v1</string>
+
+    <!-- Bookmark Export / Import data section. -->
+    <string name="gw_bookmarks_export_button">Export bookmarks</string>
+    <string name="gw_bookmarks_import_button">Import bookmarks</string>
+    <string name="gw_bookmarks_export_success">Bookmarks exported — %1$s</string>
+    <string name="gw_bookmarks_import_title">Import bookmarks</string>
+    <string name="gw_bookmarks_import_success">Bookmarks imported successfully.</string>
+
+    <!-- Combined backup Export / Import (Section 3.3/3.4 revision). -->
+    <string name="gw_backup_export_button">Export</string>
+    <string name="gw_backup_import_button">Import</string>
+    <!-- In-panel button states — replaces Toast (VR compositor doesn't surface Android Toasts). -->
+    <string name="gw_backup_exporting">Exporting…</string>
+    <string name="gw_backup_export_saved">✓ Saved</string>
+    <string name="gw_backup_export_clipboard">✓ Clipboard</string>
+    <string name="gw_backup_export_uptodate">Already up to date</string>
+    <string name="gw_backup_import_title">Import backup</string>
+    <string name="gw_backup_import_no_files">No backup files found.</string>
+    <!-- Shown as dialog title after successful import; dialog auto-dismisses after 1.2 s. -->
+    <string name="gw_backup_import_success">✓ Backup imported</string>
+    <!-- Per-row delete affordance in the import picker. Two-tap confirm (destructive). -->
+    <string name="gw_backup_delete">✕  Delete</string>
+    <string name="gw_backup_delete_confirm">Delete?</string>
+    <string name="gw_backup_delete_content_desc">Delete this backup file</string>
 </resources>
