@@ -26,6 +26,8 @@ import com.igalia.wolvic.ui.widgets.ComboHUDWidget;
 import com.igalia.wolvic.ui.widgets.combo.ComboTipBuilder;
 import com.igalia.wolvic.ui.widgets.dialogs.PromptDialogWidget;
 
+import android.widget.Toast;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -157,8 +159,20 @@ public class ActionPickerView extends PromptDialogWidget {
 
     private void onBindClicked() {
         if (mSelectedActionId <= 0) return;
-        mDispatcher.setBinding(mCapturedPath, Binding.of(mSelectedActionId));
+        if (!mDispatcher.trySetBinding(mCapturedPath, Binding.of(mSelectedActionId))) {
+            showConflictToast();
+            return;
+        }
         onDismiss();
+    }
+
+    private void showConflictToast() {
+        int conflictAction = mDispatcher.getActionForExactPath(mCapturedPath);
+        int labelRes = ComboActionRegistry.labelFor(conflictAction);
+        String label = (labelRes != 0) ? getContext().getString(labelRes) : "";
+        Toast.makeText(getContext(),
+                getContext().getString(R.string.gw_combo_path_conflict_hint, label),
+                Toast.LENGTH_LONG).show();
     }
 
     private void setBindEnabled(boolean enabled) {

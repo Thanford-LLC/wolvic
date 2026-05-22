@@ -451,6 +451,23 @@ public class ComboDispatcher {
     }
 
     /**
+     * Conflict-checked variant of {@link #setBinding}. Returns {@code false}
+     * (writing nothing) when the exact path is already bound in the active
+     * table to a DIFFERENT binding; callers surface
+     * {@code R.string.gw_combo_path_conflict_hint}. Re-binding a path to its
+     * current binding is idempotent and returns {@code true}.
+     */
+    public boolean trySetBinding(@NonNull int[] path, @NonNull Binding binding) {
+        if (path.length == 0) return false;
+        Binding existing = currentTable().get(key(path));
+        if (existing != null && !existing.equals(binding)) {
+            return false;
+        }
+        setBinding(path, binding);
+        return true;
+    }
+
+    /**
      * Phase 5 — enter/leave capture mode. While in capture mode the dispatcher
      * routes emitted paths to the listener on the main thread and does NOT
      * consult the dispatch table. Passing {@code enabled=true, listener=null}

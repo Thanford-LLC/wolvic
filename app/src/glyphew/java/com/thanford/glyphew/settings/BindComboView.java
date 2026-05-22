@@ -40,7 +40,7 @@ import java.util.Map;
  *   <li><b>Same-action collision</b> (this path is already bound to the locked
  *       action) → Bind button disabled, body shows "already bound" note.</li>
  *   <li><b>Different-action collision</b> (path is bound to some OTHER action)
- *       → Bind stays enabled, body shows "will replace &lt;other&gt;" warning.</li>
+ *       → Bind button disabled, body shows "unbind it first" hint.</li>
  *   <li><b>Prefix collision</b> (cherry-pick) → path is a proper prefix of, or
  *       has as a proper prefix, another binding. Bind stays enabled; body
  *       shows a soft warning since the shorter path will emit first and the
@@ -133,7 +133,13 @@ public class BindComboView extends PromptDialogWidget
         if (!hasCapturedPath() || exactPathConflictAction() != ComboDispatcher.A_NONE) {
             return;
         }
-        mDispatcher.setBinding(mCapturedPath, Binding.of(mActionInt));
+        if (!mDispatcher.trySetBinding(mCapturedPath, Binding.of(mActionInt))) {
+            // Race-window conflict: front-loaded check passed but table changed
+            // between path capture and Bind tap. Refresh the body to show the hint.
+            renderBody();
+            setBindEnabled(false);
+            return;
+        }
         // Blob-listener spine: save() → KEY_BLOB change → reloadBindings() →
         // BindingsListener → CombosSettingsView.onBindingsChanged → rebuild.
         onDismiss();
@@ -164,6 +170,8 @@ public class BindComboView extends PromptDialogWidget
             String otherLabel = (otherLabelRes != 0)
                     ? ctx.getString(otherLabelRes) : "";
             sb.append(ctx.getString(R.string.gw_combo_path_conflict_hint, otherLabel));
+        } else if (hasPrefixCollision()) {
+            sb.append(ctx.getString(R.string.combos_bind_prefix_collision_warning));
         }
         setBody(sb);
     }

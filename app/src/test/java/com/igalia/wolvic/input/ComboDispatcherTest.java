@@ -166,4 +166,37 @@ public class ComboDispatcherTest {
         assertTrue("after rebind, node 4 should be a legal next from [2,2,8]",
                 nexts.contains(4));
     }
+
+    // ---- trySetBinding --------------------------------------------------
+
+    @Test
+    public void trySetBinding_conflictingPath_returnsFalse() {
+        // [2] is already bound to A_SCROLL_UP. Attempting to bind it to a
+        // different action must be refused.
+        assertFalse("conflicting path must refuse and return false",
+                mDispatcher4Dir.trySetBinding(
+                        new int[]{2}, Binding.of(ComboDispatcher.A_FORWARD)));
+    }
+
+    @Test
+    public void trySetBinding_sameBinding_returnsTrue() {
+        // Re-binding [2] to A_SCROLL_UP (already its binding) is idempotent.
+        assertTrue("re-binding to the same action must succeed (idempotent)",
+                mDispatcher4Dir.trySetBinding(
+                        new int[]{2}, Binding.of(ComboDispatcher.A_SCROLL_UP)));
+    }
+
+    @Test
+    public void trySetBinding_freePath_returnsTrue() {
+        // [2,2,8] is not bound to any action — must accept and return true.
+        assertTrue("free path must accept the binding and return true",
+                mDispatcher4Dir.trySetBinding(
+                        new int[]{2, 2, 8}, Binding.of(ComboDispatcher.A_HISTORY)));
+    }
+
+    @Test
+    public void trySetBinding_emptyPath_returnsFalse() {
+        assertFalse("empty path must always return false",
+                mDispatcher4Dir.trySetBinding(new int[]{}, Binding.of(ComboDispatcher.A_FORWARD)));
+    }
 }

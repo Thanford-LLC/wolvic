@@ -9,6 +9,7 @@ package com.thanford.glyphew.settings;
 import android.content.Context;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -66,6 +67,10 @@ public class ComboBookmarkConfirmView extends PromptDialogWidget {
         });
         setButtonsDelegate((index, isChecked) -> {
             if (index == PromptDialogWidget.POSITIVE && mDispatcher != null && mCapturedPath != null) {
+                if (mDispatcher.getActionForExactPath(mCapturedPath) != ComboDispatcher.A_NONE) {
+                    showConflictToast();
+                    return; // path now taken — keep dialog open, create nothing
+                }
                 saveComboBookmark();
             }
             onDismiss();
@@ -107,7 +112,12 @@ public class ComboBookmarkConfirmView extends PromptDialogWidget {
                         store.addBookmarkReturningGuid(folderGuid, mCurrentUrl, mCurrentTitle))
                 .thenAccept(bookmarkGuid -> {
                     Binding binding = Binding.of(ComboDispatcher.A_GOTO_BOOKMARK, mCurrentUrl);
-                    mDispatcher.setBinding(mCapturedPath, binding);
+                    if (!mDispatcher.trySetBinding(mCapturedPath, binding)) {
+                        // Race: path was bound between the pre-check and the async
+                        // bookmark creation. Library entry created but not bound — log only.
+                        android.util.Log.w("ComboBookmarkConfirmView",
+                                "trySetBinding refused after bookmark creation — path taken by race");
+                    }
                 });
     }
 
@@ -136,5 +146,14 @@ public class ComboBookmarkConfirmView extends PromptDialogWidget {
         if (!(getContext() instanceof VRBrowserActivity)) return;
         ComboHUDWidget hud = ((VRBrowserActivity) getContext()).getComboHUDWidget();
         if (hud != null) hud.setHudDimmed(dimmed);
+    }
+
+    private void showConflictToast() {
+        int conflictAction = mDispatcher.getActionForExactPath(mCapturedPath);
+        int labelRes = ComboActionRegistry.labelFor(conflictAction);
+        String label = (labelRes != 0) ? getContext().getString(labelRes) : "";
+        Toast.makeText(getContext(),
+                getContext().getString(R.string.gw_combo_path_conflict_hint, label),
+                Toast.LENGTH_LONG).show();
     }
 }
