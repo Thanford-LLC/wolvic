@@ -638,7 +638,7 @@
     <string name="developer_options_homepage_other">Other</string>
 
     <!-- Settings footer: Glyphew / Wolvic / MPL 2.0 attribution block. Canonical text per WOLVIC-COMPLIANCE.md §5.2 — do not paraphrase. -->
-    <string name="glyphew_attribution">Glyphew is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/TODO/wolvic-fork\nOpen Source Licenses: coming before release.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
+    <string name="glyphew_attribution">Glyphew is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/thanfordhq/wolvic\nOpen Source Licenses: see Settings › About › Open Source Licenses.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
 
     <!-- This string is used to label a set of radio buttons that allow the user to change the
          User-Agent (UA) string of the browser. -->
@@ -2166,7 +2166,7 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
         \n\nIMPORTANT: unless you use Sync, the new app will not have your bookmarks and tabs.</string>
     <string name="deprecated_version_dialog_info_button">Learn more…</string>
     <!-- TODO: set before store submission -->
-    <string name="deprecated_version_dialog_info_url" translatable="false">https://glyphew.app/legal/TODO-support</string>
+    <string name="deprecated_version_dialog_info_url" translatable="false">https://thanford.com/support.html</string>
     <string name="deprecated_version_dialog_store_button">Install…</string>
 
     <!-- This string is displayed in the title of the slow script dialog. -->
@@ -2510,7 +2510,7 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- REVIEW WITH ATTORNEY BEFORE META STORE SUBMISSION -->
     <!-- These strings are the content of the Terms of Service. -->
     <string name="terms_service_title">Terms of Service</string>
-    <string name="terms_service_section_1">By using Glyphew, you agree to these Terms of Service. Glyphew is operated by Thanford LLC (in formation). The App is distributed through the Meta Horizon Store; Meta Platform Terms also apply.
+    <string name="terms_service_section_1">By using Glyphew, you agree to these Terms of Service. Glyphew is operated by Thanford LLC. The App is distributed through the Meta Horizon Store; Meta Platform Terms also apply.
         \n\nGlyphew is built on Wolvic (developed by Igalia, S.L.) under the Mozilla Public License 2.0. MPL 2.0-licensed source code and Thanford\'s modifications to Wolvic files are available as required by MPL 2.0. Nothing in these Terms limits rights granted to you under MPL 2.0.
         \n\nLicense: Thanford grants you a personal, non-exclusive, non-transferable, non-sublicensable license to use the App on your Meta Quest device for personal, non-commercial use.
         \n\nUser Conduct: You agree to use the App only for lawful purposes. You may not attempt to reverse-engineer proprietary portions of the App (except as permitted by applicable open source licenses), gain unauthorized access to any networks through the App, or use the App to transmit unlawful or harmful content.
@@ -2519,14 +2519,14 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="terms_service_section_2">Disclaimer of Warranties: THE APP IS PROVIDED “AS IS” AND “AS AVAILABLE” WITHOUT WARRANTY OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
         \n\nLimitation of Liability: TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD\'S TOTAL LIABILITY TO YOU SHALL NOT EXCEED THE AMOUNT YOU PAID FOR THE APP (USD $6.99). THANFORD IS NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES.
         \n\nChanges to Terms: Thanford may update these Terms from time to time. Continued use of the App after notice of an update constitutes your acceptance. If you do not agree, stop using the App.
-        \n\nGoverning Law: These Terms are governed by the laws of the State of [STATE], USA.
+        \n\nGoverning Law: These Terms are governed by the laws of the State of California, USA.
         \n\nContact: thanfordhq@gmail.com</string>
 
     <!-- REVIEW WITH ATTORNEY BEFORE META STORE SUBMISSION -->
     <!-- These strings are the content of the Privacy Policy. -->
     <string name="privacy_policy_title">Privacy Policy</string>
     <string name="privacy_policy_subtitle_1">Data We Collect</string>
-    <string name="privacy_policy_section_1">Glyphew is operated by Thanford LLC (in formation). Contact: thanfordhq@gmail.com. Privacy URL: https://glyphew.app/legal/privacy/
+    <string name="privacy_policy_section_1">Glyphew is operated by Thanford LLC. Contact: thanfordhq@gmail.com. Privacy URL: https://thanford.com/privacy.html
         \n\nTelemetry is OFF by default. When telemetry is disabled, Thanford collects NO data from you — no browsing history, no URLs, no personal information, nothing.
         \n\nIf you voluntarily enable telemetry in Settings, Thanford may collect limited diagnostic data only: crash reports, app version, device model (e.g. “Quest 3”), and aggregate session duration. We do NOT collect browsing history, URLs, search queries, passwords, payment data, your name, email, location, voice, or any personal identifiers.
         \n\nYou may enable or disable telemetry at any time in Settings › Privacy. Disabling takes effect immediately.</string>
@@ -2537,7 +2537,7 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
         \n\nCCPA (California): We do not sell personal information. Contact thanfordhq@gmail.com to exercise CCPA rights.
         \n\nGDPR/UK GDPR: Where applicable, legal basis for telemetry processing is your explicit consent. You have rights of access, rectification, erasure, restriction, portability, and objection. Contact thanfordhq@gmail.com.</string>
     <string name="privacy_policy_subtitle_3">Governing Law and Contact</string>
-    <string name="privacy_policy_section_3">This Privacy Policy is governed by the laws of the State of [STATE], USA. For questions or requests, contact Thanford LLC at thanfordhq@gmail.com. The current Privacy Policy is always available at https://glyphew.app/legal/privacy/</string>
+    <string name="privacy_policy_section_3">This Privacy Policy is governed by the laws of the State of California, USA. For questions or requests, contact Thanford LLC at thanfordhq@gmail.com. The current Privacy Policy is always available at https://thanford.com/privacy.html</string>
 
     <!-- Display names for the supported voice recognition services -->
     <string name="voice_service_metkai">MeetKai</string>

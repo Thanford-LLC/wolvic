@@ -151,4 +151,26 @@
     <string name="gw_backup_delete">✕  Delete</string>
     <string name="gw_backup_delete_confirm">Delete?</string>
     <string name="gw_backup_delete_content_desc">Delete this backup file</string>
+
+    <!-- Settings main panel -->
+    <string name="settings_about">About</string>
+
+    <!-- About screen -->
+    <string name="settings_about_title">About Glyphew</string>
+    <string name="settings_about_version_label">Version</string>
+    <string name="settings_about_company">© 2026 Thanford LLC</string>
+    <string name="settings_about_wolvic_attribution">Built on Wolvic (Mozilla Public License 2.0). Source: github.com/thanfordhq/wolvic</string>
+    <string name="settings_about_open_source_licenses">Open Source Licenses</string>
+    <string name="settings_about_terms_of_service">Terms of Service</string>
+    <string name="settings_about_privacy_policy">Privacy Policy</string>
+    <string name="settings_about_support">Support · thanfordhq@gmail.com</string>
+
+    <!-- Open Source Licenses screen -->
+    <string name="settings_open_source_licenses_title">Open Source Licenses</string>
+    <string name="settings_open_source_licenses_header">Glyphew is built on open source software. We gratefully acknowledge the following projects.</string>
+
+    <!-- About screen — legal/support URLs (open in a new browser tab) -->
+    <string name="settings_about_terms_url" translatable="false">https://thanford.com/terms.html</string>
+    <string name="settings_about_privacy_url" translatable="false">https://thanford.com/privacy.html</string>
+    <string name="settings_about_support_url" translatable="false">https://thanford.com/support.html</string>
 </resources>

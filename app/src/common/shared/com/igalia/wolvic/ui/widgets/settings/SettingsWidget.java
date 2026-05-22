@@ -31,6 +31,8 @@ import com.igalia.wolvic.R;
 import com.igalia.wolvic.VRBrowserActivity;
 import com.igalia.wolvic.VRBrowserApplication;
 import com.igalia.wolvic.audio.AudioEngine;
+import com.thanford.glyphew.settings.AboutView;
+import com.thanford.glyphew.settings.OpenSourceLicensesView;
 import com.igalia.wolvic.browser.Accounts;
 import com.igalia.wolvic.browser.SettingsStore;
 import com.igalia.wolvic.browser.engine.Session;
@@ -261,6 +263,14 @@ public class SettingsWidget extends UIDialog implements SettingsView.Delegate {
             }
 
             showView(SettingsView.SettingViewType.COMBOS);
+        });
+
+        mBinding.aboutButton.setOnClickListener(view -> {
+            if (mAudio != null) {
+                mAudio.playSound(AudioEngine.Sound.CLICK);
+            }
+
+            showView(SettingsView.SettingViewType.ABOUT);
         });
 
         mBinding.whatsNewButton.setOnClickListener(v -> {
@@ -524,6 +534,12 @@ public class SettingsWidget extends UIDialog implements SettingsView.Delegate {
                 break;
             case THIRD_PARTY_CREDITS:
                 showView(new ThirdPartyCreditsView(getContext(), mWidgetManager));
+                break;
+            case ABOUT:
+                showView(new AboutView(getContext(), mWidgetManager));
+                break;
+            case OPEN_SOURCE_LICENSES:
+                showView(new OpenSourceLicensesView(getContext(), mWidgetManager));
                 break;
         }
     }

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "name": "Wolvic",
+      "copyright": "Copyright 2022 Igalia S.L. and Wolvic contributors",
+      "license": "Mozilla Public License 2.0",
+      "license_url": "https://www.mozilla.org/en-US/MPL/2.0/",
+      "source_url": "https://github.com/thanfordhq/wolvic"
+    },
+    {
+      "name": "GeckoView",
+      "copyright": "Copyright 2018 Mozilla Foundation",
+      "license": "Mozilla Public License 2.0",
+      "license_url": "https://www.mozilla.org/en-US/MPL/2.0/",
+      "source_url": "https://mozilla.github.io/geckoview/"
+    },
+    {
+      "name": "Chromium",
+      "copyright": "Copyright 2015 The Chromium Authors",
+      "license": "BSD 3-Clause License",
+      "license_url": "https://chromium.googlesource.com/chromium/src/+/refs/heads/main/LICENSE",
+      "source_url": "https://chromium.googlesource.com/chromium/src"
+    },
+    {
+      "name": "AndroidX Libraries",
+      "copyright": "Copyright 2018 The Android Open Source Project",
+      "license": "Apache License 2.0",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "source_url": "https://developer.android.com/jetpack/androidx"
+    },
+    {
+      "name": "Material Symbols",
+      "copyright": "Copyright 2022 Google LLC",
+      "license": "Apache License 2.0",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "source_url": "https://github.com/google/material-design-icons"
+    }
+  ]
+}
