@@ -120,11 +120,6 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
     // ── Sync methods ───────────────────────────────────────────────────────
 
     @JavascriptInterface
-    public void getCatalog(String requestId) {
-        resolveOnUiThread(requestId, HomeCatalog.json());
-    }
-
-    @JavascriptInterface
     public void getPrefs(String requestId) {
         final JSONObject obj = new JSONObject();
         try {
