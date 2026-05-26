@@ -1,138 +1,111 @@
 'use strict';
 
 // ── Catalog data ───────────────────────────────────────────────────────────
-// Categories per PROJECT.md §8.2: Video / VR / Search / Gaming / Tools / Social.
+// Categories per PROJECT.md §8.2 (re-curated 2026-05-26 for Quest-3 power users).
+// Order: VR / Gaming / Video / Tools / Social / Search
+// Rule: drop any tile whose native Quest Horizon Store app strictly dominates.
+// Gaming = WebXR / browser-native VR games (not flat browser games).
 // Each site: { name, domain, icon (filename in icons/), color (brand), letter (fallback) }
 // Icons are 64×64 PNGs bundled in assets-gw-*/glyphew/icons/.
 
 const STATIC_CATALOG = [
-  {
-    id: 'video', title: 'Video', icon: '▶',
-    pages: [
-      [
-        { name: 'YouTube',    domain: 'youtube.com',      icon: 'youtube.png',      color: '#FF0033', letter: '▶' },
-        { name: 'Netflix',    domain: 'netflix.com',      icon: 'netflix.png',      color: '#E50914', letter: 'N' },
-        { name: 'Twitch',     domain: 'twitch.tv',        icon: 'twitch.png',       color: '#9146FF', letter: 'T' },
-        { name: 'Vimeo',      domain: 'vimeo.com',        icon: 'vimeo.png',        color: '#1ab7ea', letter: 'V' },
-        { name: 'Prime',      domain: 'primevideo.com',   icon: 'primevideo.png',   color: '#00A8E1', letter: '▷' },
-        { name: 'Disney+',    domain: 'disneyplus.com',   icon: 'disneyplus.png',   color: '#1A1D29', letter: 'D+' },
-        { name: 'Apple TV',   domain: 'tv.apple.com',     icon: 'appletv.png',      color: '#555555', letter: '' },
-        { name: 'Plex',       domain: 'plex.tv',          icon: 'plex.png',         color: '#E5A00D', letter: 'P' },
-      ],
-      [
-        { name: 'HBO Max',    domain: 'hbomax.com',        icon: 'hbomax.png',       color: '#8B5CF6', letter: 'M' },
-        { name: 'Peacock',    domain: 'peacocktv.com',     icon: 'peacock.png',      color: '#FFD700', letter: 'P' },
-        { name: 'Paramount+', domain: 'paramountplus.com', icon: 'paramount.png',    color: '#0064FF', letter: 'P+' },
-        { name: 'Crunchyroll',domain: 'crunchyroll.com',   icon: 'crunchyroll.png',  color: '#F47521', letter: 'C' },
-        { name: 'Tubi',       domain: 'tubitv.com',           icon: 'tubi.png',         color: '#FA541C', letter: 'T' },
-        { name: 'Dailymotion',domain: 'dailymotion.com',   icon: 'dailymotion.png',  color: '#0072EA', letter: 'D' },
-        { name: 'Rumble',     domain: 'rumble.com',        icon: 'rumble.png',       color: '#85BE00', letter: 'R' },
-        { name: 'Odysee',     domain: 'odysee.com',        icon: 'odysee.png',       color: '#E50054', letter: 'O' },
-      ],
-    ],
-  },
+  // 1. VR — promoted to first; most browser-native content for Quest users
   {
     id: 'vr', title: 'VR', icon: '◎',
     pages: [[
-      { name: 'YouTube 360',    domain: 'youtube.com', url: 'https://www.youtube.com/results?search_query=360+VR+video', icon: 'youtube.png',    color: '#FF0000', letter: '▶' },
-      { name: 'Vimeo 360',      domain: 'vimeo.com', url: 'https://vimeo.com/channels/360vr',         icon: 'vimeo.png',      color: '#1AB7EA', letter: 'V' },
-      { name: 'AirPano',        domain: 'airpano.com',                                                icon: 'airpano.png',    color: '#1E88C7', letter: 'A' },
-      { name: 'Kuula',          domain: 'kuula.co',                                                   icon: 'kuula.png',      color: '#2B2B2B', letter: 'K' },
-      { name: 'Arts & Culture', domain: 'artsandculture.google.com',                                  icon: 'artsculture.png',color: '#4285F4', letter: '◈' },
-      { name: 'Sketchfab',      domain: 'sketchfab.com',                                              icon: 'sketchfab.png',  color: '#1CAAD9', letter: 'S' },
-      { name: 'WebXR',          domain: 'itch.io', url: 'https://itch.io/games/tag-webxr',            icon: 'itchio.png',     color: '#FA5C5C', letter: '▲' },
-      { name: 'Matterport',     domain: 'matterport.com',                                             icon: 'matterport.png', color: '#00A4B4', letter: 'M' },
+      { name: 'AirPano',        domain: 'airpano.com',                                                    icon: 'airpano.png',        color: '#1E88C7', letter: 'A' },
+      { name: 'Sketchfab',      domain: 'sketchfab.com',                                                  icon: 'sketchfab.png',      color: '#1CAAD9', letter: 'S' },
+      { name: 'Kuula',          domain: 'kuula.co',                                                       icon: 'kuula.png',          color: '#2B2B2B', letter: 'K' },
+      { name: 'Vimeo 360',      domain: 'vimeo.com',     url: 'https://vimeo.com/channels/360vr',        icon: 'vimeo.png',          color: '#1AB7EA', letter: 'V' },
+      { name: 'Arts & Culture', domain: 'artsandculture.google.com',                                      icon: 'artsculture.png',    color: '#4285F4', letter: '◈' },
+      { name: 'Matterport',     domain: 'matterport.com',                                                 icon: 'matterport.png',     color: '#00A4B4', letter: 'M' },
+      { name: 'Hugh Hou',       domain: 'youtube.com',   url: 'https://www.youtube.com/@HughHou',        icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
+      { name: 'DeoVR',          domain: 'deovr.com',                                                      icon: 'deovr.png',          color: '#1A1A2E', letter: 'D' },
     ]],
   },
-  {
-    id: 'search', title: 'Search', icon: '⊙',
-    pages: [
-      [
-        { name: 'Google',     domain: 'google.com',       icon: 'google.png',      color: '#4285F4', letter: 'G' },
-        { name: 'Bing',       domain: 'bing.com',         icon: 'bing.png',        color: '#008373', letter: 'b' },
-        { name: 'DuckDuckGo', domain: 'duckduckgo.com',   icon: 'duckduckgo.png',  color: '#DE5833', letter: 'D' },
-        { name: 'Brave',      domain: 'search.brave.com', icon: 'brave.png',       color: '#FB542B', letter: '▲' },
-        { name: 'Kagi',       domain: 'kagi.com',         icon: 'kagi.png',        color: '#FFB319', letter: 'K' },
-        { name: 'Perplexity', domain: 'perplexity.ai',    icon: 'perplexity.png',  color: '#20808D', letter: 'P' },
-        { name: 'Startpage',  domain: 'startpage.com',    icon: 'startpage.png',   color: '#5046E4', letter: 'S' },
-        { name: 'Ecosia',     domain: 'ecosia.org',       icon: 'ecosia.png',      color: '#22885B', letter: '🌿' },
-      ],
-      [
-        { name: 'Yahoo',      domain: 'search.yahoo.com', icon: 'yahoo.png',       color: '#6001D2', letter: 'Y' },
-        { name: 'Yandex',     domain: 'yandex.com',       icon: 'yandex.png',      color: '#FF0000', letter: 'Я' },
-        { name: 'Qwant',      domain: 'qwant.com',        icon: 'qwant.png',       color: '#5C2D91', letter: 'Q' },
-        { name: 'Swisscows',  domain: 'swisscows.com',    icon: 'swisscows.png',   color: '#D12B24', letter: 'S' },
-        { name: 'Mojeek',     domain: 'mojeek.com',       icon: 'mojeek.png',      color: '#00B9F2', letter: 'M' },
-        { name: 'Searx',      domain: 'searx.space',      icon: 'searx.png',       color: '#3465A4', letter: 'S' },
-        { name: 'Ask',        domain: 'ask.com',          icon: 'ask.png',         color: '#E63B2E', letter: '?' },
-        { name: 'Baidu',      domain: 'baidu.com',        icon: 'baidu.png',       color: '#2932E1', letter: '百' },
-      ],
-    ],
-  },
+  // 2. Gaming — WebXR / browser-native VR games (replaces flat browser games)
   {
     id: 'gaming', title: 'Gaming', icon: '⊞',
-    pages: [
-      [
-        { name: 'itch.io',     domain: 'itch.io',          icon: 'itchio.png',     color: '#FA5C5C', letter: '▲' },
-        { name: 'Poki',        domain: 'poki.com',         icon: 'poki.png',       color: '#2A2E43', letter: 'P' },
-        { name: 'CrazyGames',  domain: 'crazygames.com',   icon: 'crazygames.png', color: '#6E3FF3', letter: 'C' },
-        { name: 'Newgrounds',  domain: 'newgrounds.com',   icon: 'newgrounds.png', color: '#FF8000', letter: 'N' },
-        { name: 'Krunker',     domain: 'krunker.io',       icon: 'krunker.png',    color: '#F2A93B', letter: 'K' },
-        { name: 'Skribbl',     domain: 'skribbl.io',       icon: 'skribbl.png',    color: '#2A7FFF', letter: '✎' },
-        { name: 'Gartic',      domain: 'garticphone.com',  icon: 'garticphone.png',color: '#00B2CA', letter: 'G' },
-        { name: 'Agar.io',     domain: 'agar.io',          icon: 'agario.png',     color: '#2B2B2B', letter: '●' },
-      ],
-      [
-        { name: 'Slither.io',  domain: 'slither.io',       icon: 'slither.png',    color: '#4CAF50', letter: '~' },
-        { name: 'Diep.io',     domain: 'diep.io',          icon: 'diep.png',       color: '#00B2E1', letter: '◆' },
-        { name: 'Coolmath',    domain: 'coolmathgames.com',icon: 'coolmath.png',   color: '#ED7D31', letter: '∞' },
-        { name: 'Armor Games', domain: 'armorgames.com',   icon: 'armorgames.png', color: '#2C3E50', letter: 'A' },
-        { name: 'Miniclip',    domain: 'miniclip.com',     icon: 'miniclip.png',   color: '#F23A2F', letter: 'M' },
-        { name: 'Y8',          domain: 'y8.com',           icon: 'y8.png',         color: '#E4002B', letter: '8' },
-        { name: 'Lichess',     domain: 'lichess.org',      icon: 'lichess.png',    color: '#629924', letter: '♞' },
-        { name: 'Chess.com',   domain: 'chess.com',        icon: 'chesscom.png',   color: '#769656', letter: '♚' },
-      ],
-    ],
-  },
-  {
-    id: 'tools', title: 'Tools', icon: '⚙',
     pages: [[
-      { name: 'Maps',      domain: 'maps.google.com',       icon: 'gmaps.png',        color: '#34A853', letter: '▿' },
-      { name: 'Gmail',     domain: 'mail.google.com',       icon: 'gmail.png',        color: '#EA4335', letter: 'M' },
-      { name: 'Drive',     domain: 'drive.google.com',      icon: 'gdrive.png',       color: '#1FA463', letter: '△' },
-      { name: 'Weather',   domain: 'weather.com',           icon: 'weather.png',      color: '#1B97D6', letter: '☀' },
-      { name: 'Translate', domain: 'translate.google.com',  icon: 'translate.png',    color: '#4285F4', letter: 'T' },
-      { name: 'Wikipedia', domain: 'wikipedia.org',         icon: 'wikipedia.png',    color: '#FFFFFF', letter: 'W' },
-      { name: 'Wolfram',   domain: 'wolframalpha.com',      icon: 'wolframalpha.png', color: '#E47000', letter: 'W' },
-      { name: 'Archive',   domain: 'archive.org',           icon: 'archive.png',      color: '#888888', letter: 'A' },
-    ], [
-      { name: 'Thanford',  domain: 'thanford.com',          icon: 'thanford.png',     color: '#111259', letter: 'T' },
+      { name: 'WebXR Hub',     domain: 'webxr-metaverse.com',                                             icon: 'webxrmetaverse.png', color: '#2B2B4A', letter: 'X' },
+      { name: 'Moon Rider',    domain: 'moonrider.xyz',                                                   icon: 'moonrider.png',      color: '#0E0E1A', letter: '♪' },
+      { name: 'heyVR',         domain: 'heyvr.io',                                                        icon: 'heyvr.png',          color: '#6C48E8', letter: 'h' },
+      { name: 'A-Frame',       domain: 'aframe.io',     url: 'https://aframe.io/showcase/',              icon: 'aframe.png',         color: '#EF2D5E', letter: 'A' },
+      { name: 'Frame VR',      domain: 'framevr.io',                                                      icon: 'framevr.png',        color: '#5850D6', letter: 'F' },
+      { name: 'Immersive Web', domain: 'immersiveweb.dev',                                                icon: 'immersiveweb.png',   color: '#2B6CB0', letter: 'W' },
+      { name: 'itch.io WebXR', domain: 'itch.io',       url: 'https://itch.io/games/tag-webxr',         icon: 'itchio.png',         color: '#FA5C5C', letter: '▲' },
+      { name: 'The Polys',     domain: 'thepolys.com',                                                    icon: 'thepolys.png',       color: '#B8860B', letter: '★' },
     ]],
   },
+  // 3. Video — only sites without a native Quest Horizon Store app + top VR creator channels
+  //    Dropped: YouTube (native app), Twitch (native app), Prime/Disney+/Peacock (native apps)
+  //    Netflix native app was delisted summer 2024; HBO Max / Apple TV / Crunchyroll have no native app
   {
-    id: 'social', title: 'Social', icon: '◉',
+    id: 'video', title: 'Video', icon: '▶',
+    pages: [[
+      { name: 'Netflix',      domain: 'netflix.com',      icon: 'netflix.png',       color: '#E50914', letter: 'N' },
+      { name: 'HBO Max',      domain: 'hbomax.com',        icon: 'hbomax.png',         color: '#8B5CF6', letter: 'M' },
+      { name: 'Apple TV',     domain: 'tv.apple.com',      icon: 'appletv.png',        color: '#555555', letter: '' },
+      { name: 'Crunchyroll',  domain: 'crunchyroll.com',   icon: 'crunchyroll.png',    color: '#F47521', letter: 'C' },
+      { name: 'Plex',         domain: 'plex.tv',           icon: 'plex.png',           color: '#E5A00D', letter: 'P' },
+      { name: 'ThrillSeeker', domain: 'youtube.com', url: 'https://www.youtube.com/@ThrillSeekerVR',    icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
+      { name: 'Nathie',       domain: 'youtube.com', url: 'https://www.youtube.com/@nathieVR',          icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
+      { name: 'Tyriel Wood',  domain: 'youtube.com', url: 'https://www.youtube.com/@TyrielWoodVRTech',  icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
+    ]],
+  },
+  // 4. Tools — utilities + AI assistants (p1) / VR news editorial (p2)
+  {
+    id: 'tools', title: 'Tools', icon: '⚙',
     pages: [
       [
-        { name: 'Reddit',     domain: 'reddit.com',       icon: 'reddit.png',    color: '#FF4500', letter: 'r' },
-        { name: 'Twitter/X',  domain: 'x.com',            icon: 'twitter.png',   color: '#FFFFFF', letter: '𝕏' },
-        { name: 'Instagram',  domain: 'instagram.com',    icon: 'instagram.png', color: '#E4405F', letter: '○' },
-        { name: 'Discord',    domain: 'discord.com',      icon: 'discord.png',   color: '#5865F2', letter: 'D' },
-        { name: 'Mastodon',   domain: 'mastodon.social',  icon: 'mastodon.png',  color: '#6364FF', letter: 'M' },
-        { name: 'Facebook',   domain: 'facebook.com',     icon: 'facebook.png',  color: '#1877F2', letter: 'f' },
-        { name: 'LinkedIn',   domain: 'linkedin.com',     icon: 'linkedin.png',  color: '#0A66C2', letter: 'in' },
-        { name: 'Hacker News',domain: 'news.ycombinator.com', icon: 'hackernews.png', color: '#FF6600', letter: 'Y' },
+        { name: 'Wikipedia', domain: 'wikipedia.org',         icon: 'wikipedia.png',    color: '#FFFFFF', letter: 'W' },
+        { name: 'Translate', domain: 'translate.google.com',  icon: 'translate.png',    color: '#4285F4', letter: 'T' },
+        { name: 'Maps',      domain: 'maps.google.com',       icon: 'gmaps.png',         color: '#34A853', letter: '▿' },
+        { name: 'Weather',   domain: 'weather.com',           icon: 'weather.png',       color: '#1B97D6', letter: '☀' },
+        { name: 'Archive',   domain: 'archive.org',           icon: 'archive.png',       color: '#888888', letter: 'A' },
+        { name: 'ChatGPT',   domain: 'chat.openai.com',       icon: 'chatgpt.png',       color: '#10A37F', letter: 'G' },
+        { name: 'Claude',    domain: 'claude.ai',             icon: 'claude.png',         color: '#D6764E', letter: 'C' },
+        { name: 'Thanford',  domain: 'thanford.com',          icon: 'thanford.png',       color: '#111259', letter: 'T' },
       ],
       [
-        { name: 'Bluesky',    domain: 'bsky.app',         icon: 'bluesky.png',   color: '#0085FF', letter: 'B' },
-        { name: 'Threads',    domain: 'threads.com',      icon: 'threads.png',   color: '#CCCCCC', letter: 'T' },
-        { name: 'Tumblr',     domain: 'tumblr.com',       icon: 'tumblr.png',    color: '#35465C', letter: 't' },
-        { name: 'Pinterest',  domain: 'pinterest.com',    icon: 'pinterest.png', color: '#E60023', letter: 'P' },
-        { name: 'Telegram',   domain: 'web.telegram.org', icon: 'telegram.png',  color: '#2AABEE', letter: '✈' },
-        { name: 'TikTok',     domain: 'tiktok.com',       icon: 'tiktok.png',    color: '#69C9D0', letter: 'T' },
-        { name: 'Lemmy',      domain: 'lemmy.world',      icon: 'lemmy.png',     color: '#00C853', letter: 'L' },
-        { name: 'Matrix',     domain: 'matrix.to',        icon: 'matrix.png',    color: '#0DBD8B', letter: 'M' },
+        { name: 'Road to VR',      domain: 'roadtovr.com',    icon: 'roadtovr.png',      color: '#E53935', letter: 'R' },
+        { name: 'UploadVR',        domain: 'uploadvr.com',     icon: 'uploadvr.png',       color: '#5C6BC0', letter: 'U' },
+        { name: 'VR Focus',        domain: 'vrfocus.com',      icon: 'vrfocus.png',        color: '#1565C0', letter: 'V' },
+        { name: 'Mixed News',      domain: 'mixed-news.com',   icon: 'mixednews.png',      color: '#FF6F00', letter: 'M' },
+        { name: 'XR Today',        domain: 'xrtoday.com',      icon: 'xrtoday.png',        color: '#0288D1', letter: 'X' },
+        { name: 'The Ghost Howls', domain: 'skarredghost.com', icon: 'skarredghost.png',   color: '#7B1FA2', letter: 'G' },
+        { name: 'VRDB',            domain: 'vrdb.app', url: 'https://vrdb.app/news',       icon: 'vrdb.png',           color: '#333333', letter: 'V' },
+        { name: 'VR.org',          domain: 'vr.org',           icon: 'vrorg.png',          color: '#0D47A1', letter: 'V' },
       ],
     ],
+  },
+  // 5. Social — trimmed to browser-only sites (Instagram/Facebook/Discord/LinkedIn dropped)
+  {
+    id: 'social', title: 'Social', icon: '◉',
+    pages: [[
+      { name: 'Reddit',           domain: 'reddit.com',           icon: 'reddit.png',     color: '#FF4500', letter: 'r' },
+      { name: 'r/virtualreality', domain: 'reddit.com', url: 'https://www.reddit.com/r/virtualreality/', icon: 'reddit.png', color: '#FF4500', letter: 'VR' },
+      { name: 'Twitter/X',        domain: 'x.com',                icon: 'twitter.png',    color: '#FFFFFF', letter: '𝕏' },
+      { name: 'Bluesky',          domain: 'bsky.app',             icon: 'bluesky.png',    color: '#0085FF', letter: 'B' },
+      { name: 'Mastodon',         domain: 'mastodon.social',      icon: 'mastodon.png',   color: '#6364FF', letter: 'M' },
+      { name: 'Hacker News',      domain: 'news.ycombinator.com', icon: 'hackernews.png', color: '#FF6600', letter: 'Y' },
+      { name: 'TikTok',           domain: 'tiktok.com',           icon: 'tiktok.png',     color: '#69C9D0', letter: 'T' },
+      { name: 'Telegram',         domain: 'web.telegram.org',     icon: 'telegram.png',   color: '#2AABEE', letter: '✈' },
+    ]],
+  },
+  // 6. Search — demoted to last; trimmed to 1 page (URL bar covers most needs)
+  {
+    id: 'search', title: 'Search', icon: '⊙',
+    pages: [[
+      { name: 'Google',     domain: 'google.com',       icon: 'google.png',      color: '#4285F4', letter: 'G' },
+      { name: 'DuckDuckGo', domain: 'duckduckgo.com',   icon: 'duckduckgo.png',  color: '#DE5833', letter: 'D' },
+      { name: 'Perplexity', domain: 'perplexity.ai',    icon: 'perplexity.png',  color: '#20808D', letter: 'P' },
+      { name: 'Brave',      domain: 'search.brave.com', icon: 'brave.png',       color: '#FB542B', letter: '▲' },
+      { name: 'Kagi',       domain: 'kagi.com',         icon: 'kagi.png',        color: '#FFB319', letter: 'K' },
+      { name: 'Bing',       domain: 'bing.com',         icon: 'bing.png',        color: '#008373', letter: 'b' },
+      { name: 'Startpage',  domain: 'startpage.com',    icon: 'startpage.png',   color: '#5046E4', letter: 'S' },
+      { name: 'Ecosia',     domain: 'ecosia.org',       icon: 'ecosia.png',      color: '#22885B', letter: '🌿' },
+    ]],
   },
 ];
 
@@ -992,10 +965,12 @@ function tryBridgeUpgrade() {
         _slideQueue = [];
       }
     }
-    // Fallback: init() only gets valid position when loadHomePage() re-injected __gwLastRow.
-    // On history-cache navigation (returning home without a fresh loadHomePage call), __gwLastRow
-    // is stale (-1). Read live prefs from the bridge instead so restore always works.
-    if (_savedRow < 0 && typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex >= 0) {
+    // Always prefer SharedPreferences over the baked __gwLastRow. The baked value is written at
+    // loadHomePage() time; on back navigation Chromium re-parses the same data: URI so __gwLastRow
+    // reflects the position at app start, not the row the user was on when they tapped a tile.
+    // SharedPreferences is updated by savePosition() immediately before every outbound navigation,
+    // so it is always the most recent authoritative value.
+    if (typeof prefs.lastRowIndex === 'number' && prefs.lastRowIndex >= 0) {
       _savedRow  = prefs.lastRowIndex;
       _savedPage = typeof prefs.lastColIndex === 'number' ? prefs.lastColIndex : 0;
       if (window.gwHome && window.gwHome.debugLog) {
