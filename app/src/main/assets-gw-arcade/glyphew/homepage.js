@@ -105,6 +105,8 @@ const STATIC_CATALOG = [
       { name: 'Wikipedia', domain: 'wikipedia.org',         icon: 'wikipedia.png',    color: '#FFFFFF', letter: 'W' },
       { name: 'Wolfram',   domain: 'wolframalpha.com',      icon: 'wolframalpha.png', color: '#E47000', letter: 'W' },
       { name: 'Archive',   domain: 'archive.org',           icon: 'archive.png',      color: '#888888', letter: 'A' },
+    ], [
+      { name: 'Thanford',  domain: 'thanford.com',          icon: 'thanford.png',     color: '#111259', letter: 'T' },
     ]],
   },
   {
