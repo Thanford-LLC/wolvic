@@ -159,7 +159,7 @@
     <string name="settings_about_title">About Glyphew</string>
     <string name="settings_about_version_label">Version</string>
     <string name="settings_about_company">© 2026 Thanford LLC</string>
-    <string name="settings_about_wolvic_attribution">Built on Wolvic (Mozilla Public License 2.0). Source: github.com/thanfordhq/wolvic</string>
+    <string name="settings_about_wolvic_attribution">Built on Wolvic (Mozilla Public License 2.0). Source: github.com/Thanford-LLC/wolvic/tree/glyphew</string>
     <string name="settings_about_open_source_licenses">Open Source Licenses</string>
     <string name="settings_about_terms_of_service">Terms of Service</string>
     <string name="settings_about_privacy_policy">Privacy Policy</string>

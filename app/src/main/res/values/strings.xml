@@ -638,7 +638,7 @@
     <string name="developer_options_homepage_other">Other</string>
 
     <!-- Settings footer: Glyphew / Wolvic / MPL 2.0 attribution block. Canonical text per WOLVIC-COMPLIANCE.md §5.2 — do not paraphrase. -->
-    <string name="glyphew_attribution">Glyphew is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/thanfordhq/wolvic\nOpen Source Licenses: see Settings › About › Open Source Licenses.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
+    <string name="glyphew_attribution">Glyphew is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/Thanford-LLC/wolvic/tree/glyphew\nOpen Source Licenses: see Settings › About › Open Source Licenses.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
 
     <!-- This string is used to label a set of radio buttons that allow the user to change the
          User-Agent (UA) string of the browser. -->
