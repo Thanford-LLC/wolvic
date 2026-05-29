@@ -1,0 +1,99 @@
+name: Glyphew CI
+
+# Runs the native (C++) and JVM unit tests on every push and PR.
+#
+# NOTE: this workflow does NOT build the APK. The shipped APK is Chromium, which
+# needs the Chromium AAR (not on Maven, local-only — see RELEASE.md §3.1), so the
+# official signed build is produced locally (RELEASE.md §3.3) and uploaded to the
+# Meta Horizon Store dashboard by hand.
+on:
+  push:
+    branches:
+      - feat/combos-phase-8b
+      - main
+      - glyphew
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Xmx4g"
+
+jobs:
+  # ── Native unit tests (host build, runs on every push) ───
+  native-tests:
+    name: C++ Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install CMake
+        run: sudo apt-get install -y cmake
+
+      - name: Configure
+        working-directory: app/src/glyphew/tests
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build & Run
+        working-directory: app/src/glyphew/tests
+        run: cmake --build build && ./build/glyphew_tests --gtest_color=yes
+
+  # ── JVM unit tests — Gecko and Chromium flavor ───────────
+  # Robolectric tests run on JVM; no native AAR needed for Chromium flavor.
+  # A fake empty directory satisfies isChromiumAvailable() without the AAR.
+  jvm-tests:
+    name: JVM Unit Tests (${{ matrix.backend }} flavor)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: gecko
+            task: testOculusvrArm64GeckoGenericDebugUnitTest
+            extra_props: ""
+          - backend: chromium
+            task: testOculusvrArm64ChromiumGenericDebugUnitTest
+            extra_props: "-Pchromium_aar_ci=true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install SDK components
+        run: |
+          sdkmanager --install \
+            "platforms;android-35" \
+            "build-tools;34.0.0" \
+            --sdk_root="$ANDROID_SDK_ROOT"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Create fake Chromium AAR directory (Chromium flavor only)
+        if: matrix.backend == 'chromium'
+        run: mkdir -p /tmp/fake-chromium-aar
+
+      - name: Write local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> local.properties
+          if [ "${{ matrix.backend }}" = "chromium" ]; then
+            echo "chromium_aar=/tmp/fake-chromium-aar" >> local.properties
+          fi
+
+      - name: Run ${{ matrix.backend }} JVM unit tests
+        run: |
+          ./gradlew ${{ matrix.task }} \
+            -PskipDesignCheck=true \
+            --no-daemon

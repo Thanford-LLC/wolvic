@@ -63,6 +63,17 @@
 -keep class * extends com.google.gson.reflect.TypeToken # and its descendants.
 
 # --------------------------------------------------------------------
+# Glyphew — homepage JS bridge (window.gwHome)
+# --------------------------------------------------------------------
+# homepage.js calls these methods by name (gwHome.getCatalog(), pollResult(), ...).
+# @JavascriptInterface methods are NOT kept by the default Android config, so R8
+# would strip/rename them → the bridge silently breaks in release builds.
+-keep class com.thanford.glyphew.home.HomeBridge { *; }
+-keepclassmembers class com.thanford.glyphew.home.HomeBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# --------------------------------------------------------------------
 # Keep classes from HTC SDK
 # --------------------------------------------------------------------
 -keep class com.htc.** {*;}
