@@ -378,6 +378,8 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
 
         updateMaxWindowScales();
         mWidgetManager.addWidget(newWindow);
+        // Glyphew: open new windows at 3x scale for comfortable VR reading.
+        newWindow.resizeByMultiplier(newWindow.getCurrentAspect(), 3.0f);
         updateCurvedMode(true);
         updateViews();
         focusWindow(newWindow);
@@ -779,15 +781,11 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
     }
 
     void updateMaxWindowScales() {
-        float maxScale = 3;
-        if (mFullscreenWindow == null && getCurrentWindows().size() >= 3) {
-            maxScale = 1.5f;
-        } else if (mFullscreenWindow == null && getCurrentWindows().size() == 2) {
-            maxScale = 2.0f;
-        }
-
+        // Glyphew: keep max scale at 3x regardless of window count so windows never
+        // get force-shrunk when another window opens (user preference). New windows
+        // also open at 3x via resizeByMultiplier in addWindow().
         for (WindowWidget window: getCurrentWindows()) {
-            window.setMaxWindowScale(maxScale);
+            window.setMaxWindowScale(3.0f);
         }
     }
 

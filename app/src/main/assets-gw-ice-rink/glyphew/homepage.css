@@ -10,8 +10,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
-  width: 1280px;
-  height: 720px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   margin: 0; padding: 0;
   background: var(--bg);
@@ -20,11 +20,17 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* #app is the fixed 1280×720 design canvas.
+ * transform: scale(--gw-fit) is set by JS to fit it inside the actual
+ * viewport at any window size (1x / 2x / 3x / 0.5x).
+ * transform-origin top-left so the scale math is simple. */
 #app {
   position: relative;
   width: 1280px;
   height: 720px;
   overflow: hidden;
+  transform: scale(var(--gw-fit, 1));
+  transform-origin: top left;
 }
 
 /* Soft brand wash — radial glow that reads on dark bg */

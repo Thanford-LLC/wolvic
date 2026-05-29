@@ -930,6 +930,19 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             html = html.replace(
                 "<link rel=\"stylesheet\" href=\"homepage.css\">",
                 "<style>\n" + css + "\n</style>");
+            // Inject favicon as a base64 data-URL so it resolves from a data: URI page.
+            // Relative hrefs have no base URL in data: context and silently fail (no icon on bookmark).
+            try {
+                byte[] faviconBytes = readAssetAsBytes("glyphew/favicon.svg");
+                String faviconB64 = android.util.Base64.encodeToString(faviconBytes, android.util.Base64.NO_WRAP);
+                html = html.replace(
+                    "<!-- __GW_FAVICON__ -->",
+                    "<link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml;base64," + faviconB64 + "\"/>");
+            } catch (java.io.IOException e) {
+                // favicon.svg missing — bookmark will show generic globe; not fatal
+                html = html.replace("<!-- __GW_FAVICON__ -->", "");
+                Log.w(LOGTAG, "loadHomePage: favicon.svg not found, bookmark icon will be generic");
+            }
             // Inline all bundled icons as base64 data-URLs so they resolve from a data: URI page.
             // Relative paths (icons/youtube.png) have no base URL in data: context and always fail.
             // ~100 KB total across 64 PNGs → ~136 KB base64 — negligible page-size cost.
@@ -975,13 +988,17 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
 
     /** Read an Android asset as a UTF-8 string using a proper read loop (fixes is.available() bug). */
     private String readAssetAsString(String assetPath) throws java.io.IOException {
+        return new String(readAssetAsBytes(assetPath), StandardCharsets.UTF_8);
+    }
+
+    private byte[] readAssetAsBytes(String assetPath) throws java.io.IOException {
         InputStream is = mContext.getAssets().open(assetPath);
         try {
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
             byte[] chunk = new byte[4096];
             int n;
             while ((n = is.read(chunk)) != -1) buf.write(chunk, 0, n);
-            return buf.toString(StandardCharsets.UTF_8.name());
+            return buf.toByteArray();
         } finally {
             is.close();
         }

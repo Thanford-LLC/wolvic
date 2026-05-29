@@ -173,4 +173,7 @@
     <string name="settings_about_terms_url" translatable="false">https://thanford.com/terms.html</string>
     <string name="settings_about_privacy_url" translatable="false">https://thanford.com/privacy.html</string>
     <string name="settings_about_support_url" translatable="false">https://thanford.com/support.html</string>
+
+    <!-- Remote catalog update toast (§5.3 subtitle zone, 72% down) -->
+    <string name="catalog_updated_toast">Homepage updated — new sites available</string>
 </resources>

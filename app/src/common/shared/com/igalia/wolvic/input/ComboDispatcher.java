@@ -900,6 +900,9 @@ public class ComboDispatcher {
         WindowWidget win = mWindows.addWindow();
         if (win != null) {
             win.loadHome();
+        } else if (mHapticController != null) {
+            // At MAX_WINDOWS (3) — signal "can't" with the illegal-combo double-haptic.
+            mHapticController.fireIllegalCombo();
         }
     }
 
@@ -913,8 +916,13 @@ public class ComboDispatcher {
         if (src == null) return;
         String uri = src.getSession().getCurrentUri();
         WindowWidget newWin = mWindows.addWindow();
-        if (newWin != null && uri != null && !uri.isEmpty()) {
-            newWin.getSession().loadUri(uri);
+        if (newWin != null) {
+            if (uri != null && !uri.isEmpty()) {
+                newWin.getSession().loadUri(uri);
+            }
+        } else if (mHapticController != null) {
+            // At MAX_WINDOWS (3) — signal "can't" with the illegal-combo double-haptic.
+            mHapticController.fireIllegalCombo();
         }
     }
 
@@ -962,7 +970,15 @@ public class ComboDispatcher {
         WindowWidget win = focusedWindow();
         if (win == null) return;
         Session session = win.getSession();
-        String url   = session.getCurrentUri();
+        // Bookmarking the homepage is disallowed — the homepage is served from a
+        // data: URI which can't be re-navigated to (Chromium blocks data: from
+        // external triggers → about:blank#blocked) and yields no usable favicon.
+        // Signal "not allowed" with the illegal-combo double-haptic instead.
+        if (session.isOnHomePage()) {
+            if (mHapticController != null) mHapticController.fireIllegalCombo();
+            return;
+        }
+        String url = session.getCurrentUri();
         String title = session.getCurrentTitle();
         if (url == null || url.isEmpty()) return;
         SessionStore.get().getBookmarkStore().addBookmark(url, title);

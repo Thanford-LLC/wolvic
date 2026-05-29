@@ -363,6 +363,60 @@ public class HomeBridge implements BookmarksStore.BookmarkListener {
         }).exceptionally(e -> { resolveOnUiThread(requestId, "\"\""); return null; });
     }
 
+    // ── Remote catalog ────────────────────────────────────────────────────────
+
+    /**
+     * Returns the catalog JSON string for the homepage to consume synchronously.
+     *
+     * Priority: remote cache (if present and valid JSON) → bundled fallback asset.
+     * Never returns null; returns an empty-categories JSON on catastrophic failure.
+     */
+    @JavascriptInterface
+    @NonNull
+    public String getCatalog() {
+        return readEffectiveCatalog(mContext);
+    }
+
+    /**
+     * Returns the effective catalog: remote cache if present and parseable,
+     * otherwise the bundled fallback from assets.
+     *
+     * Package-visible so tests can call it without constructing a full HomeBridge.
+     */
+    @NonNull
+    static String readEffectiveCatalog(@NonNull Context context) {
+        CatalogStore store = new CatalogStore(context);
+        if (store.hasCachedCatalog()) {
+            String cached = store.read();
+            if (cached != null && CatalogValidator.isValid(cached)) {
+                return cached;
+            }
+            // Corrupt/invalid cache — fall through to bundled
+        }
+        String bundled = readBundledCatalog(context);
+        return bundled != null ? bundled : "{\"catalog_version\":1,\"categories\":[]}";
+    }
+
+    /**
+     * Reads the bundled fallback catalog from APK assets.
+     * Package-visible for tests.
+     */
+    @Nullable
+    static String readBundledCatalog(@NonNull Context context) {
+        try {
+            java.io.InputStream is = context.getAssets().open("glyphew/catalog-bundled.json");
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = is.read(buf)) != -1) baos.write(buf, 0, n);
+            is.close();
+            return baos.toString("UTF-8");
+        } catch (Exception e) {
+            android.util.Log.e("HomeBridge", "readBundledCatalog failed", e);
+            return null;
+        }
+    }
+
     // ── Resolve helper ─────────────────────────────────────────────────────
 
     /** Stores the result for JS to pick up via pollResult(). Thread-safe; no evaluateJavaScript. */

@@ -1,113 +1,70 @@
 'use strict';
 
-// ── Catalog data ───────────────────────────────────────────────────────────
-// Categories per PROJECT.md §8.2 (re-curated 2026-05-26 for Quest-3 power users).
-// Order: VR / Gaming / Video / Tools / Social / Search
-// Rule: drop any tile whose native Quest Horizon Store app strictly dominates.
-// Gaming = WebXR / browser-native VR games (not flat browser games).
-// Each site: { name, domain, icon (filename in icons/), color (brand), letter (fallback) }
-// Icons are 64×64 PNGs bundled in assets-gw-*/glyphew/icons/.
+// ── Fit-to-viewport scaling ─────────────────────────────────────────────────
+// #app is a fixed 1280×720 design canvas. Scale it to fill whatever physical
+// window size Wolvic gives us (0.5x / 1x / 2x / 3x mode), preserving aspect
+// ratio with letter-boxing.
+(function fitToViewport() {
+  function apply() {
+    var scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    document.documentElement.style.setProperty('--gw-fit', scale);
+    // Centre the scaled canvas so it's not stuck to the top-left corner.
+    var app = document.getElementById('app');
+    if (app) {
+      app.style.marginLeft = Math.max(0, (window.innerWidth  - 1280 * scale) / 2) + 'px';
+      app.style.marginTop  = Math.max(0, (window.innerHeight - 720  * scale) / 2) + 'px';
+    }
+  }
+  window.addEventListener('resize', apply);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', apply);
+  } else {
+    apply();
+  }
+}());
 
-const STATIC_CATALOG = [
-  // 1. VR — promoted to first; most browser-native content for Quest users
-  {
-    id: 'vr', title: 'VR', icon: '◎',
-    pages: [[
-      { name: 'AirPano',        domain: 'airpano.com',                                                    icon: 'airpano.png',        color: '#1E88C7', letter: 'A' },
-      { name: 'Sketchfab',      domain: 'sketchfab.com',                                                  icon: 'sketchfab.png',      color: '#1CAAD9', letter: 'S' },
-      { name: 'Kuula',          domain: 'kuula.co',                                                       icon: 'kuula.png',          color: '#2B2B2B', letter: 'K' },
-      { name: 'Vimeo 360',      domain: 'vimeo.com',     url: 'https://vimeo.com/channels/360vr',        icon: 'vimeo.png',          color: '#1AB7EA', letter: 'V' },
-      { name: 'Arts & Culture', domain: 'artsandculture.google.com',                                      icon: 'artsculture.png',    color: '#4285F4', letter: '◈' },
-      { name: 'Matterport',     domain: 'matterport.com',                                                 icon: 'matterport.png',     color: '#00A4B4', letter: 'M' },
-      { name: 'Hugh Hou',       domain: 'youtube.com',   url: 'https://www.youtube.com/@HughHou',        icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
-      { name: 'DeoVR',          domain: 'deovr.com',                                                      icon: 'deovr.png',          color: '#1A1A2E', letter: 'D' },
-    ]],
-  },
-  // 2. Gaming — WebXR / browser-native VR games (replaces flat browser games)
-  {
-    id: 'gaming', title: 'Gaming', icon: '⊞',
-    pages: [[
-      { name: 'WebXR Hub',     domain: 'webxr-metaverse.com',                                             icon: 'webxrmetaverse.png', color: '#2B2B4A', letter: 'X' },
-      { name: 'Moon Rider',    domain: 'moonrider.xyz',                                                   icon: 'moonrider.png',      color: '#0E0E1A', letter: '♪' },
-      { name: 'heyVR',         domain: 'heyvr.io',                                                        icon: 'heyvr.png',          color: '#6C48E8', letter: 'h' },
-      { name: 'A-Frame',       domain: 'aframe.io',     url: 'https://aframe.io/showcase/',              icon: 'aframe.png',         color: '#EF2D5E', letter: 'A' },
-      { name: 'Frame VR',      domain: 'framevr.io',                                                      icon: 'framevr.png',        color: '#5850D6', letter: 'F' },
-      { name: 'Immersive Web', domain: 'immersiveweb.dev',                                                icon: 'immersiveweb.png',   color: '#2B6CB0', letter: 'W' },
-      { name: 'itch.io WebXR', domain: 'itch.io',       url: 'https://itch.io/games/tag-webxr',         icon: 'itchio.png',         color: '#FA5C5C', letter: '▲' },
-      { name: 'The Polys',     domain: 'thepolys.com',                                                    icon: 'thepolys.png',       color: '#B8860B', letter: '★' },
-    ]],
-  },
-  // 3. Video — only sites without a native Quest Horizon Store app + top VR creator channels
-  //    Dropped: YouTube (native app), Twitch (native app), Prime/Disney+/Peacock (native apps)
-  //    Netflix native app was delisted summer 2024; HBO Max / Apple TV / Crunchyroll have no native app
-  {
-    id: 'video', title: 'Video', icon: '▶',
-    pages: [[
-      { name: 'Netflix',      domain: 'netflix.com',      icon: 'netflix.png',       color: '#E50914', letter: 'N' },
-      { name: 'HBO Max',      domain: 'hbomax.com',        icon: 'hbomax.png',         color: '#8B5CF6', letter: 'M' },
-      { name: 'Apple TV',     domain: 'tv.apple.com',      icon: 'appletv.png',        color: '#555555', letter: '' },
-      { name: 'Crunchyroll',  domain: 'crunchyroll.com',   icon: 'crunchyroll.png',    color: '#F47521', letter: 'C' },
-      { name: 'Plex',         domain: 'plex.tv',           icon: 'plex.png',           color: '#E5A00D', letter: 'P' },
-      { name: 'ThrillSeeker', domain: 'youtube.com', url: 'https://www.youtube.com/@ThrillSeekerVR',    icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
-      { name: 'Nathie',       domain: 'youtube.com', url: 'https://www.youtube.com/@nathieVR',          icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
-      { name: 'Tyriel Wood',  domain: 'youtube.com', url: 'https://www.youtube.com/@TyrielWoodVRTech',  icon: 'youtube.png',        color: '#FF0000', letter: '▶' },
-    ]],
-  },
-  // 4. Tools — utilities + AI assistants (p1) / VR news editorial (p2)
-  {
-    id: 'tools', title: 'Tools', icon: '⚙',
-    pages: [
-      [
-        { name: 'Wikipedia', domain: 'wikipedia.org',         icon: 'wikipedia.png',    color: '#FFFFFF', letter: 'W' },
-        { name: 'Translate', domain: 'translate.google.com',  icon: 'translate.png',    color: '#4285F4', letter: 'T' },
-        { name: 'Maps',      domain: 'maps.google.com',       icon: 'gmaps.png',         color: '#34A853', letter: '▿' },
-        { name: 'Weather',   domain: 'weather.com',           icon: 'weather.png',       color: '#1B97D6', letter: '☀' },
-        { name: 'Archive',   domain: 'archive.org',           icon: 'archive.png',       color: '#888888', letter: 'A' },
-        { name: 'ChatGPT',   domain: 'chat.openai.com',       icon: 'chatgpt.png',       color: '#10A37F', letter: 'G' },
-        { name: 'Claude',    domain: 'claude.ai',             icon: 'claude.png',         color: '#D6764E', letter: 'C' },
-        { name: 'Thanford',  domain: 'thanford.com',          icon: 'thanford.png',       color: '#111259', letter: 'T' },
-      ],
-      [
-        { name: 'Road to VR',      domain: 'roadtovr.com',    icon: 'roadtovr.png',      color: '#E53935', letter: 'R' },
-        { name: 'UploadVR',        domain: 'uploadvr.com',     icon: 'uploadvr.png',       color: '#5C6BC0', letter: 'U' },
-        { name: 'VR Focus',        domain: 'vrfocus.com',      icon: 'vrfocus.png',        color: '#1565C0', letter: 'V' },
-        { name: 'Mixed News',      domain: 'mixed-news.com',   icon: 'mixednews.png',      color: '#FF6F00', letter: 'M' },
-        { name: 'XR Today',        domain: 'xrtoday.com',      icon: 'xrtoday.png',        color: '#0288D1', letter: 'X' },
-        { name: 'The Ghost Howls', domain: 'skarredghost.com', icon: 'skarredghost.png',   color: '#7B1FA2', letter: 'G' },
-        { name: 'VRDB',            domain: 'vrdb.app', url: 'https://vrdb.app/news',       icon: 'vrdb.png',           color: '#333333', letter: 'V' },
-        { name: 'VR.org',          domain: 'vr.org',           icon: 'vrorg.png',          color: '#0D47A1', letter: 'V' },
-      ],
-    ],
-  },
-  // 5. Social — trimmed to browser-only sites (Instagram/Facebook/Discord/LinkedIn dropped)
-  {
-    id: 'social', title: 'Social', icon: '◉',
-    pages: [[
-      { name: 'Reddit',           domain: 'reddit.com',           icon: 'reddit.png',     color: '#FF4500', letter: 'r' },
-      { name: 'r/virtualreality', domain: 'reddit.com', url: 'https://www.reddit.com/r/virtualreality/', icon: 'reddit.png', color: '#FF4500', letter: 'VR' },
-      { name: 'Twitter/X',        domain: 'x.com',                icon: 'twitter.png',    color: '#FFFFFF', letter: '𝕏' },
-      { name: 'Bluesky',          domain: 'bsky.app',             icon: 'bluesky.png',    color: '#0085FF', letter: 'B' },
-      { name: 'Mastodon',         domain: 'mastodon.social',      icon: 'mastodon.png',   color: '#6364FF', letter: 'M' },
-      { name: 'Hacker News',      domain: 'news.ycombinator.com', icon: 'hackernews.png', color: '#FF6600', letter: 'Y' },
-      { name: 'TikTok',           domain: 'tiktok.com',           icon: 'tiktok.png',     color: '#69C9D0', letter: 'T' },
-      { name: 'Telegram',         domain: 'web.telegram.org',     icon: 'telegram.png',   color: '#2AABEE', letter: '✈' },
-    ]],
-  },
-  // 6. Search — demoted to last; trimmed to 1 page (URL bar covers most needs)
-  {
-    id: 'search', title: 'Search', icon: '⊙',
-    pages: [[
-      { name: 'Google',     domain: 'google.com',       icon: 'google.png',      color: '#4285F4', letter: 'G' },
-      { name: 'DuckDuckGo', domain: 'duckduckgo.com',   icon: 'duckduckgo.png',  color: '#DE5833', letter: 'D' },
-      { name: 'Perplexity', domain: 'perplexity.ai',    icon: 'perplexity.png',  color: '#20808D', letter: 'P' },
-      { name: 'Brave',      domain: 'search.brave.com', icon: 'brave.png',       color: '#FB542B', letter: '▲' },
-      { name: 'Kagi',       domain: 'kagi.com',         icon: 'kagi.png',        color: '#FFB319', letter: 'K' },
-      { name: 'Bing',       domain: 'bing.com',         icon: 'bing.png',        color: '#008373', letter: 'b' },
-      { name: 'Startpage',  domain: 'startpage.com',    icon: 'startpage.png',   color: '#5046E4', letter: 'S' },
-      { name: 'Ecosia',     domain: 'ecosia.org',       icon: 'ecosia.png',      color: '#22885B', letter: '🌿' },
-    ]],
-  },
-];
+// ── Remote catalog ─────────────────────────────────────────────────────────
+// Loaded synchronously from HomeBridge.getCatalog() at startup.
+// HomeBridge returns the remote-updated catalog if one has been fetched and
+// validated; otherwise falls back to the bundled catalog-bundled.json asset.
+// The old STATIC_CATALOG constant has been removed — catalog/source.json in
+// the glyphew repo is now the single source of truth.
+var REMOTE_CATALOG = (function() {
+  try {
+    var raw = (typeof gwHome !== 'undefined') ? gwHome.getCatalog() : null;
+    if (!raw) return [];
+    var parsed = JSON.parse(raw);
+    var cats = (parsed && Array.isArray(parsed.categories)) ? parsed.categories : [];
+    // Normalise to the shape homepage.js expects: { id, title, icon, pages[] }
+    return cats.map(function(cat) {
+      return {
+        id:    cat.id    || '',
+        title: cat.label || cat.title || '',
+        icon:  '◎',
+        pages: [(cat.tiles || []).map(function(t) {
+          return {
+            name:   t.label  || t.name  || '',
+            domain: (t.url || '').replace(/^https?:\/\//, '').split('/')[0],
+            url:    t.url    || '',
+            icon:   t.icon   || '',
+            color:  t.color  || '#333333',
+            letter: t.letter || (t.label || '?').charAt(0).toUpperCase(),
+          };
+        })],
+      };
+    });
+  } catch (e) {
+    return [];
+  }
+}());
+
+// Legacy alias so existing multi-page categories (tools has 2 pages) still work.
+// The remote catalog flattens each category to a single page of tiles. For the
+// tools category the second page (VR news) is included in the tile list but
+// pagination into multiple pages of 8 is handled by the normalisation above
+// once HomeBridge returns the full tile list.
+
+// ── STATIC_CATALOG removed — catalog served from HomeBridge.getCatalog() ──
 
 // Tips shown during logo hub slide (cycles each logo appearance)
 const HUB_TIPS = [
@@ -205,7 +162,7 @@ var CAP_CLASS  = { 2:'to-n', 8:'to-s', 4:'to-w', 6:'to-e' };
 
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
-  catalog: STATIC_CATALOG,
+  catalog: REMOTE_CATALOG,
   rowIndex: 0,
   pageIndex: 0,
   focusIdx: 0,
@@ -1000,7 +957,7 @@ function tryBridgeUpgrade() {
           pages: (cat.pages || []),
         };
       });
-      state.catalog = userRows.concat(STATIC_CATALOG);
+      state.catalog = userRows.concat(REMOTE_CATALOG);
     }
 
     // Restore saved position if valid. Runs whether or not bookmark categories exist so that

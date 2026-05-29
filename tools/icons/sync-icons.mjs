@@ -78,14 +78,33 @@ function fileIsRealIcon(p) {
 
 // ── 3. Collect every (icon -> domain) the catalog needs ─────────────────────
 function catalogIcons() {
-  const js = fs.readFileSync(path.join(PRIMARY, 'homepage.js'), 'utf8');
-  const catalog = extractCatalog(js);
+  // Read from catalog-bundled.json (the new source of truth).
+  // Falls back to parsing STATIC_CATALOG from homepage.js for local dev setups
+  // that haven't run catalog:bundle yet.
+  const bundledPath = path.join(PRIMARY, 'catalog-bundled.json');
+  let catalog;
+  if (fs.existsSync(bundledPath)) {
+    const parsed = JSON.parse(fs.readFileSync(bundledPath, 'utf8'));
+    // catalog-bundled.json uses { categories: [{ id, tiles: [{ url, icon }] }] }
+    catalog = (parsed.categories || []).map(cat => ({
+      pages: [cat.tiles || []],
+      _isBundledFormat: true,
+    }));
+  } else {
+    // Legacy fallback
+    const js = fs.readFileSync(path.join(PRIMARY, 'homepage.js'), 'utf8');
+    catalog = extractCatalog(js);
+  }
   const out = new Map(); // icon filename -> domain
   for (const cat of catalog)
     for (const page of cat.pages)
       for (const site of page) {
-        if (!site || !site.icon || !site.domain) continue;
-        if (!out.has(site.icon)) out.set(site.icon, site.domain);
+        if (!site || !site.icon) continue;
+        // catalog-bundled.json uses 'url'; homepage.js legacy used 'domain'
+        const domain = site.domain ||
+            (site.url || '').replace(/^https?:\/\//, '').split('/')[0];
+        if (!domain) continue;
+        if (!out.has(site.icon)) out.set(site.icon, domain);
       }
   return out;
 }

@@ -240,6 +240,8 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     // hint. Kept FD-namespaced so it cannot collide with Wolvic's own
     // NotificationManager ids.
     private static final int FD_LONGPRESS_ONBOARDING_NOTIFICATION_ID = 0xFD0601;
+    private static final int GW_CATALOG_UPDATED_NOTIFICATION_ID      = 0xFD0602;
+    private com.thanford.glyphew.home.CatalogUpdateManager mCatalogUpdateManager;
     RootWidget mRootWidget;
     KeyboardWidget mKeyboard;
     NavigationBarWidget mNavigationBar;
@@ -537,6 +539,14 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         // Glyphew (Section 3.4): offer import on first launch if export files exist.
         mTray.postDelayed(this::maybeOfferFirstRunImport, 3500L);
+
+        // Remote catalog updates — cold-start trigger (24h lock prevents repeat fetches).
+        mCatalogUpdateManager = new com.thanford.glyphew.home.CatalogUpdateManager(
+                this,
+                (catalogJson) -> { /* already persisted by CatalogStore inside the manager */ },
+                this::onCatalogUpdated,
+                this::onAppUpdateAvailable);
+        mCatalogUpdateManager.checkAsync();
     }
 
     private void onPresentingImmersiveChange(boolean presenting) {
@@ -663,6 +673,11 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         TelemetryService.sessionStop();
         if (mTray != null) {
             mTray.stop(this);
+        }
+        // Background trigger — fires when headset removed, Quest home pressed, or app switched.
+        // 24h lock inside the manager means this is a no-op most of the time.
+        if (mCatalogUpdateManager != null) {
+            mCatalogUpdateManager.checkAsync();
         }
     }
 
@@ -1425,6 +1440,41 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     // it lands in the subtitle zone per CLAUDE.md §5.3 (never the top 20%
     // which occludes web content). Marks the flag immediately so a process
     // kill during the 5s window doesn't double-show on next launch.
+    // ── Remote catalog callbacks ───────────────────────────────────────────────
+
+    private void onCatalogUpdated() {
+        runOnUiThread(() -> {
+            // Re-render the homepage if the user is currently on it so they see
+            // the fresh tiles immediately. Otherwise the next navigation home picks
+            // them up automatically.
+            if (mWindows != null) {
+                WindowWidget w = mWindows.getFocusedWindow();
+                if (w != null && w.getSession() != null && w.getSession().isOnHomePage()) {
+                    w.getSession().loadHomePage();
+                }
+            }
+            if (mTray == null) return;
+            com.igalia.wolvic.ui.widgets.NotificationManager.Notification n =
+                    new com.igalia.wolvic.ui.widgets.NotificationManager.Builder(mTray)
+                            .withString(R.string.catalog_updated_toast)
+                            .withPosition(com.igalia.wolvic.ui.widgets.NotificationManager.Notification.TOP)
+                            .withMargin(20.0f)
+                            .withDuration(4000)
+                            .build();
+            com.igalia.wolvic.ui.widgets.NotificationManager.show(
+                    GW_CATALOG_UPDATED_NOTIFICATION_ID, n);
+        });
+    }
+
+    private void onAppUpdateAvailable(@androidx.annotation.NonNull String versionName,
+                                       @androidx.annotation.NonNull String storeUrl) {
+        // Gift-icon app-update notification dropped for now: Wolvic re-fetches its
+        // RemoteProperties from PROPS_ENDPOINT on every startup (SettingsStore), which
+        // clobbers any injected entry. Catalog (tile) updates still work via the toast.
+        // Revisit by pointing PROPS_ENDPOINT at a thanford.com-hosted props file.
+        android.util.Log.i("GW.Catalog", "app update available: " + versionName + " (notification suppressed)");
+    }
+
     private void maybeShowLongPressOnboardingHint() {
         if (mTray == null) return;
         com.thanford.glyphew.settings.ComboBindingStore store =
