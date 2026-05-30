@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Thanford. All rights reserved.
+ *
+ * Proprietary Glyphew component. Not licensed under the MPL 2.0 that
+ * covers the surrounding Wolvic files.
+ */
 package com.igalia.wolvic.browser.api;
 
 import com.igalia.wolvic.ui.widgets.menus.VideoProjectionMenuWidget;

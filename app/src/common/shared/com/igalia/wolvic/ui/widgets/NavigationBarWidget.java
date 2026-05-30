@@ -670,7 +670,10 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             if (!mAttachedWindow.isFullScreen())
                 enterFullScreenMode();
 
-            evaluateProjectionAndMaybeEnterVRVideo();
+            // Just entered fullscreen: detection already ran during decode (cached on Media),
+            // so this uses the known projection with no metadata wait — the small delay only
+            // lets the fullscreen video surface settle before reprojecting.
+            evaluateProjectionAndMaybeEnterVRVideo(FULLSCREEN_SETTLE_MS);
             mAttachedWindow.reCenterFrontWindow();
         } else {
             // This can be called by content's fullscreen event later but will be a noop.
@@ -690,16 +693,22 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
     @Override
     public void onMediaProjectionChanged(@NonNull WMediaSession mediaSession) {
         if (mAttachedWindow != null && mAttachedWindow.isFullScreen() && !isInVRVideo()) {
-            evaluateProjectionAndMaybeEnterVRVideo();
+            // Metadata arrived while already fullscreen — the video surface is already
+            // settled, so enter VR immediately (no settle delay).
+            evaluateProjectionAndMaybeEnterVRVideo(0);
         }
     }
+
+    /** Delay before reprojecting into VR-video right after a fullscreen transition, to let
+     *  the fullscreen video surface settle. Not a metadata wait — detection runs during decode. */
+    private static final int FULLSCREEN_SETTLE_MS = 300;
 
     /**
      * Resolve the fullscreen video's projection (metadata > URL hint > filename > aspect)
      * and auto-enter VR-video if it's renderable. Shared by the fullscreen event and the
      * (possibly later) projection-metadata event.
      */
-    private void evaluateProjectionAndMaybeEnterVRVideo() {
+    private void evaluateProjectionAndMaybeEnterVRVideo(int enterDelayMs) {
         com.igalia.wolvic.browser.Media video = getSession().getFullScreenVideo();
         boolean autoEnter = false;
         if (video == null) {
@@ -729,7 +738,11 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
 
         if (mAutoSelectedProjection != VIDEO_PROJECTION_NONE && autoEnter) {
             mViewModel.setAutoEnteredVRVideo(true);
-            postDelayed(() -> enterVRVideo(mAutoSelectedProjection), 300);
+            if (enterDelayMs > 0) {
+                postDelayed(() -> enterVRVideo(mAutoSelectedProjection), enterDelayMs);
+            } else {
+                enterVRVideo(mAutoSelectedProjection);
+            }
         } else {
             mViewModel.setAutoEnteredVRVideo(false);
             if (mProjectionMenu != null) {
