@@ -57,19 +57,25 @@ public final class SphericalVideoProjection {
                 if (stereoMode == STEREO_LEFT_RIGHT)
                     return VideoProjectionMenuWidget.VIDEO_PROJECTION_3D_SIDE_BY_SIDE;
                 return VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE;
-            default:  // cubemap / mesh — not natively renderable
+            case TYPE_CUBEMAP:
+                // EAC (equi-angular cubemap, e.g. YouTube) — Milestone 2 sphere-mesh renderer.
+                return VideoProjectionMenuWidget.VIDEO_PROJECTION_CUBEMAP;
+            case TYPE_MESH:
+                // Arbitrary UV-distortion mesh — Milestone 2 renders as equirect fallback.
+                return VideoProjectionMenuWidget.VIDEO_PROJECTION_MESH;
+            default:
                 return VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE;
         }
     }
 
     /**
      * @return true if the content declares a spherical projection that Wolvic
-     *         cannot render natively yet (cubemap / mesh, e.g. YouTube's EAC).
-     *         The caller should log this for the EAC follow-up rather than
-     *         garble-rendering it as equirectangular.
+     *         cannot render natively (no native renderer and no known fallback).
+     *         After Milestone 2, EAC cubemap and mesh are renderable, so this
+     *         returns false for them.
      */
     public static boolean isSphericalButUnsupported(int projectionType) {
-        return projectionType == TYPE_CUBEMAP || projectionType == TYPE_MESH;
+        return false;
     }
 
     /**
@@ -142,10 +148,9 @@ public final class SphericalVideoProjection {
     /**
      * Resolves the projection to auto-enter at fullscreen, in priority order:
      * <ol>
-     *   <li>authoritative container metadata (equirectangular) — always wins;
-     *   <li>spherical-but-unsupported metadata (cubemap/mesh) — return NONE so we
-     *       neither garble-render nor fall through to a misleading heuristic;
+     *   <li>authoritative container metadata (equirectangular, cubemap, mesh) — always wins;
      *   <li>URL hint ({@code mozVideoProjection}, already resolved by the caller);
+     *   <li>filename convention for sideloaded direct media files;
      *   <li>aspect-ratio fallback for untagged content.
      * </ol>
      *
@@ -155,26 +160,21 @@ public final class SphericalVideoProjection {
     public static int chooseProjection(int metaProjectionType, int metaStereoMode,
                                        int urlProjection, String url,
                                        long width, long height) {
-        // 1. Authoritative container metadata (equirect 360/180, flat-3D stereo).
+        // 1. Authoritative container metadata (equirect 360/180, cubemap/EAC, mesh, flat-3D).
         int metaResult = toVideoProjection(metaProjectionType, metaStereoMode);
         if (metaResult != VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE) {
             return metaResult;
         }
-        // 2. Spherical but not natively renderable (cubemap/mesh, e.g. EAC) — never
-        //    garble-render and never fall through to a misleading heuristic.
-        if (isSphericalButUnsupported(metaProjectionType)) {
-            return VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE;
-        }
-        // 3. mozVideoProjection URL parameter (already resolved by the caller).
+        // 2. mozVideoProjection URL parameter (already resolved by the caller).
         if (urlProjection != VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE) {
             return urlProjection;
         }
-        // 4. Filename convention for sideloaded direct media files.
+        // 3. Filename convention for sideloaded direct media files.
         int fileHint = classifyByFilename(url);
         if (fileHint != VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE) {
             return fileHint;
         }
-        // 5. Pixel aspect-ratio fallback for untagged content.
+        // 4. Pixel aspect-ratio fallback for untagged content.
         return classifyByAspectRatio(width, height);
     }
 }

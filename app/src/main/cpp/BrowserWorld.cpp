@@ -1762,6 +1762,7 @@ BrowserWorld::ShowVRVideo(const int aWindowHandle, const int aVideoProjection) {
     m.vrVideo->Exit();
   }
   auto projection = static_cast<VRVideo::VRVideoProjection>(aVideoProjection);
+  VRB_DEBUG("GW_VR ShowVRVideo windowHandle=%d projection=%d", aWindowHandle, aVideoProjection);
   m.vrVideo = VRVideo::Create(m.create, widget, projection, m.device);
   if (m.skybox && !isFrontFacingVRProjection(projection)) {
     m.skybox->SetVisible(false);
@@ -1886,6 +1887,7 @@ BrowserWorld::TickWorld() {
   }
   if (m.vrVideo) {
     m.vrVideo->SetReorientTransform(m.device->GetReorientTransform());
+    m.vrVideo->DrawEACBlit();
   }
 
   m.drawHandler = [=](device::Eye aEye) {

@@ -22,7 +22,8 @@ public class VideoProjectionMenuWidget extends MenuWidget {
     @IntDef(value = { VIDEO_PROJECTION_NONE, VIDEO_PROJECTION_3D_SIDE_BY_SIDE, VIDEO_PROJECTION_360,
                       VIDEO_PROJECTION_360_STEREO, VIDEO_PROJECTION_180,
                       VIDEO_PROJECTION_180_STEREO_LEFT_RIGHT, VIDEO_PROJECTION_180_STEREO_TOP_BOTTOM,
-                      VIDEO_PROJECTION_3D_TOP_BOTTOM })
+                      VIDEO_PROJECTION_3D_TOP_BOTTOM,
+                      VIDEO_PROJECTION_CUBEMAP, VIDEO_PROJECTION_MESH })
     public @interface VideoProjectionFlags {}
 
     public static final int VIDEO_PROJECTION_NONE = -1;
@@ -33,6 +34,10 @@ public class VideoProjectionMenuWidget extends MenuWidget {
     public static final int VIDEO_PROJECTION_180_STEREO_LEFT_RIGHT = 4;
     public static final int VIDEO_PROJECTION_180_STEREO_TOP_BOTTOM = 5;
     public static final int VIDEO_PROJECTION_3D_TOP_BOTTOM = 6;
+    // Milestone 2: equi-angular cubemap (EAC, e.g. YouTube) and arbitrary mesh projection.
+    // Auto-detected from container metadata; not user-selectable in the projection menu.
+    public static final int VIDEO_PROJECTION_CUBEMAP = 7;
+    public static final int VIDEO_PROJECTION_MESH = 8;
 
     public interface Delegate {
         void onVideoProjectionClick(@VideoProjectionFlags int aProjection);

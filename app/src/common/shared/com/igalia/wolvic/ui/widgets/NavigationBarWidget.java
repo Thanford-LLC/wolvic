@@ -713,6 +713,8 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         boolean autoEnter = false;
         if (video == null) {
             mAutoSelectedProjection = VIDEO_PROJECTION_NONE;
+            com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                    "fullScreenVideo=null -> NONE (uri=" + getSession().getCurrentUri() + ")");
         } else {
             AtomicBoolean urlAutoEnter = new AtomicBoolean(false);
             int urlProjection = VideoProjectionMenuWidget.getAutomaticProjection(
@@ -734,6 +736,15 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             boolean fromAspect = urlProjection == VIDEO_PROJECTION_NONE;
             autoEnter = mAutoSelectedProjection != VIDEO_PROJECTION_NONE
                     && (fromMetadata || urlAutoEnter.get() || fromAspect);
+
+            com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                    "meta(type=" + metaProjection + ",stereo=" + metaStereo + ")"
+                    + " url=" + urlProjection + " size=" + video.getWidth() + "x" + video.getHeight()
+                    + " -> chosen=" + mAutoSelectedProjection
+                    + " autoEnter=" + autoEnter
+                    + " (fromMeta=" + fromMetadata + ",urlAuto=" + urlAutoEnter.get()
+                    + ",fromAspect=" + fromAspect + ")"
+                    + " uri=" + getSession().getCurrentUri());
         }
 
         if (mAutoSelectedProjection != VIDEO_PROJECTION_NONE && autoEnter) {
@@ -948,6 +959,9 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
     }
 
     private void enterVRVideo(@VideoProjectionMenuWidget.VideoProjectionFlags int aProjection) {
+        com.thanford.glyphew.util.GwLog.d("enterVRVideo",
+                "projection=" + aProjection
+                + " alreadyInVR=" + mViewModel.getIsInVRVideo().getValue().get());
         if (mViewModel.getIsInVRVideo().getValue().get() || aProjection == VIDEO_PROJECTION_NONE) {
             return;
         }
@@ -985,7 +999,9 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             mediaHeight = mAttachedWindow.getWindowHeight();
         }
         final boolean resetBorder = aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_360 ||
-                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_360_STEREO;
+                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_360_STEREO ||
+                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_CUBEMAP ||
+                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_MESH;
         mAttachedWindow.enableVRVideoMode(mediaWidth, mediaHeight, resetBorder);
         // Handle video resize while in VR video playback
         if (mFullScreenMedia != null) {

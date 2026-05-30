@@ -42,12 +42,35 @@ public class SphericalVideoProjectionTest {
     }
 
     @Test
-    public void cubemapIsSphericalButUnsupported() {
-        // YouTube's EAC arrives as cubemap/mesh: it IS 360, but Wolvic can't render
-        // it natively yet (Milestone 2). The caller logs this rather than garble-rendering.
-        assertEquals(true,
+    public void cubemapMapsToVideoCubemap() {
+        assertEquals(
+                VideoProjectionMenuWidget.VIDEO_PROJECTION_CUBEMAP,
+                SphericalVideoProjection.toVideoProjection(
+                        SphericalVideoProjection.TYPE_CUBEMAP,
+                        SphericalVideoProjection.STEREO_MONO));
+    }
+
+    @Test
+    public void meshMapsToVideoMesh() {
+        assertEquals(
+                VideoProjectionMenuWidget.VIDEO_PROJECTION_MESH,
+                SphericalVideoProjection.toVideoProjection(
+                        SphericalVideoProjection.TYPE_MESH,
+                        SphericalVideoProjection.STEREO_MONO));
+    }
+
+    @Test
+    public void cubemapNoLongerReportedAsUnsupported() {
+        assertEquals(false,
                 SphericalVideoProjection.isSphericalButUnsupported(
                         SphericalVideoProjection.TYPE_CUBEMAP));
+    }
+
+    @Test
+    public void meshNoLongerReportedAsUnsupported() {
+        assertEquals(false,
+                SphericalVideoProjection.isSphericalButUnsupported(
+                        SphericalVideoProjection.TYPE_MESH));
     }
 
     // --- Aspect-ratio fallback (used only when no spherical metadata is present) ---
@@ -223,16 +246,26 @@ public class SphericalVideoProjectionTest {
     }
 
     @Test
-    public void cubemapMetadataNeverGarbleRendersDespite2to1Frame() {
-        // EAC decodes to a flat frame that may look 2:1; metadata says cubemap, so we
-        // must return NONE rather than wrap it on an equirectangular sphere.
+    public void cubemapMetadataAutoEntersCubemapProjection() {
+        // Milestone 2: EAC/cubemap metadata is now renderable — returns CUBEMAP, not NONE.
         int chosen = SphericalVideoProjection.chooseProjection(
                 SphericalVideoProjection.TYPE_CUBEMAP,
                 SphericalVideoProjection.STEREO_MONO,
                 VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE,
                 null,
                 4096, 2048);
-        assertEquals(VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE, chosen);
+        assertEquals(VideoProjectionMenuWidget.VIDEO_PROJECTION_CUBEMAP, chosen);
+    }
+
+    @Test
+    public void meshMetadataAutoEntersMeshProjection() {
+        int chosen = SphericalVideoProjection.chooseProjection(
+                SphericalVideoProjection.TYPE_MESH,
+                SphericalVideoProjection.STEREO_MONO,
+                VideoProjectionMenuWidget.VIDEO_PROJECTION_NONE,
+                null,
+                0, 0);
+        assertEquals(VideoProjectionMenuWidget.VIDEO_PROJECTION_MESH, chosen);
     }
 
     @Test
