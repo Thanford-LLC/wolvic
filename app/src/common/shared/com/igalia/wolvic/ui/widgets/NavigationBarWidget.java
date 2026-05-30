@@ -670,23 +670,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             if (!mAttachedWindow.isFullScreen())
                 enterFullScreenMode();
 
-            AtomicBoolean autoEnter = new AtomicBoolean(false);
-            if (getSession().getFullScreenVideo() == null) {
-                mAutoSelectedProjection = VIDEO_PROJECTION_NONE;
-                autoEnter.set(false);
-            } else {
-                mAutoSelectedProjection = VideoProjectionMenuWidget.getAutomaticProjection(getSession().getCurrentUri(), autoEnter);
-            }
-
-            if (mAutoSelectedProjection != VIDEO_PROJECTION_NONE && autoEnter.get()) {
-                mViewModel.setAutoEnteredVRVideo(true);
-                postDelayed(() -> enterVRVideo(mAutoSelectedProjection), 300);
-            } else {
-                mViewModel.setAutoEnteredVRVideo(false);
-                if (mProjectionMenu != null) {
-                    mProjectionMenu.setSelectedProjection(mAutoSelectedProjection);
-                }
-            }
+            evaluateProjectionAndMaybeEnterVRVideo();
             mAttachedWindow.reCenterFrontWindow();
         } else {
             // This can be called by content's fullscreen event later but will be a noop.
@@ -697,6 +681,62 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             }
         }
    }
+
+    /**
+     * Spherical-video metadata can arrive seconds AFTER the user enters fullscreen
+     * (YouTube reports the 360 Projection late, after the ad/buffering). When it does,
+     * auto-enter VR-video without making the user exit and re-enter fullscreen.
+     */
+    @Override
+    public void onMediaProjectionChanged(@NonNull WMediaSession mediaSession) {
+        if (mAttachedWindow != null && mAttachedWindow.isFullScreen() && !isInVRVideo()) {
+            evaluateProjectionAndMaybeEnterVRVideo();
+        }
+    }
+
+    /**
+     * Resolve the fullscreen video's projection (metadata > URL hint > filename > aspect)
+     * and auto-enter VR-video if it's renderable. Shared by the fullscreen event and the
+     * (possibly later) projection-metadata event.
+     */
+    private void evaluateProjectionAndMaybeEnterVRVideo() {
+        com.igalia.wolvic.browser.Media video = getSession().getFullScreenVideo();
+        boolean autoEnter = false;
+        if (video == null) {
+            mAutoSelectedProjection = VIDEO_PROJECTION_NONE;
+        } else {
+            AtomicBoolean urlAutoEnter = new AtomicBoolean(false);
+            int urlProjection = VideoProjectionMenuWidget.getAutomaticProjection(
+                    getSession().getCurrentUri(), urlAutoEnter);
+            int metaProjection = video.getProjectionType();
+            int metaStereo = video.getStereoMode();
+
+            mAutoSelectedProjection = com.igalia.wolvic.browser.api.SphericalVideoProjection
+                    .chooseProjection(metaProjection, metaStereo, urlProjection,
+                            getSession().getCurrentUri(),
+                            video.getWidth(), video.getHeight());
+
+            // Auto-enter on authoritative metadata (any projection the metadata yields),
+            // an _auto URL hint, or an aspect-ratio/filename match (urlProjection==NONE
+            // but a projection was still chosen). A bare manual URL projection only
+            // pre-selects the menu.
+            boolean fromMetadata = com.igalia.wolvic.browser.api.SphericalVideoProjection
+                    .toVideoProjection(metaProjection, metaStereo) != VIDEO_PROJECTION_NONE;
+            boolean fromAspect = urlProjection == VIDEO_PROJECTION_NONE;
+            autoEnter = mAutoSelectedProjection != VIDEO_PROJECTION_NONE
+                    && (fromMetadata || urlAutoEnter.get() || fromAspect);
+        }
+
+        if (mAutoSelectedProjection != VIDEO_PROJECTION_NONE && autoEnter) {
+            mViewModel.setAutoEnteredVRVideo(true);
+            postDelayed(() -> enterVRVideo(mAutoSelectedProjection), 300);
+        } else {
+            mViewModel.setAutoEnteredVRVideo(false);
+            if (mProjectionMenu != null) {
+                mProjectionMenu.setSelectedProjection(mAutoSelectedProjection);
+            }
+        }
+    }
 
     @Override
     public void onContentFullScreen(@NonNull WindowWidget aWindow, boolean aFullScreen) {

@@ -1436,7 +1436,14 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
         if (!aFullScreen)
             return;
 
-        assert mFullscreenWindow != null;
+        // onContentFullScreen (which sets mFullscreenWindow) may arrive after
+        // onMediaFullScreen when fullscreen is triggered programmatically
+        // (e.g. by the YouTube VR webcompat injector calling player.requestFullscreen()).
+        // NavigationBarWidget.onMediaFullScreen already guards against this ordering;
+        // mirror that guard here so we don't crash.
+        if (mFullscreenWindow == null)
+            return;
+
         setFullScreenSize(mFullscreenWindow);
     }
 

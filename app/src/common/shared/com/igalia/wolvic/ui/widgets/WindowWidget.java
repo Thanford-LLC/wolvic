@@ -119,6 +119,10 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
     private final float MAX_SCALE = 3.0f;
     private final long FOCUS_ON_HOVER_DELAY_MS = 500;
 
+    public static final String BROWSER_FALLBACK_URL = "browser_fallback_url";
+    public static final String GOOGLE_PLAY_STORE = "play.google.com";
+    public static final String GOOGLE_PLAY_STORE_APP_DETAILS_PATH = "/store/apps/details";
+
     private Surface mSurface;
     private int mSurfaceWidth;
     private int mSurfaceHeight;
@@ -175,6 +179,7 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
         default void onSessionChanged(@NonNull Session aOldSession, @NonNull Session aSession) {}
         default void onContentFullScreen(@NonNull WindowWidget aWindow, boolean aFullScreen) {}
         default void onMediaFullScreen(@NonNull final WMediaSession mediaSession, boolean aFullScreen) {}
+        default void onMediaProjectionChanged(@NonNull final WMediaSession mediaSession) {}
         default void onIsWindowFullscreenChanged(boolean aFullScreen) {}
         default void onVideoAvailabilityChanged(@NonNull WindowWidget aWindow) {}
         default void onKioskMode(WindowWidget aWindow, boolean isKioskMode) {}
@@ -2055,6 +2060,12 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
            for (WindowListener listener: mListeners)
                listener.onMediaFullScreen(mediaSession, enabled);
        }
+
+       @Override
+       public void onProjectionChanged(@NonNull final WMediaSession mediaSession, final int projectionType, final int stereoMode) {
+           for (WindowListener listener: mListeners)
+               listener.onMediaProjectionChanged(mediaSession);
+       }
     };
 
     // ISession.NavigationDelegate
@@ -2403,6 +2414,13 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
 
     // ExternalRequestDelegate
 
+    private void showExternalRequestErrorDialog(@NonNull String url) {
+        mWidgetManager.getFocusedWindow().showAlert(
+                getResources().getString(R.string.external_open_uri_error_title),
+                getResources().getString(R.string.external_open_uri_error_bad_uri_body, url),
+                null);
+    }
+
     @Override
     public boolean onHandleExternalRequest(@NonNull String url) {
         URI uri;
@@ -2420,10 +2438,7 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
             try {
                 intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
             } catch (Exception ex) {
-                mWidgetManager.getFocusedWindow().showAlert(
-                        getResources().getString(R.string.external_open_uri_error_title),
-                        getResources().getString(R.string.external_open_uri_error_bad_uri_body, url),
-                        null);
+                showExternalRequestErrorDialog(url);
                 return false;
             }
 
@@ -2435,19 +2450,36 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
                 selector.setComponent(null);
             }
 
+            // Pages often launch an intent to push their Android app; if the app isn't
+            // installed, fall back to the intent's browser_fallback_url (and if that just
+            // points at the Play Store listing, extract the app's real ?url= to open in-browser).
+            // Best-effort: a missing/odd fallback must NOT block the normal startActivity below.
+            String fallbackUrl = intent.getStringExtra(BROWSER_FALLBACK_URL);
+            if (fallbackUrl != null) {
+                try {
+                    Uri fallbackUri = Uri.parse(fallbackUrl);
+                    if (fallbackUri.getHost() != null && fallbackUri.getHost().equals(GOOGLE_PLAY_STORE)
+                            && fallbackUri.getPath() != null
+                            && fallbackUri.getPath().startsWith(GOOGLE_PLAY_STORE_APP_DETAILS_PATH)) {
+                        fallbackUrl = fallbackUri.getQueryParameter("url");
+                    }
+                } catch (Exception e) {
+                    // Keep the original fallbackUrl; extraction is only an optimization.
+                }
+            }
+
             try {
                 getContext().startActivity(intent);
             } catch (ActivityNotFoundException ex) {
-                mWidgetManager.getFocusedWindow().showAlert(
-                        getResources().getString(R.string.external_open_uri_error_title),
-                        getResources().getString(R.string.external_open_uri_error_no_activity_body, url),
-                        null);
-                return false;
+                if (fallbackUrl != null && !fallbackUrl.isEmpty()) {
+                    mSession.loadUri(fallbackUrl, WSession.LOAD_FLAGS_EXTERNAL);
+                    return true;
+                } else {
+                    showExternalRequestErrorDialog(url);
+                    return false;
+                }
             } catch (SecurityException ex) {
-                mWidgetManager.getFocusedWindow().showAlert(
-                        getResources().getString(R.string.external_open_uri_error_title),
-                        getResources().getString(R.string.external_open_uri_error_security_exception_body, url),
-                        null);
+                showExternalRequestErrorDialog(url);
                 return false;
             }
 

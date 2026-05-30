@@ -194,6 +194,10 @@ include_directories(
 
 # Add dependency on KTX-Software
 add_subdirectory(${CMAKE_SOURCE_DIR}/src/main/cpp/KTX-Software)
+# Align LOAD segments to 16kb so the libs load on Android 15+/Quest 16kb-page
+# devices and pass Meta/Play submission checks (upstream a5854aa, #1917).
+target_link_options(ktx PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(ktx_read PRIVATE "-Wl,-z,max-page-size=16384")
 target_link_libraries(native-lib PRIVATE ktx_read)
 target_include_directories(native-lib PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/KTX-Software/include)
 
@@ -215,6 +219,7 @@ target_link_libraries( # Specifies the target library.
                        EGL
                        GLESv3
                       )
+target_link_options(native-lib PRIVATE "-Wl,-z,max-page-size=16384")
 
 # OVR Platform SDK: only available and needed for Meta store builds.
 if(OCULUSVR AND STORE_BUILD)

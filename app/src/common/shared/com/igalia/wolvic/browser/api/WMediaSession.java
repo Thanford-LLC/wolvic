@@ -185,6 +185,17 @@ public interface WMediaSession {
                 @NonNull final WMediaSession mediaSession,
                 final boolean enabled,
                 @Nullable final WMediaSession.ElementMetadata meta) {}
+
+        /**
+         * Called when the spherical-video projection/stereo metadata is (re)parsed
+         * from the container — which can arrive seconds after playback starts and
+         * after fullscreen entry. Lets the UI auto-enter VR-video once a renderable
+         * projection becomes known, without the user re-entering fullscreen.
+         */
+        default void onProjectionChanged(
+                @NonNull final WMediaSession mediaSession,
+                final int projectionType,
+                final int stereoMode) {}
     }
 
     /** The representation of a media element's metadata. */

@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.igalia.wolvic.browser.api.WDisplay;
+import com.igalia.wolvic.browser.api.WMediaSession;
 import com.igalia.wolvic.browser.api.WSession;
 import com.igalia.wolvic.browser.api.WWebRequestError;
 
@@ -229,5 +230,24 @@ public class TabWebContentsObserver extends WebContentsObserver {
     @Override
     public void hasEffectivelyFullscreenVideoChange(boolean isFullscreen) {
         mSession.getTab().onMediaFullscreen(isFullscreen);
+    }
+
+    @Override
+    public void mediaResized(int width, int height) {
+        // Relay video dimensions to TabMediaSessionObserver so they are available
+        // when a fullscreen event arrives and NavigationBarWidget needs to classify
+        // the video's aspect ratio for automatic VR-video projection.
+        mSession.getTab().onMediaResized(width, height);
+    }
+
+    @Override
+    public void mediaProjectionChanged(int projectionType, int stereoMode) {
+        // Authoritative spherical-video metadata (sv3d/st3d) parsed by the demuxer.
+        // The session's media session delegate IS the shared Media object, so set
+        // the projection on it directly; NavigationBarWidget reads it at fullscreen.
+        WMediaSession.Delegate delegate = mSession.getMediaSessionDelegate();
+        if (delegate instanceof com.igalia.wolvic.browser.Media) {
+            ((com.igalia.wolvic.browser.Media) delegate).setProjection(projectionType, stereoMode);
+        }
     }
 }

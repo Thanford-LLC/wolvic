@@ -43,6 +43,11 @@ public class TabMediaSessionObserver extends MediaSessionObserver implements Med
     private boolean mIsSuspended = false;
     private boolean mRunUpdatingPositionTask = false;
 
+    // Video dimensions reported by MediaResized — used to classify aspect ratio
+    // for automatic VR-video projection in NavigationBarWidget.onMediaFullScreen.
+    private int mVideoWidth = 0;
+    private int mVideoHeight = 0;
+
     public TabMediaSessionObserver(@NonNull WebContents webContents, @NonNull SessionImpl session) {
         super(MediaSession.fromWebContents(webContents));
 
@@ -120,11 +125,27 @@ public class TabMediaSessionObserver extends MediaSessionObserver implements Med
             startUpdatingPosition();
     }
 
+    /**
+     * Store video dimensions reported by Chromium's MediaResized C++ signal.
+     * Called before onMediaFullscreen so the dimensions are ready when
+     * NavigationBarWidget.onMediaFullScreen reads them via Media.getWidth/Height.
+     */
+    public void setVideoSize(int width, int height) {
+        mVideoWidth = width;
+        mVideoHeight = height;
+    }
+
     public void onMediaFullscreen(boolean isFullscreen) {
         assert mMediaSession != null;
-        if (mSession.getMediaSessionDelegate() != null)
+        if (mSession.getMediaSessionDelegate() != null) {
+            // Pass real ElementMetadata so Media.getWidth/getHeight return the
+            // actual video dimensions (previously always passed null → returned 0).
+            WMediaSession.ElementMetadata meta = isFullscreen && mVideoWidth > 0 && mVideoHeight > 0
+                    ? new WMediaSession.ElementMetadata(null, 0, mVideoWidth, mVideoHeight, 0, 1)
+                    : null;
             mSession.getMediaSessionDelegate().onFullscreen(
-                    mSession, mMediaSession, isFullscreen, null);
+                    mSession, mMediaSession, isFullscreen, meta);
+        }
     }
 
     /* package */ class WMediaSessionImpl implements WMediaSession {

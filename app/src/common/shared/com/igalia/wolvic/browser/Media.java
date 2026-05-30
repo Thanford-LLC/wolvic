@@ -27,6 +27,10 @@ public class Media implements WMediaSession.Delegate {
     private ResizeDelegate mResizeDelegate;
     private VideoAvailabilityListener mAvailabilityDelegate;
     private long mFeatures = 0;
+    // Spherical-video projection parsed from container metadata (st3d/sv3d), fed by the
+    // native mediaProjectionChanged signal. Defaults to flat/mono until the demuxer reports.
+    private int mProjectionType = com.igalia.wolvic.browser.api.SphericalVideoProjection.TYPE_RECTANGULAR;
+    private int mStereoMode = com.igalia.wolvic.browser.api.SphericalVideoProjection.STEREO_MONO;
 
     public Media() {
         mMediaListeners = new CopyOnWriteArrayList<>();
@@ -145,6 +149,31 @@ public class Media implements WMediaSession.Delegate {
 
     public long getHeight() {
         return mElement != null ? mElement.height : 0;
+    }
+
+    /** Spherical projection (SphericalVideoProjection.TYPE_*) from container metadata. */
+    public int getProjectionType() {
+        return mProjectionType;
+    }
+
+    /** Stereo layout (SphericalVideoProjection.STEREO_*) from container metadata. */
+    public int getStereoMode() {
+        return mStereoMode;
+    }
+
+    /** Set by the native mediaProjectionChanged signal when the demuxer parses st3d/sv3d. */
+    public void setProjection(int projectionType, int stereoMode) {
+        mProjectionType = projectionType;
+        mStereoMode = stereoMode;
+        // Notify listeners so the UI can auto-enter VR-video if this renderable
+        // projection arrives after the user already entered fullscreen (the metadata
+        // can lag playback by many seconds on YouTube). mMediaSession may be null
+        // very early; the listener path also re-reads on the fullscreen event.
+        final WMediaSession ms = mMediaSession;
+        if (ms != null) {
+            mMediaListeners.forEach(listener ->
+                    listener.onProjectionChanged(ms, projectionType, stereoMode));
+        }
     }
 
     public void skipAd() {

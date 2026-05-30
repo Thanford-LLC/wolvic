@@ -51,6 +51,10 @@ public class TabImpl extends Tab {
         mTabMediaSessionObserver.onMediaFullscreen(isFullscreen);
     }
 
+    public void onMediaResized(int width, int height) {
+        mTabMediaSessionObserver.setVideoSize(width, height);
+    }
+
     public void purgeHistory() {
         mWebContents.getNavigationController().clearHistory();
     }
