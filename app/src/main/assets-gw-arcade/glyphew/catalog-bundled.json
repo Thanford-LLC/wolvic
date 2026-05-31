@@ -1,6 +1,6 @@
 {
   "catalog_version": 1,
-  "generated_at": "2026-05-27T00:00:00Z",
+  "generated_at": "2026-05-31T00:00:00Z",
   "categories": [
     {
       "id": "vr",
@@ -8,21 +8,63 @@
       "order": 0,
       "tiles": [
         {
-          "url": "https://thanford.com/glyphew/test-vr.html",
-          "label": "VR_Test",
-          "icon": "thanford.png",
-          "featured": true
+          "url": "https://sidequestvr.com/",
+          "label": "SideQuest",
+          "icon": "sidequest.png",
+          "featured": false
+        },
+        {
+          "url": "https://uploadvr.com/",
+          "label": "UploadVR",
+          "icon": "uploadvr.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.roadtovr.com/",
+          "label": "Road to VR",
+          "icon": "roadtovr.png",
+          "featured": false
+        },
+        {
+          "url": "https://vrscout.com/",
+          "label": "VRScout",
+          "icon": "vrscout.png",
+          "featured": false
+        },
+        {
+          "url": "https://mixed-news.com/en/",
+          "label": "MIXED News",
+          "icon": "mixednews.png",
+          "featured": false
+        },
+        {
+          "url": "https://moonrider.xyz/",
+          "label": "Moon Rider",
+          "icon": "moonrider.png",
+          "featured": false
+        },
+        {
+          "url": "https://aframe.io/showcase/",
+          "label": "A-Frame",
+          "icon": "aframe.png",
+          "featured": false
+        },
+        {
+          "url": "https://sketchfab.com/vr",
+          "label": "Sketchfab",
+          "icon": "sketchfab.png",
+          "featured": false
+        },
+        {
+          "url": "https://webxr.directory/",
+          "label": "WebXR Directory",
+          "icon": "webxrmetaverse.png",
+          "featured": false
         },
         {
           "url": "https://www.airpano.com/",
           "label": "AirPano",
           "icon": "airpano.png",
-          "featured": false
-        },
-        {
-          "url": "https://sketchfab.com/",
-          "label": "Sketchfab",
-          "icon": "sketchfab.png",
           "featured": false
         },
         {
@@ -32,33 +74,87 @@
           "featured": false
         },
         {
-          "url": "https://vimeo.com/channels/360vr",
-          "label": "Vimeo 360",
-          "icon": "vimeo.png",
-          "featured": false
-        },
-        {
-          "url": "https://artsandculture.google.com/",
-          "label": "Arts & Culture",
-          "icon": "artsculture.png",
-          "featured": false
-        },
-        {
-          "url": "https://matterport.com/",
-          "label": "Matterport",
-          "icon": "matterport.png",
-          "featured": false
-        },
-        {
           "url": "https://www.youtube.com/@HughHou",
           "label": "Hugh Hou",
           "icon": "youtube.png",
           "featured": false
         },
         {
-          "url": "https://deovr.com/",
-          "label": "DeoVR",
-          "icon": "deovr.png",
+          "url": "https://www.meta.com/quest/experiences/",
+          "label": "Meta Quest Store",
+          "icon": "metaquest.png",
+          "featured": false
+        },
+        {
+          "url": "https://hubs.mozilla.com/",
+          "label": "Mozilla Hubs",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://hello.vrchat.com/",
+          "label": "VRChat",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.xrtoday.com/",
+          "label": "XR Today",
+          "icon": "xrtoday.png",
+          "featured": false
+        },
+        {
+          "url": "https://skarredghost.com/",
+          "label": "Skarredghost",
+          "icon": "skarredghost.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.vrfocus.com/",
+          "label": "VRFocus",
+          "icon": "vrfocus.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.veer.tv/",
+          "label": "VeeR VR",
+          "icon": "veer.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.littlstar.com/",
+          "label": "LittlStar",
+          "icon": "littlstar.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.360cities.net/",
+          "label": "360 Cities",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://hoppin.world/",
+          "label": "Hoppin World",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/c/VR180Tour/videos",
+          "label": "VR180 Tour",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.felixandpaul.com/",
+          "label": "Felix & Paul",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.spatial.io/",
+          "label": "Spatial",
+          "icon": "",
           "featured": false
         }
       ]
@@ -69,39 +165,21 @@
       "order": 1,
       "tiles": [
         {
-          "url": "https://webxr-metaverse.com/",
-          "label": "WebXR Hub",
-          "icon": "webxrmetaverse.png",
+          "url": "https://www.ign.com/",
+          "label": "IGN",
+          "icon": "ign.png",
           "featured": false
         },
         {
-          "url": "https://moonrider.xyz/",
-          "label": "Moon Rider",
-          "icon": "moonrider.png",
+          "url": "https://howlongtobeat.com/",
+          "label": "HowLongToBeat",
+          "icon": "",
           "featured": false
         },
         {
-          "url": "https://heyvr.io/",
-          "label": "heyVR",
-          "icon": "heyvr.png",
-          "featured": false
-        },
-        {
-          "url": "https://aframe.io/showcase/",
-          "label": "A-Frame",
-          "icon": "aframe.png",
-          "featured": false
-        },
-        {
-          "url": "https://framevr.io/",
-          "label": "Frame VR",
-          "icon": "framevr.png",
-          "featured": false
-        },
-        {
-          "url": "https://immersiveweb.dev/",
-          "label": "Immersive Web",
-          "icon": "immersiveweb.png",
+          "url": "https://www.eurogamer.net/",
+          "label": "Eurogamer",
+          "icon": "eurogamer.png",
           "featured": false
         },
         {
@@ -111,9 +189,123 @@
           "featured": false
         },
         {
-          "url": "https://thepolys.com/",
-          "label": "The Polys",
-          "icon": "thepolys.png",
+          "url": "https://www.xbox.com/play",
+          "label": "Xbox Cloud",
+          "icon": "xbox.png",
+          "featured": false
+        },
+        {
+          "url": "https://play.geforcenow.com/",
+          "label": "GeForce NOW",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://store.steampowered.com/",
+          "label": "Steam",
+          "icon": "steam.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.crazygames.com/",
+          "label": "CrazyGames",
+          "icon": "crazygames.png",
+          "featured": false
+        },
+        {
+          "url": "https://poki.com/",
+          "label": "Poki",
+          "icon": "poki.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.polygon.com/",
+          "label": "Polygon",
+          "icon": "polygon.png",
+          "featured": false
+        },
+        {
+          "url": "https://kotaku.com/",
+          "label": "Kotaku",
+          "icon": "kotaku.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.gamesradar.com/",
+          "label": "GamesRadar+",
+          "icon": "gamesradar.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.gamespot.com/",
+          "label": "GameSpot",
+          "icon": "gamespot.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.pcgamer.com/",
+          "label": "PC Gamer",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.nintendolife.com/",
+          "label": "Nintendo Life",
+          "icon": "nintendo.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.pushsquare.com/",
+          "label": "Push Square",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.purexbox.com/",
+          "label": "Pure Xbox",
+          "icon": "xbox.png",
+          "featured": false
+        },
+        {
+          "url": "https://steamdb.info/",
+          "label": "SteamDB",
+          "icon": "steam.png",
+          "featured": false
+        },
+        {
+          "url": "https://opencritic.com/",
+          "label": "OpenCritic",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.chess.com/",
+          "label": "Chess.com",
+          "icon": "chesscom.png",
+          "featured": false
+        },
+        {
+          "url": "https://lichess.org/",
+          "label": "Lichess",
+          "icon": "lichess.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.miniclip.com/",
+          "label": "Miniclip",
+          "icon": "miniclip.png",
+          "featured": false
+        },
+        {
+          "url": "https://armorgames.com/",
+          "label": "Armor Games",
+          "icon": "armorgames.png",
+          "featured": false
+        },
+        {
+          "url": "https://heyvr.io/",
+          "label": "heyVR",
+          "icon": "heyvr.png",
           "featured": false
         }
       ]
@@ -123,6 +315,126 @@
       "label": "Video",
       "order": 2,
       "tiles": [
+        {
+          "url": "https://www.youtube.com/@ThrillSeekerVR",
+          "label": "ThrillSeeker",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@VirtualRealityOasis",
+          "label": "VR Oasis",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@BeardoBenjo",
+          "label": "Beardo Benjo",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@BMFVR",
+          "label": "BMFVR",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@CasandChary",
+          "label": "Cas and Chary",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@AWolfInVR",
+          "label": "A Wolf in VR",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@nathieVR",
+          "label": "Nathie",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@TyrielWoodVRTech",
+          "label": "Tyriel Wood",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@TwoMinutePapers",
+          "label": "Two Minute Papers",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@mkbhd",
+          "label": "MKBHD",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@LinusTechTips",
+          "label": "Linus Tech Tips",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@kurzgesagt",
+          "label": "Kurzgesagt",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@veritasium",
+          "label": "Veritasium",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.crunchyroll.com/",
+          "label": "Crunchyroll",
+          "icon": "crunchyroll.png",
+          "featured": false
+        },
+        {
+          "url": "https://vimeo.com/channels/360vr",
+          "label": "Vimeo 360",
+          "icon": "vimeo.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@tested",
+          "label": "Tested",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.youtube.com/@NatGeo",
+          "label": "National Geographic",
+          "icon": "youtube.png",
+          "featured": false
+        },
+        {
+          "url": "https://nebula.tv/",
+          "label": "Nebula",
+          "icon": "nebula.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.twitch.tv/lirik",
+          "label": "Twitch: LIRIK",
+          "icon": "twitch.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.twitch.tv/shroud",
+          "label": "Twitch: shroud",
+          "icon": "twitch.png",
+          "featured": false
+        },
         {
           "url": "https://www.netflix.com/",
           "label": "Netflix",
@@ -142,32 +454,20 @@
           "featured": false
         },
         {
-          "url": "https://www.crunchyroll.com/",
-          "label": "Crunchyroll",
-          "icon": "crunchyroll.png",
-          "featured": false
-        },
-        {
           "url": "https://www.plex.tv/",
           "label": "Plex",
           "icon": "plex.png",
           "featured": false
         },
         {
-          "url": "https://www.youtube.com/@ThrillSeekerVR",
-          "label": "ThrillSeeker",
+          "url": "https://www.youtube.com/@CorridorCrew",
+          "label": "Corridor Crew",
           "icon": "youtube.png",
           "featured": false
         },
         {
-          "url": "https://www.youtube.com/@nathieVR",
-          "label": "Nathie",
-          "icon": "youtube.png",
-          "featured": false
-        },
-        {
-          "url": "https://www.youtube.com/@TyrielWoodVRTech",
-          "label": "Tyriel Wood",
+          "url": "https://www.youtube.com/@SmarterEveryDay",
+          "label": "SmarterEveryDay",
           "icon": "youtube.png",
           "featured": false
         }
@@ -179,34 +479,10 @@
       "order": 3,
       "tiles": [
         {
-          "url": "https://www.wikipedia.org/",
-          "label": "Wikipedia",
-          "icon": "wikipedia.png",
-          "featured": false
-        },
-        {
-          "url": "https://translate.google.com/",
-          "label": "Translate",
-          "icon": "translate.png",
-          "featured": false
-        },
-        {
-          "url": "https://maps.google.com/",
-          "label": "Maps",
-          "icon": "gmaps.png",
-          "featured": false
-        },
-        {
-          "url": "https://weather.com/",
-          "label": "Weather",
-          "icon": "weather.png",
-          "featured": false
-        },
-        {
-          "url": "https://archive.org/",
-          "label": "Archive",
-          "icon": "archive.png",
-          "featured": false
+          "url": "https://thanford.com/glyphew/test-vr.html",
+          "label": "VR_Test",
+          "icon": "thanford.png",
+          "featured": true
         },
         {
           "url": "https://chat.openai.com/",
@@ -221,9 +497,129 @@
           "featured": false
         },
         {
-          "url": "https://thanford.com/",
-          "label": "Thanford",
-          "icon": "thanford.png",
+          "url": "https://www.perplexity.ai/",
+          "label": "Perplexity",
+          "icon": "perplexity.png",
+          "featured": false
+        },
+        {
+          "url": "https://github.com/",
+          "label": "GitHub",
+          "icon": "github.png",
+          "featured": false
+        },
+        {
+          "url": "https://stackoverflow.com/",
+          "label": "Stack Overflow",
+          "icon": "stackoverflow.png",
+          "featured": false
+        },
+        {
+          "url": "https://huggingface.co/",
+          "label": "Hugging Face",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.photopea.com/",
+          "label": "Photopea",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.figma.com/",
+          "label": "Figma",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.canva.com/",
+          "label": "Canva",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.notion.so/",
+          "label": "Notion",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://docs.google.com/",
+          "label": "Google Docs",
+          "icon": "gdrive.png",
+          "featured": false
+        },
+        {
+          "url": "https://replit.com/",
+          "label": "Replit",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.speedtest.net/",
+          "label": "Speedtest",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://immersed.com/",
+          "label": "Immersed",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://ollama.com/",
+          "label": "Ollama",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://trello.com/",
+          "label": "Trello",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://codepen.io/",
+          "label": "CodePen",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://drive.google.com/",
+          "label": "Google Drive",
+          "icon": "gdrive.png",
+          "featured": false
+        },
+        {
+          "url": "https://obsidian.md/",
+          "label": "Obsidian",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.cursor.com/",
+          "label": "Cursor",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.remove.bg/",
+          "label": "Remove.bg",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://excalidraw.com/",
+          "label": "Excalidraw",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.kaggle.com/",
+          "label": "Kaggle",
+          "icon": "",
           "featured": false
         }
       ]
@@ -234,12 +630,6 @@
       "order": 4,
       "tiles": [
         {
-          "url": "https://www.reddit.com/",
-          "label": "Reddit",
-          "icon": "reddit.png",
-          "featured": false
-        },
-        {
           "url": "https://www.reddit.com/r/virtualreality/",
           "label": "r/virtualreality",
           "icon": "reddit.png",
@@ -247,14 +637,8 @@
         },
         {
           "url": "https://x.com/",
-          "label": "Twitter/X",
+          "label": "X (Twitter)",
           "icon": "twitter.png",
-          "featured": false
-        },
-        {
-          "url": "https://bsky.app/",
-          "label": "Bluesky",
-          "icon": "bluesky.png",
           "featured": false
         },
         {
@@ -264,9 +648,51 @@
           "featured": false
         },
         {
-          "url": "https://news.ycombinator.com/",
-          "label": "Hacker News",
-          "icon": "hackernews.png",
+          "url": "https://bsky.app/",
+          "label": "Bluesky",
+          "icon": "bluesky.png",
+          "featured": false
+        },
+        {
+          "url": "https://web.telegram.org/",
+          "label": "Telegram",
+          "icon": "telegram.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.reddit.com/r/OculusQuest/",
+          "label": "r/OculusQuest",
+          "icon": "reddit.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.reddit.com/",
+          "label": "Reddit",
+          "icon": "reddit.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.instagram.com/",
+          "label": "Instagram",
+          "icon": "instagram.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.threads.net/",
+          "label": "Threads",
+          "icon": "threads.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.facebook.com/",
+          "label": "Facebook",
+          "icon": "facebook.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.linkedin.com/",
+          "label": "LinkedIn",
+          "icon": "linkedin.png",
           "featured": false
         },
         {
@@ -276,9 +702,75 @@
           "featured": false
         },
         {
-          "url": "https://web.telegram.org/",
-          "label": "Telegram",
-          "icon": "telegram.png",
+          "url": "https://discord.com/",
+          "label": "Discord",
+          "icon": "discord.png",
+          "featured": false
+        },
+        {
+          "url": "https://news.ycombinator.com/",
+          "label": "Hacker News",
+          "icon": "hackernews.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.meetup.com/",
+          "label": "Meetup",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://nextdoor.com/",
+          "label": "Nextdoor",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.reddit.com/r/Quest3/",
+          "label": "r/Quest3",
+          "icon": "reddit.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.reddit.com/r/LocalLLaMA/",
+          "label": "r/LocalLLaMA",
+          "icon": "reddit.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.pinterest.com/",
+          "label": "Pinterest",
+          "icon": "pinterest.png",
+          "featured": false
+        },
+        {
+          "url": "https://join-lemmy.org/",
+          "label": "Lemmy",
+          "icon": "lemmy.png",
+          "featured": false
+        },
+        {
+          "url": "https://app.element.io/",
+          "label": "Matrix Element",
+          "icon": "matrix.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.snapchat.com/",
+          "label": "Snapchat",
+          "icon": "snapchat.png",
+          "featured": false
+        },
+        {
+          "url": "https://medium.com/",
+          "label": "Medium",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://substack.com/",
+          "label": "Substack",
+          "icon": "",
           "featured": false
         }
       ]
@@ -301,6 +793,12 @@
           "featured": false
         },
         {
+          "url": "https://www.bing.com/",
+          "label": "Bing",
+          "icon": "bing.png",
+          "featured": false
+        },
+        {
           "url": "https://www.perplexity.ai/",
           "label": "Perplexity",
           "icon": "perplexity.png",
@@ -319,12 +817,6 @@
           "featured": false
         },
         {
-          "url": "https://www.bing.com/",
-          "label": "Bing",
-          "icon": "bing.png",
-          "featured": false
-        },
-        {
           "url": "https://www.startpage.com/",
           "label": "Startpage",
           "icon": "startpage.png",
@@ -334,6 +826,96 @@
           "url": "https://www.ecosia.org/",
           "label": "Ecosia",
           "icon": "ecosia.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.wikipedia.org/",
+          "label": "Wikipedia",
+          "icon": "wikipedia.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.wolframalpha.com/",
+          "label": "Wolfram Alpha",
+          "icon": "wolframalpha.png",
+          "featured": false
+        },
+        {
+          "url": "https://yandex.com/",
+          "label": "Yandex",
+          "icon": "yandex.png",
+          "featured": false
+        },
+        {
+          "url": "https://scholar.google.com/",
+          "label": "Google Scholar",
+          "icon": "google.png",
+          "featured": false
+        },
+        {
+          "url": "https://archive.org/",
+          "label": "Internet Archive",
+          "icon": "internetarchive.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.imdb.com/",
+          "label": "IMDb",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.amazon.com/",
+          "label": "Amazon",
+          "icon": "amazon.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.qwant.com/",
+          "label": "Qwant",
+          "icon": "qwant.png",
+          "featured": false
+        },
+        {
+          "url": "https://www.metacritic.com/",
+          "label": "Metacritic",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://you.com/",
+          "label": "You.com",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://www.semanticscholar.org/",
+          "label": "Semantic Scholar",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://arxiv.org/",
+          "label": "ArXiv",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://pubmed.ncbi.nlm.nih.gov/",
+          "label": "PubMed",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://giphy.com/",
+          "label": "Giphy",
+          "icon": "",
+          "featured": false
+        },
+        {
+          "url": "https://tenor.com/",
+          "label": "Tenor",
+          "icon": "",
           "featured": false
         }
       ]
