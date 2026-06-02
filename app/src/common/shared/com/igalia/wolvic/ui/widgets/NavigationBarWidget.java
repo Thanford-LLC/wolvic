@@ -125,6 +125,9 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
     private MediaControlsWidget mMediaControlsWidget;
     private Media mFullScreenMedia;
     private @VideoProjectionMenuWidget.VideoProjectionFlags int mAutoSelectedProjection = VIDEO_PROJECTION_NONE;
+    // Projection currently applied to the live VR-video layer. Used to re-project (not just enter)
+    // when a corrected projection/stereo metadata arrives after we are already in VR video.
+    private @VideoProjectionMenuWidget.VideoProjectionFlags int mVRVideoProjectionApplied = VIDEO_PROJECTION_NONE;
     private HamburgerMenuWidget mHamburgerMenu;
     private QuickPermissionWidget mQuickPermissionWidget;
     private SendTabDialogWidget mSendTabDialog;
@@ -692,9 +695,12 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
      */
     @Override
     public void onMediaProjectionChanged(@NonNull WMediaSession mediaSession) {
-        if (mAttachedWindow != null && mAttachedWindow.isFullScreen() && !isInVRVideo()) {
+        if (mAttachedWindow != null && mAttachedWindow.isFullScreen()) {
             // Metadata arrived while already fullscreen — the video surface is already
-            // settled, so enter VR immediately (no settle delay).
+            // settled, so evaluate immediately (no settle delay). If we are already in
+            // VR video this re-projects the live layer when a corrected projection/stereo
+            // arrives late (otherwise the first, often wrong, projection stays latched
+            // until the user manually exits and re-enters fullscreen).
             evaluateProjectionAndMaybeEnterVRVideo(0);
         }
     }
@@ -748,11 +754,23 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         }
 
         if (mAutoSelectedProjection != VIDEO_PROJECTION_NONE && autoEnter) {
-            mViewModel.setAutoEnteredVRVideo(true);
-            if (enterDelayMs > 0) {
-                postDelayed(() -> enterVRVideo(mAutoSelectedProjection), enterDelayMs);
+            if (isInVRVideo()) {
+                // Already in VR video: a corrected projection/stereo arrived late. Re-project
+                // the live layer in place (no exit/re-enter) when it actually changed.
+                if (mAutoSelectedProjection != mVRVideoProjectionApplied) {
+                    com.thanford.glyphew.util.GwLog.d("reprojectInVRVideo",
+                            "applied=" + mVRVideoProjectionApplied + " -> " + mAutoSelectedProjection);
+                    mVRVideoProjectionApplied = mAutoSelectedProjection;
+                    mProjectionMenu.setSelectedProjection(mAutoSelectedProjection);
+                    mWidgetManager.showVRVideo(mAttachedWindow.getHandle(), mAutoSelectedProjection);
+                }
             } else {
-                enterVRVideo(mAutoSelectedProjection);
+                mViewModel.setAutoEnteredVRVideo(true);
+                if (enterDelayMs > 0) {
+                    postDelayed(() -> enterVRVideo(mAutoSelectedProjection), enterDelayMs);
+                } else {
+                    enterVRVideo(mAutoSelectedProjection);
+                }
             }
         } else {
             mViewModel.setAutoEnteredVRVideo(false);
@@ -972,6 +990,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         mWidgetManager.setCylinderDensityForce(0.0f);
 
         mViewModel.setIsInVRVideo(true);
+        mVRVideoProjectionApplied = aProjection;
         mWidgetManager.pushBackHandler(mVRVideoBackHandler);
         mProjectionMenu.setSelectedProjection(aProjection);
         // Backup the placement because the same widget is reused in FullScreen & MediaControl menus
@@ -1042,6 +1061,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             mFullScreenMedia.setResizeDelegate(null);
         }
         mViewModel.setIsInVRVideo(false);
+        mVRVideoProjectionApplied = VIDEO_PROJECTION_NONE;
         mWidgetManager.popBackHandler(mVRVideoBackHandler);
         mWidgetManager.hideVRVideo();
         boolean composited = mProjectionMenu.getPlacement().composited;
