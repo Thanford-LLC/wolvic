@@ -29,6 +29,12 @@
 // validated; otherwise falls back to the bundled catalog-bundled.json asset.
 // The old STATIC_CATALOG constant has been removed — catalog/source.json in
 // the glyphew repo is now the single source of truth.
+function chunkArray(arr, size) {
+  var chunks = [];
+  for (var i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  return chunks.length ? chunks : [[]];
+}
+
 var REMOTE_CATALOG = (function() {
   try {
     var raw = (typeof gwHome !== 'undefined') ? gwHome.getCatalog() : null;
@@ -36,21 +42,23 @@ var REMOTE_CATALOG = (function() {
     var parsed = JSON.parse(raw);
     var cats = (parsed && Array.isArray(parsed.categories)) ? parsed.categories : [];
     // Normalise to the shape homepage.js expects: { id, title, icon, pages[] }
+    // Each page holds 8 tiles to match the 3×3 grid (8 outer slots).
     return cats.map(function(cat) {
+      var tiles = (cat.tiles || []).map(function(t) {
+        return {
+          name:   t.label  || t.name  || '',
+          domain: (t.url || '').replace(/^https?:\/\//, '').split('/')[0],
+          url:    t.url    || '',
+          icon:   t.icon   || '',
+          color:  t.color  || '#333333',
+          letter: t.letter || (t.label || '?').charAt(0).toUpperCase(),
+        };
+      });
       return {
         id:    cat.id    || '',
         title: cat.label || cat.title || '',
         icon:  '◎',
-        pages: [(cat.tiles || []).map(function(t) {
-          return {
-            name:   t.label  || t.name  || '',
-            domain: (t.url || '').replace(/^https?:\/\//, '').split('/')[0],
-            url:    t.url    || '',
-            icon:   t.icon   || '',
-            color:  t.color  || '#333333',
-            letter: t.letter || (t.label || '?').charAt(0).toUpperCase(),
-          };
-        })],
+        pages: chunkArray(tiles, 8),
       };
     });
   } catch (e) {
