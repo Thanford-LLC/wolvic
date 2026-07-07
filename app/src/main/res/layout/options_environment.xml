@@ -46,6 +46,19 @@
                     app:values="@array/developer_options_environments_values"
                     app:images="@array/developer_options_environments_images"/>
 
+                <TextView
+                    android:id="@+id/thirdPartyCreditsLink"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:text="@string/third_party_credits_title"
+                    android:textAppearance="@style/settingsText"
+                    android:textColor="@color/azure"
+                    android:visibility="gone" />
+
             </LinearLayout>
         </com.igalia.wolvic.ui.views.CustomScrollView>
 

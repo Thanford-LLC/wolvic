@@ -41,6 +41,14 @@ OpenXRGestureManager::handFacesHead(const vrb::Matrix &hand, const vrb::Matrix &
     if (handDirection.Dot(headDirection) <= kHandHeadDirectionAlignment)
         return false;
 
+#if defined(OCULUSVR)
+    // VRC.Quest.Input.8: Quest's hand-tracking menu gesture is reserved when
+    // the palm faces the user. The older lateral-distance gate missed valid
+    // left-hand menu gestures that Meta's runtime still reports as
+    // "should fire menu button for hand 0".
+    return true;
+#endif
+
     // Then check that vectors are not too far away
     const float kHandHeadDistanceThreshold = 0.10;
     auto handToHead = hand.GetTranslation() - head.GetTranslation();

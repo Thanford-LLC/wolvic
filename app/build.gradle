@@ -7,6 +7,13 @@ plugins {
 apply plugin: 'com.android.application'
 apply from: "$project.rootDir/tools/gradle/versionCode.gradle"
 apply plugin: 'kotlin-android'
+// Glyphew: dependency license manifest (run :app:generateLicenseReport; WOLVIC-COMPLIANCE.md §8)
+apply plugin: 'com.github.jk1.dependency-license-report'
+licenseReport {
+    configurations = ['oculusvrArm64ChromiumGenericReleaseRuntimeClasspath']
+    renderers = [new com.github.jk1.license.render.JsonReportRenderer('dep-licenses.json'),
+                 new com.github.jk1.license.render.CsvReportRenderer('dep-licenses.csv')]
+}
 
 // Apply AGConnect plugin only for Huawei builds
 if (getGradle().getStartParameter().getTaskRequests().toString() =~ /[Hh]vr/
@@ -87,10 +94,19 @@ def getMKApiKey = { ->
 }
 
 def isChromiumAvailable = {
-    if (gradle.hasProperty("localProperties.chromium_aar")) {
-        return true
+    if (!gradle.hasProperty("localProperties.chromium_aar")) {
+        return false
     }
-    return false
+    def aarPath = gradle."localProperties.chromium_aar".toString()
+    def aarDir = new File(aarPath)
+    if (!aarDir.exists()) {
+        throw new GradleException(
+            "Chromium AAR directory not found: ${aarPath}\n" +
+            "Mount the Chromium build disk and retry:\n" +
+            "  sudo mount /mnt/chromium-build/chromium-aars\n" +
+            "Or remove 'chromium_aar' from local.properties to build the Gecko backend instead.")
+    }
+    return true
 }
 
 def isWebKitAvailable = {
@@ -102,13 +118,175 @@ def isWebKitAvailable = {
 
 // Version names for Gecko and Chromium releases.
 def GECKO_RELEASE_VERSION_NAME = '1.9'
-def CHROMIUM_RELEASE_VERSION_NAME = '1.3'
+
+// ── Design-system staleness check ─────────────────────────────────────────
+// Fails the build if generated color XML / homepage CSS are stale vs DESIGN.md.
+// Requires Node ≥ 20 and `npm ci` to have been run in the glyphew/ planning repo.
+// Skip by passing -PskipDesignCheck=true to Gradle.
+if (!project.hasProperty('skipDesignCheck')) {
+    task verifyDesignExports(type: Exec) {
+        group = 'Glyphew'
+        description = 'Verify generated colors-gw*.xml and _design-vars.css match DESIGN.md YAML tokens.'
+        def glyphewRepo = rootProject.projectDir.parentFile
+            .toPath().resolve('glyphew').toFile()
+        workingDir glyphewRepo
+        commandLine 'node', 'tools/design-export.mjs',
+            '--wolvic-root', rootProject.projectDir.canonicalPath,
+            '--check'
+        ignoreExitValue false
+        // enabled must be set at configuration time, not inside doFirst
+        if (!glyphewRepo.exists()) {
+            logger.lifecycle("WARNING: glyphew repo not found at $glyphewRepo; skipping design check.")
+            enabled = false
+        }
+    }
+    preBuild.dependsOn verifyDesignExports
+}
+
+// ── Backend config verification ────────────────────────────────────────────
+// Asserts applicationId contract and logs the resolved backend so it's visible
+// in every build output. Skip by passing -PskipBackendCheck=true to Gradle.
+if (!project.hasProperty('skipBackendCheck')) {
+    task verifyBackendConfig {
+        group = 'Glyphew'
+        description = 'Assert applicationId == com.thanford.glyphew and log the resolved backend.'
+        doLast {
+            def expectedAppId = project.hasProperty('gwTestBuild')
+                    ? 'com.thanford.glyphew.vrtest' : 'com.thanford.glyphew'
+            def actualAppId = android.defaultConfig.applicationId
+            if (actualAppId != expectedAppId) {
+                throw new GradleException(
+                    "applicationId mismatch: expected '${expectedAppId}', got '${actualAppId}'.\n" +
+                    "Do not change applicationId without updating CLAUDE.md §4.5.")
+            }
+            def backend = isChromiumAvailable() ? 'chromium' : 'gecko'
+            logger.lifecycle("Glyphew backend: ${backend} | applicationId: ${actualAppId}")
+        }
+    }
+    preBuild.dependsOn verifyBackendConfig
+}
+
+// Glyphew: a MetaStore build without -PgwMetaAppId would compile the entitlement
+// check without Glyphew's App ID (upstream default was Wolvic's). Hard-fail instead.
+gradle.taskGraph.whenReady { graph ->
+    // Match real MetaStore work (compile/package/assemble), not the empty
+    // pre<Variant>Build lifecycle markers AGP pulls into every variant's graph —
+    // those false-positived the guard on plain Generic builds.
+    def metaStoreRequested = graph.allTasks.any {
+        it.project == project && it.name.contains('MetaStore') &&
+                !(it.name.startsWith('pre') && it.name.endsWith('Build'))
+    }
+    if (metaStoreRequested && !project.hasProperty('gwMetaAppId')) {
+        throw new GradleException(
+            "MetaStore variants require -PgwMetaAppId=<Glyphew Meta App ID from the Horizon dashboard>.\n" +
+            "Refusing to build the store entitlement check without it (upstream fallback was Wolvic's App ID).")
+    }
+}
+
+// Verifies that signature assets (logo, homepage, cubemaps) match the golden SHA-256 hashes
+// stored in ../glyphew/tools/asset-hashes.json.  A mismatch means an asset was silently
+// replaced — either update the file in the same PR, or revert the accidental change.
+// Skip with -PskipAssetCheck=true (CI fake-AAR builds don't need asset verification).
+if (!project.hasProperty('skipAssetCheck')) {
+    task verifyAppAssets {
+        group = 'Glyphew'
+        description = 'Verify signature asset SHA-256 hashes against tools/asset-hashes.json.'
+        doLast {
+            def hashesFile = rootProject.file('../glyphew/tools/asset-hashes.json')
+            if (!hashesFile.exists()) {
+                throw new GradleException(
+                    "asset-hashes.json not found at ${hashesFile}.\n" +
+                    "Clone the glyphew planning repo alongside wolvic, or pass -PskipAssetCheck=true.")
+            }
+
+            def json = new groovy.json.JsonSlurper().parse(hashesFile)
+            def projectDir = rootProject.file('.')
+
+            def checkFile = { String label, String relPath, String expectedHash ->
+                def f = new File(projectDir, relPath)
+                if (!f.exists()) {
+                    throw new GradleException("verifyAppAssets: ${label} not found at ${f}")
+                }
+                def digest = java.security.MessageDigest.getInstance('SHA-256')
+                def actualHash = digest.digest(f.bytes).encodeHex().toString()
+                if (actualHash != expectedHash) {
+                    throw new GradleException(
+                        "verifyAppAssets: ${label} hash mismatch.\n" +
+                        "  file   : ${f}\n" +
+                        "  expected: ${expectedHash}\n" +
+                        "  actual  : ${actualHash}\n" +
+                        "If this is intentional, update tools/asset-hashes.json in the same PR.")
+                }
+                logger.info("verifyAppAssets: OK ${label}")
+            }
+
+            // Logo
+            checkFile('logo.png', json.logo.path as String, json.logo.sha256 as String)
+
+            // Homepage
+            def homepagePath = json.homepage.path as String
+            checkFile('homepage.html', homepagePath, json.homepage.sha256 as String)
+            def homepageText = new File(projectDir, homepagePath).text
+            (json.homepage.mustContain as List<String>).each { token ->
+                if (!homepageText.contains(token)) {
+                    throw new GradleException(
+                        "verifyAppAssets: homepage.html must contain '${token}' — Glyphew brand check failed.\n" +
+                        "If this is intentional (e.g. rebrand), update tools/asset-hashes.json.")
+                }
+            }
+            (json.homepage.mustNotContain as List<String>).each { token ->
+                if (homepageText.contains(token)) {
+                    throw new GradleException(
+                        "verifyAppAssets: homepage.html must NOT contain '${token}' — stale FingerDance brand token.\n" +
+                        "Remove all '${token}' occurrences from the homepage source.")
+                }
+            }
+
+            // Cubemap faces (oculusvr + pfdmxr)
+            def cubemapFaces = json.cubemap.faces as List
+            def cubemapSrcSets = json.cubemap.sourceSets as List<String>
+            cubemapSrcSets.each { srcSet ->
+                cubemapFaces.each { face ->
+                    checkFile("cubemap/${srcSet}/${face.name}", "${srcSet}/${face.name}", face.sha256 as String)
+                }
+            }
+        }
+    }
+}
+
+// ── Homepage favicon completeness check ──────────────────────────────────
+// Fails the build if any STATIC_CATALOG site lacks a real (non-placeholder) icon.
+// Skip by passing -PskipIconCheck=true to Gradle.
+if (!project.hasProperty('skipIconCheck')) {
+    task verifyHomepageIcons(type: Exec) {
+        group = 'Glyphew'
+        description = 'Verify every homepage catalog site has a real favicon PNG.'
+        workingDir rootProject.projectDir
+        commandLine 'node', 'tools/icons/sync-icons.mjs', '--check'
+        ignoreExitValue false
+    }
+    preBuild.dependsOn verifyHomepageIcons
+}
+
+// Glyphew Store version. This is the versionName stamped on chromium release APKs
+// (the string Meta shows). First Horizon Store submission = 1.0. Bump per release.
+def CHROMIUM_RELEASE_VERSION_NAME = '2.0'
 
 android {
     namespace 'com.igalia.wolvic'
     compileSdkVersion 35
+    // Chromium is the canonical Glyphew dev/test backend (CLAUDE.md §4.4).
+    // Ensures `./gradlew assemble` targets Chromium, not Gecko, when Chromium is available.
+    defaultPublishConfig 'oculusvrArm64ChromiumGenericDebug'
     defaultConfig {
-        applicationId "com.igalia.wolvic"
+        // VR-format test APK (-PgwTestBuild=true): separate package, side-by-side
+        // installable, with the automated-test hooks (force VR entry, eye-buffer
+        // dump, autoplay override) compiled ACTIVE. The product Glyphew APK never
+        // enables them (GW_TEST_HOOKS=false). See tools/vr-format-tests/ in glyphew.
+        applicationId project.hasProperty('gwTestBuild')
+                ? "com.thanford.glyphew.vrtest" : "com.thanford.glyphew"
+        buildConfigField "Boolean", "GW_TEST_HOOKS",
+                project.hasProperty('gwTestBuild') ? "true" : "false"
         minSdkVersion 24
         targetSdkVersion 34
         versionCode generatedVersionCode
@@ -125,13 +303,19 @@ android {
         buildConfigField "Float", "DEFAULT_WINDOW_DISTANCE", "0.0f"
         buildConfigField "Boolean", "ENABLE_PAGE_ZOOM", "false"
         buildConfigField "Boolean", "USE_SOUNDPOOL", "true"
-        buildConfigField 'String', 'ANNOUNCEMENTS_ENDPOINT', '"https://igalia.github.io/wolvic/announcements.json"'
-        buildConfigField 'String', 'EXPERIENCES_ENDPOINT', '"https://igalia.github.io/wolvic/experiences.json"'
+        // Glyphew: first-party remote config (was igalia.github.io). A paid fork
+        // shouldn't fetch its startup config/announcements from Igalia's servers.
+        // Files hosted at thanford.com/glyphew/config/ (Cloudflare Pages).
+        // HEYVR_ENDPOINT left as-is: heyvr.io is a separate third-party VR-content
+        // feed, not Igalia infrastructure.
+        buildConfigField 'String', 'ANNOUNCEMENTS_ENDPOINT', '"https://thanford.com/glyphew/config/announcements.json"'
+        buildConfigField 'String', 'EXPERIENCES_ENDPOINT', '"https://thanford.com/glyphew/config/experiences.json"'
         buildConfigField 'String', 'HEYVR_ENDPOINT', '"https://api.heyvr.io/v1/public/global/feed/featured?limit=50"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        resValue 'string', 'app_name', 'Wolvic'
-        resValue 'string', 'HOMEPAGE_URL', "https://wolvic.com/start"
+        resValue 'string', 'app_name', project.hasProperty('gwTestBuild')
+                ? 'Glyphew VRTest' : 'Glyphew Browser'
+        resValue 'string', 'HOMEPAGE_URL', "about://home"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++14 -fexceptions -frtti -Werror" +
@@ -183,18 +367,38 @@ android {
         jvmTarget = '1.8'
     }
 
+    signingConfigs {
+        release {
+            // Populated from Gradle properties set by the CI workflow (glyphew-release.yml).
+            // Locally, leave these unset to fall back to debug signing via getUseDebugSigningOnRelease().
+            if (project.hasProperty('signingStoreFile')) {
+                storeFile     file(project.signingStoreFile)
+                storePassword project.signingStorePassword
+                keyAlias      project.signingKeyAlias
+                keyPassword   project.signingKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig getUseDebugSigningOnRelease() ? debug.signingConfig : release.signingConfig
+            // NB: reference signingConfigs.{debug,release}, NOT debug/release.signingConfig.
+            // Inside buildTypes.release, `release.signingConfig` is a self-reference to this
+            // build type's own (still-null) signingConfig — so the release branch silently
+            // produced an UNSIGNED apk. signingConfigs.release is the keystore-populated one.
+            signingConfig((getUseDebugSigningOnRelease() || !project.hasProperty('signingStoreFile')) ? signingConfigs.debug : signingConfigs.release)
             buildConfigField "String", "MK_API_KEY", "\"${getMKApiKey()}\""
         }
         debug {
             applicationIdSuffix getDevApplicationIdSuffix()
             pseudoLocalesEnabled true
             buildConfigField "String", "MK_API_KEY", "\"\""
+            // PDT build stamp so the installed versionName confirms which APK is running
+            def pdt = new Date().format("MMddHHmm", TimeZone.getTimeZone("America/Los_Angeles"))
+            versionNameSuffix "-${pdt}"
         }
     }
 
@@ -247,12 +451,16 @@ android {
         // Supported platforms
         oculusvr {
             dimension "platform"
-            targetSdkVersion 32
+            // Meta Horizon Store requires targetSdkVersion 34 (Android 14) for all
+            // new binary uploads as of 2026-03-01 (was 32). minSdk stays 24.
+            // NOTE: API 34 enforces foreground-service types + stricter receiver
+            // export — must be device-smoke-tested, not just built (Phase 7.5).
+            targetSdkVersion 34
             buildConfigField "Boolean", "USE_SOUNDPOOL", "false"
             externalNativeBuild {
                 cmake {
                     cppFlags "-DOCULUSVR -DOPENXR"
-                    arguments "-DVR_SDK_EXTRA_LIB=ovrplatform-lib", "-DOCULUSVR=ON", "-DOPENXR=ON"
+                    arguments "-DOCULUSVR=ON", "-DOPENXR=ON"
                 }
             }
             manifestPlaceholders = [ headtrackingRequired:"false", permissionToRemove:"android.permission.RECEIVE_BOOT_COMPLETED" ]
@@ -331,7 +539,7 @@ android {
         noapi {
             dimension "platform"
             applicationIdSuffix ".noapi"
-            resValue "string", "app_name", "Wolvic NoAPI"
+            resValue "string", "app_name", "Glyphew NoAPI"
             externalNativeBuild {
                 cmake {
                     cppFlags " -DNOAPI"
@@ -381,12 +589,12 @@ android {
                     arguments "-DGECKO=ON"
                 }
             }
-            buildConfigField 'String', 'PROPS_ENDPOINT', '"https://igalia.github.io/wolvic/props.json"'
+            buildConfigField 'String', 'PROPS_ENDPOINT', '"https://thanford.com/glyphew/config/props.json"'
         }
 
         chromium {
             dimension "backend"
-            resValue "string", "app_name", "Wolvic Chromium"
+            resValue "string", "app_name", "Glyphew"
             externalNativeBuild {
                 cmake {
                     cppFlags " -DCHROMIUM"
@@ -394,7 +602,7 @@ android {
                 }
             }
             buildConfigField "Boolean", "ENABLE_PAGE_ZOOM", "true"
-            buildConfigField 'String', 'PROPS_ENDPOINT', '"https://igalia.github.io/wolvic/props-chromium.json"'
+            buildConfigField 'String', 'PROPS_ENDPOINT', '"https://thanford.com/glyphew/config/props.json"'
         }
 
         webkit {
@@ -408,20 +616,25 @@ android {
 
         metaStore {
             dimension "store"
-            applicationIdSuffix ".metastore"
+            // Glyphew: Horizon Store build. Package stays com.thanford.glyphew (no
+            // upstream ".metastore" suffix — it must match the package registered in
+            // the Meta dashboard). The entitlement check (STORE_BUILD) must run with
+            // GLYPHEW'S Meta App ID, never upstream Wolvic's; pass it explicitly:
+            //   ./gradlew assembleOculusvrArm64ChromiumMetaStoreRelease -PgwMetaAppId=<APP_ID>
+            // Missing -PgwMetaAppId fails the build via the task-graph guard below.
             externalNativeBuild {
                 cmake {
-                    cppFlags "-DSTORE_BUILD", "-DMETA_APP_ID=5917120145021341"
+                    if (project.hasProperty('gwMetaAppId')) {
+                        // cppFlags -> compiler #if defined(STORE_BUILD); arguments -DSTORE_BUILD=ON
+                        // -> CMake `if(STORE_BUILD)` (which adds the OVR Platform SDK include
+                        // dir + links libovrplatformloader). Upstream shipped only cppFlags, so
+                        // the entitlement headers were never on the include path (build broke
+                        // with 'OVR_Platform.h not found'). Mirror the GECKO/CHROMIUM pattern.
+                        cppFlags "-DSTORE_BUILD", "-DMETA_APP_ID=${project.property('gwMetaAppId')}"
+                        arguments "-DSTORE_BUILD=ON"
+                    }
                 }
             }
-        }
-
-        mainlandChina {
-            applicationId "com.cn.igalia.wolvic"
-            dimension "store"
-            buildConfigField "Boolean", "FXA_USE_CHINA_SERVER", "true"
-            buildConfigField "Boolean", "WEBVIEW_IN_PHONE_UI", "true"
-            buildConfigField "Boolean", "CN_FIRST_RUN_IN_PHONE_UI", "true"
         }
 
         magicleap {
@@ -438,10 +651,6 @@ android {
         // Create x64 variants only for noapi and aosp platforms
         if (abi == 'x64')
             variant.setIgnore(platform != 'noapi' && platform !='aosp');
-
-        // Create variants for China only for HVR and Pico platforms
-        if (store == 'mainlandChina' && !(platform.startsWith('hvr') || platform.startsWith('visionglass') || platform.startsWith('picoxr')))
-            variant.setIgnore(true);
 
         // Create variants for chromium/webkit, only when they are available
         if (backend == 'chromium' && !isChromiumAvailable())
@@ -476,8 +685,22 @@ android {
             java.srcDirs = [
                     'app',
                     'src/common/shared',
-                    'src/main/cpp/vrb/android/java'
+                    'src/main/cpp/vrb/android/java',
+                    'src/glyphew/java'
             ]
+
+            // Glyphew skin selection.
+            // Override with -PgwSkin=signature|ice-rink|arcade at build time.
+            // Each skin dir contains values/colors-gw.xml (12 brand tokens + gw_hud_accent)
+            // and glyphew/homepage.html. Only one is included per build.
+            def gwSkin = project.findProperty('gwSkin') ?: 'signature'
+            def gwSkinAllowed = ['signature', 'ice-rink', 'arcade']
+            if (!gwSkinAllowed.contains(gwSkin)) {
+                throw new GradleException("Invalid gwSkin=${gwSkin}. Allowed: ${gwSkinAllowed}")
+            }
+            res.srcDirs += ["src/main/res-gw-${gwSkin}"]
+            res.srcDirs += ["src/glyphew/res"]
+            assets.srcDirs += ["src/main/assets-gw-${gwSkin}"]
         }
 
         release {
@@ -664,8 +887,16 @@ dependencies {
     implementation libs.work.runtime
     implementation libs.work.runtime.ktx
 
-    // OpenXR standard loader
-    implementation libs.openxrloader
+    // OpenXR loader — 1.1.x for Meta (16KB-aligned, passes Quest/Play submission),
+    // 1.0.x for other platforms where 1.1 isn't supported (e.g. Pico4U). See
+    // upstream a5854aa (#1917) and 5bce272.
+    oculusvrImplementation libs.openxrloader
+    picoxrImplementation libs.openxrloader10
+    pfdmxrImplementation libs.openxrloader10
+    lynxImplementation libs.openxrloader10
+    spacesImplementation libs.openxrloader10
+    aospImplementation libs.openxrloader10
+    hvrImplementation libs.openxrloader10
 
     // Testing
     androidTestImplementation libs.atsl.runner
@@ -682,7 +913,6 @@ dependencies {
 
     // MeetKai
     implementation fileTree(dir: "${project.rootDir}/libs/meetkai/", include: ['*.aar'])
-    implementation libs.okhttp
     implementation libs.zip4j
     implementation libs.apache.commonsmath3
 
@@ -742,6 +972,9 @@ dependencies {
     implementation libs.opentelemetry.android.instrumentation.sessions
     implementation libs.opentelemetry.exporter.logging
     coreLibraryDesugaring libs.desugar.jdk.libs
+
+    // Glyphew: runtime brand-color extraction for user-bookmark favicons (catalog colors are precomputed)
+    implementation "androidx.palette:palette-ktx:1.0.0"
 }
 
 if (findProject(':servo')) {
@@ -780,24 +1013,6 @@ android.applicationVariants.configureEach { variant ->
 
     def platform = variant.productFlavors.get(0).name
     def store = variant.productFlavors.get(3).name
-
-    // Default homepages and voice recognition services for China releases.
-    // HVR packages for mainland china must only use HVR speech recognition system.
-    if (store == "mainlandChina") {
-        if (platform.toLowerCase().startsWith('hvr')) {
-            variant.resValue 'string', 'HOMEPAGE_URL', '"https://wolvic.com/zh/start/index.html"'
-            variant.buildConfigField "String[]", "SPEECH_SERVICES", "{ com.igalia.wolvic.speech.SpeechServices.HUAWEI_ASR }"
-        } else if (platform.toLowerCase().startsWith('visionglass')) {
-            variant.resValue 'string', 'HOMEPAGE_URL', '"https://wolvic.com/zh/start/hvg.html"'
-            variant.buildConfigField "String[]", "SPEECH_SERVICES", "{ com.igalia.wolvic.speech.SpeechServices.HUAWEI_ASR }"
-        } else if (platform.toLowerCase().startsWith('picoxr')) {
-            variant.resValue 'string', 'HOMEPAGE_URL', '"https://wolvic.com/zh/start/pico.html"'
-            variant.buildConfigField "String[]", "SPEECH_SERVICES", "{ com.igalia.wolvic.speech.SpeechServices.MEETKAI }"
-        }  else if (platform.toLowerCase().startsWith('pfdmxr')) {
-            variant.resValue 'string', 'HOMEPAGE_URL', '"https://wolvic.com/zh/start/pfdm.html"'
-            variant.buildConfigField "String[]", "SPEECH_SERVICES", "{ com.igalia.wolvic.speech.SpeechServices.MEETKAI }"
-        }
-    }
 
     // Append "Dev" to the app name for debug builds. We do it by directly modifying the resource
     // value so that this is visible from inside the app.

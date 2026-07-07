@@ -11,7 +11,7 @@
         <shape>
             <corners android:radius="5dp" />
             <stroke android:color="@color/rhino" android:width="2dp" />
-            <solid android:color="@color/fog" />
+            <solid android:color="@color/azure" />
         </shape>
     </item>
     <item android:state_hovered="false" android:state_pressed="false">

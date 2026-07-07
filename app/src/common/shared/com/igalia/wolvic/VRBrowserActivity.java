@@ -7,6 +7,7 @@ package com.igalia.wolvic;
 
 import static com.igalia.wolvic.ui.widgets.UIWidget.REMOVE_WIDGET;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
@@ -94,11 +95,13 @@ import com.igalia.wolvic.ui.widgets.dialogs.LegalDocumentDialogWidget;
 import com.igalia.wolvic.ui.widgets.dialogs.PromptDialogWidget;
 import com.igalia.wolvic.ui.widgets.dialogs.SendTabDialogWidget;
 import com.igalia.wolvic.ui.widgets.dialogs.WhatsNewWidget;
+import com.igalia.wolvic.ui.widgets.settings.SettingsView;
 import com.igalia.wolvic.ui.widgets.menus.VideoProjectionMenuWidget;
 import com.igalia.wolvic.utils.BitmapCache;
 import com.igalia.wolvic.utils.ConnectivityReceiver;
 import com.igalia.wolvic.utils.DeviceType;
 import com.igalia.wolvic.utils.LocaleUtils;
+import com.igalia.wolvic.utils.SeasonUtils;
 import com.igalia.wolvic.utils.StringUtils;
 import com.igalia.wolvic.utils.SystemUtils;
 
@@ -107,9 +110,11 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -228,6 +233,16 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     Handler mHandler = new Handler(Looper.getMainLooper());
     Runnable mAudioUpdateRunnable;
     Windows mWindows;
+    com.igalia.wolvic.input.ComboDispatcher mComboDispatcher;
+    com.igalia.wolvic.ui.widgets.ComboHUDWidget mHUDWidget;
+    com.thanford.glyphew.dispatch.ComboBookmarkSync mComboBookmarkSync;
+    boolean mHUDEnabled = true;  // Glyphew: thumbstick press toggles HUD visibility
+    // Glyphew (Phase 6): stable id for the one-shot long-press onboarding
+    // hint. Kept FD-namespaced so it cannot collide with Wolvic's own
+    // NotificationManager ids.
+    private static final int FD_LONGPRESS_ONBOARDING_NOTIFICATION_ID = 0xFD0601;
+    private static final int GW_CATALOG_UPDATED_NOTIFICATION_ID      = 0xFD0602;
+    private com.thanford.glyphew.home.CatalogUpdateManager mCatalogUpdateManager;
     RootWidget mRootWidget;
     KeyboardWidget mKeyboard;
     NavigationBarWidget mNavigationBar;
@@ -300,6 +315,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         SettingsStore.getInstance(getBaseContext()).setPid(Process.myPid());
         ((VRBrowserApplication)getApplication()).onActivityCreate(this);
+        setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_name)));
 
         if (!DeviceType.isHVRBuild() && SettingsStore.getInstance(getBaseContext()).isTelemetryEnabled()) {
             TelemetryService.setService(new OpenTelemetry(getApplication()));
@@ -327,7 +343,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         BitmapCache.getInstance(this).onCreate();
 
         WRuntime runtime = EngineProvider.INSTANCE.getOrCreateRuntime(this);
-        runtime.appendAppNotesToCrashReport("Wolvic " + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "-" + BuildConfig.FLAVOR + "-" + BuildConfig.BUILD_TYPE + " (" + BuildConfig.GIT_HASH + ")");
+        runtime.appendAppNotesToCrashReport("Glyphew " + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "-" + BuildConfig.FLAVOR + "-" + BuildConfig.BUILD_TYPE + " (" + BuildConfig.GIT_HASH + ")");
 
         // Create broadcast receiver for getting crash messages from crash process
         IntentFilter intentFilter = new IntentFilter();
@@ -375,6 +391,9 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mPrefs.registerOnSharedPreferenceChangeListener(this);
+
+        // Glyphew: on a fresh install STREAM_MUSIC can sit at 0, muting all video.
+        com.thanford.glyphew.audio.InitialVolume.ensureAudibleOnFirstLaunch(this);
 
         queueRunnable(() -> {
             createOffscreenDisplay();
@@ -438,9 +457,15 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         // Create the WebXR interstitial
         mWebXRInterstitial = new WebXRInterstitialWidget(this);
+        mHUDWidget = new com.igalia.wolvic.ui.widgets.ComboHUDWidget(this);
 
         // Windows
         mWindows = new Windows(this);
+        mComboDispatcher = new com.igalia.wolvic.input.ComboDispatcher(mWindows, this);
+        mHUDWidget.attachDispatcher(mComboDispatcher);
+        mComboBookmarkSync = new com.thanford.glyphew.dispatch.ComboBookmarkSync(
+                getApplicationContext(), mComboDispatcher);
+        mComboBookmarkSync.register();
         mWindows.setDelegate(new Windows.Delegate() {
             @Override
             public void onFocusedWindowChanged(@NonNull WindowWidget aFocusedWindow, @Nullable WindowWidget aPrevFocusedWindow) {
@@ -502,7 +527,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
         attachToWindow(mWindows.getFocusedWindow(), null);
 
-        addWidgets(Arrays.asList(mRootWidget, mNavigationBar, mKeyboard, mTray, mTabsBar, mWebXRInterstitial));
+        addWidgets(Arrays.asList(mRootWidget, mNavigationBar, mKeyboard, mTray, mTabsBar, mWebXRInterstitial, mHUDWidget));
 
         // Create the platform plugin after widgets are created to be extra safe.
         mPlatformPlugin = createPlatformPlugin(this);
@@ -510,6 +535,23 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
             mPlatformPlugin.registerListener(this);
 
         mWindows.restoreSessions();
+
+        // Glyphew (Phase 6): schedule the one-shot long-press onboarding
+        // hint. 3s delay lets the splash fade complete before the tooltip
+        // appears above the Tray. Gated inside the helper so repeat launches
+        // are no-ops.
+        mTray.postDelayed(this::maybeShowLongPressOnboardingHint, 3000L);
+
+        // Glyphew (Section 3.4): offer import on first launch if export files exist.
+        mTray.postDelayed(this::maybeOfferFirstRunImport, 3500L);
+
+        // Remote catalog updates — cold-start trigger (24h lock prevents repeat fetches).
+        mCatalogUpdateManager = new com.thanford.glyphew.home.CatalogUpdateManager(
+                this,
+                (catalogJson) -> { /* already persisted by CatalogStore inside the manager */ },
+                this::onCatalogUpdated,
+                this::onAppUpdateAvailable);
+        mCatalogUpdateManager.checkAsync();
     }
 
     private void onPresentingImmersiveChange(boolean presenting) {
@@ -637,6 +679,11 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         if (mTray != null) {
             mTray.stop(this);
         }
+        // Background trigger — fires when headset removed, Quest home pressed, or app switched.
+        // 24h lock inside the manager means this is a no-op most of the time.
+        if (mCatalogUpdateManager != null) {
+            mCatalogUpdateManager.checkAsync();
+        }
     }
 
     public void flushBackHandlers() {
@@ -732,6 +779,8 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         }
 
         mTray.removeListeners(mWindows);
+
+        if (mComboBookmarkSync != null) mComboBookmarkSync.unregister();
 
         // Remove all widget listeners
         mWindows.onDestroy();
@@ -966,6 +1015,25 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         } else if (mWindows.getFocusedWindow().isCurrentUriBlank()) {
             mWindows.getFocusedWindow().loadHome();
         }
+
+        // Glyphew test hook (vrtest builds only — never the product APK): optional
+        // forced VR-video entry for automated tests.
+        if (BuildConfig.GW_TEST_HOOKS) {
+            com.thanford.glyphew.test.VrTestHook.maybeSchedule(intent.getExtras(), mWindows, mNavigationBar, this);
+        }
+    }
+
+    /** Glyphew test hook (vrtest builds only): dump the next rendered left-eye buffer to aPath. */
+    public void requestEyeDumpForTest(@NonNull String aPath) {
+        if (!BuildConfig.GW_TEST_HOOKS) return;
+        queueRunnable(() -> requestEyeDumpNative(aPath));
+    }
+
+    /** Glyphew test hook (vrtest builds only): force the no-layer mesh path for VR video so
+     *  the eye-buffer dump can see it (compositor layers bypass the eye buffer). */
+    public void setForceNoLayerVRVideoForTest(boolean aForce) {
+        if (!BuildConfig.GW_TEST_HOOKS) return;
+        queueRunnable(() -> setForceNoLayerVRVideoNative(aForce));
     }
 
     private ConnectivityReceiver.Delegate mConnectivityDelegate = connected -> {
@@ -1262,6 +1330,277 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
     @SuppressWarnings({"UnusedDeclaration"})
     @Keep
+    void handleComboEvent(final int[] path, final int length) {
+        android.util.Log.e("Glyphew", "handleComboEvent length=" + length + " path=" + java.util.Arrays.toString(java.util.Arrays.copyOf(path, length)));
+        runOnUiThread(() -> {
+            if (mComboDispatcher != null) {
+                mComboDispatcher.dispatch(path, length);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboProgress(final int[] path, final int length) {
+        runOnUiThread(() -> {
+            if (mHUDWidget != null) {
+                mHUDWidget.updatePath(path, length);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboPreview(final int previewNode) {
+        runOnUiThread(() -> {
+            if (mHUDWidget != null) {
+                mHUDWidget.updatePreview(previewNode);
+            }
+        });
+    }
+
+    // Glyphew (Phase 3b): continuous [0,1] preview-progress signal. Throttled
+    // by the native engine so this fires only on meaningful change. The HUD
+    // applies its own EMA smoothing before consumption in Phase 3c.
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboPreviewProgress(final int zone, final float progress) {
+        runOnUiThread(() -> {
+            if (mHUDWidget != null) {
+                mHUDWidget.updatePreviewProgress(zone, progress);
+            }
+        });
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboThumbstickPress() {
+        runOnUiThread(() -> {
+            if (mHUDWidget == null) return;
+            // Sync toggle with the persisted pref so the Settings switch and the
+            // joystick toggle always agree. Reading the pref here means a prior
+            // Settings change is honoured even though mHUDEnabled may have drifted.
+            android.content.SharedPreferences prefs =
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            mHUDEnabled = !prefs.getBoolean(
+                    com.igalia.wolvic.ui.widgets.ComboHUDWidget.PREF_HUD_VISIBLE, true);
+            android.util.Log.d("Glyphew", "HUD toggled: " + mHUDEnabled);
+            // setHudVisible updates the pref AND shows/hides the widget, so
+            // show() will no longer be blocked by a stale mVisiblePref=false.
+            mHUDWidget.setHudVisible(mHUDEnabled);
+        });
+    }
+
+    // Glyphew (Phase 6): native JNI receiver — joystick (either hand) held
+    // >= LONG_PRESS_MS with grip OFF. Opens Combos Settings directly. Grip-OFF
+    // gating lives in the native engine (ComboWindowEngine); we just route to
+    // the Tray on the UI thread. Both hand recognizers register this callback
+    // per feedback_combos_hand_agnostic.md — dedupe happens via the
+    // openCombosSettings debounce window below.
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleLongPressThumbstick() {
+        android.util.Log.d("Glyphew", "handleLongPressThumbstick → openCombosSettingsDirect");
+        runOnUiThread(this::openCombosSettingsDirect);
+    }
+
+    // Glyphew (Phase 7): A/X face button pressed while grip held + path
+    // non-empty → notify dispatcher so the next combo release opens FROM_CAPTURE.
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleComboAXPressed(int hand) {
+        android.util.Log.d("Glyphew", "handleComboAXPressed hand=" + hand);
+        if (mComboDispatcher != null) {
+            runOnUiThread(() -> mComboDispatcher.onAXButtonPressed(hand));
+        }
+    }
+
+    // Debounce for both-hands long-press. If the left and right recognizers
+    // both cross the 800ms threshold within this window, only the first one
+    // opens Settings. UI-thread only — no volatile needed.
+    private static final long OPEN_COMBOS_SETTINGS_DEBOUNCE_MS = 500L;
+    private long mLastOpenCombosSettingsMs = 0L;
+
+    // Glyphew (Phase 6): open the Combos settings panel from anywhere.
+    // Safe to call from any thread via runOnUiThread(); must be on UI thread
+    // when invoked directly. Guards against null Tray (cold-start edge per
+    // Eng Review E-gap: long-press firing before mTray initialized) and
+    // double-fire from simultaneous both-hand long-press ticks.
+    public void openCombosSettings() {
+        if (mTray == null) {
+            android.util.Log.w("Glyphew", "openCombosSettings: mTray null, dropping");
+            return;
+        }
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - mLastOpenCombosSettingsMs < OPEN_COMBOS_SETTINGS_DEBOUNCE_MS) {
+            android.util.Log.d("Glyphew", "openCombosSettings: debounced (both-hands long-press)");
+            return;
+        }
+        mLastOpenCombosSettingsMs = now;
+        mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
+    }
+
+    // Phase 7: long-press direct-open variant. Same debounce logic as
+    // openCombosSettings(), but flags CombosSettingsView to exit the whole
+    // settings widget on Back (skip the app settings grid).
+    private void openCombosSettingsDirect() {
+        if (mTray == null) {
+            android.util.Log.w("Glyphew", "openCombosSettingsDirect: mTray null, dropping");
+            return;
+        }
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - mLastOpenCombosSettingsMs < OPEN_COMBOS_SETTINGS_DEBOUNCE_MS) {
+            android.util.Log.d("Glyphew", "openCombosSettingsDirect: debounced");
+            return;
+        }
+        mLastOpenCombosSettingsMs = now;
+        com.thanford.glyphew.settings.CombosSettingsView.flagNextAsDirectOpen();
+        mTray.showSettingsDialog(SettingsView.SettingViewType.COMBOS);
+    }
+
+    // Glyphew (Phase 6): first-launch discovery hint for the long-press
+    // joystick gesture. One-shot per install lifetime, gated by
+    // ComboBindingStore.KEY_LONGPRESS_HINT_SEEN. Anchored above the Tray so
+    // it lands in the subtitle zone per CLAUDE.md §5.3 (never the top 20%
+    // which occludes web content). Marks the flag immediately so a process
+    // kill during the 5s window doesn't double-show on next launch.
+    // ── Remote catalog callbacks ───────────────────────────────────────────────
+
+    private void onCatalogUpdated() {
+        runOnUiThread(() -> {
+            // Re-render the homepage if the user is currently on it so they see
+            // the fresh tiles immediately. Otherwise the next navigation home picks
+            // them up automatically.
+            if (mWindows != null) {
+                WindowWidget w = mWindows.getFocusedWindow();
+                if (w != null && w.getSession() != null && w.getSession().isOnHomePage()) {
+                    w.getSession().loadHomePage();
+                }
+            }
+            if (mTray == null) return;
+            com.igalia.wolvic.ui.widgets.NotificationManager.Notification n =
+                    new com.igalia.wolvic.ui.widgets.NotificationManager.Builder(mTray)
+                            .withString(R.string.catalog_updated_toast)
+                            .withPosition(com.igalia.wolvic.ui.widgets.NotificationManager.Notification.TOP)
+                            .withMargin(20.0f)
+                            .withDuration(4000)
+                            .build();
+            com.igalia.wolvic.ui.widgets.NotificationManager.show(
+                    GW_CATALOG_UPDATED_NOTIFICATION_ID, n);
+        });
+    }
+
+    private void onAppUpdateAvailable(@androidx.annotation.NonNull String versionName,
+                                       @androidx.annotation.NonNull String storeUrl) {
+        // Gift-icon app-update notification dropped for now: Wolvic re-fetches its
+        // RemoteProperties from PROPS_ENDPOINT on every startup (SettingsStore), which
+        // clobbers any injected entry. Catalog (tile) updates still work via the toast.
+        // Revisit by pointing PROPS_ENDPOINT at a thanford.com-hosted props file.
+        android.util.Log.i("GW.Catalog", "app update available: " + versionName + " (notification suppressed)");
+    }
+
+    private void maybeShowLongPressOnboardingHint() {
+        if (mTray == null) return;
+        com.thanford.glyphew.settings.ComboBindingStore store =
+                new com.thanford.glyphew.settings.ComboBindingStore(this);
+        if (store.hasSeenLongPressHint()) return;
+        com.igalia.wolvic.ui.widgets.NotificationManager.Notification hint =
+                new com.igalia.wolvic.ui.widgets.NotificationManager.Builder(mTray)
+                        .withString(R.string.combos_longpress_onboarding_hint)
+                        .withPosition(com.igalia.wolvic.ui.widgets.NotificationManager.Notification.TOP)
+                        .withMargin(20.0f)
+                        .withDuration(5000)
+                        .build();
+        com.igalia.wolvic.ui.widgets.NotificationManager.show(
+                FD_LONGPRESS_ONBOARDING_NOTIFICATION_ID, hint);
+        store.markLongPressHintSeen();
+    }
+
+    // Glyphew (Section 3.4): one-shot first-run import offer.
+    // Shows the import picker if export files exist and the pref has not been set.
+    // Marks the pref immediately (before showing) so a process kill mid-show
+    // doesn't re-prompt on the next launch.
+    private void maybeOfferFirstRunImport() {
+        if (mComboDispatcher == null) return;
+        android.content.SharedPreferences prefs =
+                android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean(com.thanford.glyphew.settings.ComboExportImport.PREF_IMPORT_OFFERED,
+                false)) {
+            return;
+        }
+        prefs.edit().putBoolean(
+                com.thanford.glyphew.settings.ComboExportImport.PREF_IMPORT_OFFERED,
+                true).apply();
+        if (!com.thanford.glyphew.settings.ComboExportImport.listExportEntries(this, 1).isEmpty()) {
+            new com.thanford.glyphew.settings.ComboImportPickerView(this, mComboDispatcher)
+                    .showWithFocus();
+        }
+    }
+
+    // Glyphew (Phase 3b): which controller hand owns the active combo grip.
+    // NONE = neither hand's grip is held. LEFT / RIGHT = that hand is driving
+    // the recognizer. If both are held simultaneously the most-recent press
+    // wins (mLastComboGripHand), matching how the recognizer routes joystick
+    // input when the user has both grips down.
+    public enum ComboHand { NONE, LEFT, RIGHT }
+
+    private static final int COMBO_HAND_LEFT_IDX  = 0;
+    private static final int COMBO_HAND_RIGHT_IDX = 1;
+    // Indexed by the native-side hand ordinal (0=left, 1=right). Read/written
+    // on the UI thread only (handleGripStateChanged posts via runOnUiThread).
+    private final boolean[] mComboGripHeldByHand = new boolean[2];
+    private ComboHand mLastComboGripHand = ComboHand.NONE;
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
+    void handleGripStateChanged(final boolean held, final int hand) {
+        android.util.Log.d("Glyphew", "handleGripStateChanged held=" + held + " hand=" + hand + " mHUDEnabled=" + mHUDEnabled);
+        runOnUiThread(() -> {
+            if (hand == COMBO_HAND_LEFT_IDX || hand == COMBO_HAND_RIGHT_IDX) {
+                mComboGripHeldByHand[hand] = held;
+                if (held) {
+                    mLastComboGripHand = (hand == COMBO_HAND_LEFT_IDX)
+                            ? ComboHand.LEFT : ComboHand.RIGHT;
+                } else if (!mComboGripHeldByHand[COMBO_HAND_LEFT_IDX]
+                        && !mComboGripHeldByHand[COMBO_HAND_RIGHT_IDX]) {
+                    mLastComboGripHand = ComboHand.NONE;
+                }
+            }
+            // HUD show/hide follows any-hand grip state — either hand shows
+            // the HUD, HUD hides only when neither hand is gripping.
+            final boolean anyGripHeld = mComboGripHeldByHand[COMBO_HAND_LEFT_IDX]
+                                     || mComboGripHeldByHand[COMBO_HAND_RIGHT_IDX];
+            if (mHUDWidget != null) {
+                if (anyGripHeld && mHUDEnabled) {
+                    mHUDWidget.resetPath();
+                    mHUDWidget.show(UIWidget.KEEP_WIDGET);
+                } else if (!anyGripHeld) {
+                    mHUDWidget.hide(UIWidget.KEEP_WIDGET);
+                }
+                mHUDWidget.updateGripState(anyGripHeld);
+            }
+        });
+    }
+
+    /**
+     * Glyphew (Phase 3b): expose which controller hand is currently driving
+     * combo input. Phase 3c's R4 dead-end CTA reads this to label the commit
+     * button glyph ("A" for right, "X" for left). Returns NONE when neither
+     * grip is held. Read on the UI thread only.
+     */
+    public ComboHand getActiveComboControllerHand() {
+        final boolean left  = mComboGripHeldByHand[COMBO_HAND_LEFT_IDX];
+        final boolean right = mComboGripHeldByHand[COMBO_HAND_RIGHT_IDX];
+        if (!left && !right) return ComboHand.NONE;
+        if (left && !right) return ComboHand.LEFT;
+        if (right && !left) return ComboHand.RIGHT;
+        // Both held — surface the most recent press so the CTA stays stable
+        // across "add second grip" transitions.
+        return mLastComboGripHand == ComboHand.NONE ? ComboHand.RIGHT : mLastComboGripHand;
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Keep
     void handleBack() {
         runOnUiThread(() -> {
             dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
@@ -1427,7 +1766,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
                 final float y = canvas.getHeight() * 0.5f;
                 final float radius = canvas.getWidth() * 0.4f;
                 canvas.drawCircle(x, y, radius, paint);
-                paint.setColor(Color.BLACK);
+                paint.setColor(Color.parseColor("#111259"));
                 paint.setStrokeWidth(4);
                 paint.setStyle(Paint.Style.STROKE);
                 canvas.drawCircle(x, y, radius, paint);
@@ -1480,6 +1819,18 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     public String getActiveEnvironment() {
         return getServicesProvider().getEnvironmentsManager().getOrDownloadEnvironment();
     }
+
+    @Keep
+    @SuppressWarnings("unused")
+    private float getSkyboxSeasonalYaw() {
+        float yaw = SeasonUtils.seasonalSkyboxYawRadians(Calendar.getInstance(), Locale.getDefault());
+        if (!mSeasonYawLogged) {
+            mSeasonYawLogged = true;
+            android.util.Log.d("GW_Season", "month=" + Calendar.getInstance().get(Calendar.MONTH) + " season=" + SeasonUtils.currentSeason(Calendar.getInstance(), Locale.getDefault()) + " yaw=" + yaw);
+        }
+        return yaw;
+    }
+    private boolean mSeasonYawLogged = false;
 
     @Keep
     @SuppressWarnings("unused")
@@ -1997,6 +2348,13 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     }
 
     @Override
+    public void triggerHapticFeedbackUnconditional(int controllerId, float durationMs, float intensity) {
+        // Call native directly (no queueRunnable) to minimise grip-release latency.
+        // triggerHapticFeedbackNative is safe to call from any thread.
+        triggerHapticFeedbackNative(durationMs, intensity, controllerId);
+    }
+
+    @Override
     public void setControllersVisible(final boolean aVisible) {
         queueRunnable(() -> setControllersVisibleNative(aVisible));
     }
@@ -2202,6 +2560,20 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         return mWindows;
     }
 
+    // Glyphew: proprietary Combos Settings panel needs read access to the
+    // dispatcher so its adapter can call getAllBindings()/isCombo4DirMode() and
+    // register as a BindingsListener. Not on WidgetManagerDelegate to avoid
+    // widening that interface.
+    public com.igalia.wolvic.input.ComboDispatcher getComboDispatcher() {
+        return mComboDispatcher;
+    }
+
+    // Phase 5 — Glyphew accessor. BindComboView dims the HUD to 0.3 alpha
+    // during capture so the dialog chrome carries the authoritative trace.
+    public com.igalia.wolvic.ui.widgets.ComboHUDWidget getComboHUDWidget() {
+        return mHUDWidget;
+    }
+
     @Override
     public void saveState() {
         mWindows.saveState();
@@ -2337,8 +2709,15 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
     private native void updateEnvironmentNative();
     private native void updatePointerColorNative();
     private native void showVRVideoNative(int aWindowHandler, int aVideoProjection);
+    private native void requestEyeDumpNative(String aPath);
+    private native void setForceNoLayerVRVideoNative(boolean aForce);
     private native void hideVRVideoNative();
     private native void togglePassthroughNative();
+    private native void setComboFourDirModeNative(boolean enabled);
+
+    public void setComboFourDirMode(boolean enabled) {
+        setComboFourDirModeNative(enabled);
+    }
     private native void setLockEnabledNative(@LockMode int aLockMode);
     private native void recenterUIYawNative(@YawTarget int aTarget);
     private native void setControllersVisibleNative(boolean aVisible);

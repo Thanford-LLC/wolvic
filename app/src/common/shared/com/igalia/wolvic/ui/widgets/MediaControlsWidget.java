@@ -323,6 +323,13 @@ public class MediaControlsWidget extends UIWidget implements WMediaSession.Deleg
         mBackHandler = aRunnable;
     }
 
+    // Glyphew: hide the overlay Back button in VR video so a casual trigger press
+    // (e.g. one meant to resume after pausing) cannot land on Back and exit VR.
+    // Exit stays available via the deliberate Back combo. See VrVideoControlsPolicy.
+    public void setBackButtonVisible(boolean visible) {
+        mBinding.mediaBackButton.setVisibility(visible ? android.view.View.VISIBLE : android.view.View.GONE);
+    }
+
     @Override
     public void releaseWidget() {
         super.releaseWidget();

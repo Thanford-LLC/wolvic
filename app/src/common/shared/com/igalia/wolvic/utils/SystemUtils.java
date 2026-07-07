@@ -32,10 +32,10 @@ public class SystemUtils {
     public static final long ONE_WEEK_MILLIS = 604800000;
 
     public static void restart(@NonNull Context context) {
-        context.startActivity(
-                Intent.makeRestartActivityTask(
-                        context.getPackageManager().getLaunchIntentForPackage(
-                                context.getPackageName()).getComponent()));
+        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+        if (launchIntent != null) {
+            context.startActivity(Intent.makeRestartActivityTask(launchIntent.getComponent()));
+        }
         Runtime.getRuntime().exit(0);
     }
 

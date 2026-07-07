@@ -15,7 +15,7 @@
     <item android:state_hovered="true">
         <shape android:shape="rectangle">
             <corners android:bottomLeftRadius="@dimen/menu_corner_radius" android:bottomRightRadius="@dimen/menu_corner_radius" android:topLeftRadius="@dimen/menu_corner_radius" android:topRightRadius="@dimen/menu_corner_radius" />
-            <solid android:color="@color/fog" />
+            <solid android:color="@color/dusk" />
         </shape>
     </item>
     <item>

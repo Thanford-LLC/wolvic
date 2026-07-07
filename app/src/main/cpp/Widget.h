@@ -67,6 +67,12 @@ public:
   void SetQuad(const QuadPtr& aQuad);
   void SetCylinder(const CylinderPtr& aCylinder);
   VRLayerSurfacePtr GetLayer() const;
+  // Glyphew: detach the window's compositor layer so its content decodes into a sampleable
+  // GL TextureSurface (required for fisheye VR180). The browser rebinds to the new surface
+  // automatically. Returns the detached layer; pass it to AttachLayer() to restore on exit.
+  // Quad windows only — returns nullptr for cylinder windows or if there is no layer.
+  VRLayerQuadPtr DetachLayer();
+  void AttachLayer(const VRLayerQuadPtr& aLayer);
   vrb::TransformPtr GetTransformNode() const;
   const WidgetPlacementPtr& GetPlacement() const;
   void SetPlacement(const WidgetPlacementPtr& aPlacement);

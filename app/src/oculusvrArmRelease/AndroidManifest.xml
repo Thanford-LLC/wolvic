@@ -34,7 +34,7 @@
 
     <application
         android:name=".VRBrowserApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:exported="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -50,7 +50,7 @@
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
             android:excludeFromRecents="true"
-            android:theme="@style/FxR.Dark"
+            android:theme="@style/Glyphew.Dark"
             android:configChanges="density|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|uiMode"
             android:windowSoftInputMode="stateAlwaysHidden"
             android:resizeableActivity="false"

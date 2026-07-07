@@ -463,6 +463,45 @@ Widget::GetLayer() const {
   return m.GetLayer();
 }
 
+VRLayerQuadPtr
+Widget::DetachLayer() {
+  if (!m.quad || !m.quad->GetLayer()) {
+    return nullptr;
+  }
+  VRLayerQuadPtr detached = m.quad->DetachLayer();
+  // Recreate the surface in no-layer mode: this allocates a GL TextureSurface and
+  // dispatches it to the browser, which rebinds and renders the page into it.
+  //
+  // Force a FRESH TextureSurface by dropping the old one first. UpdateSurface only
+  // creates a surface when m.surface is null (its `if (!surface)` guard), and the
+  // browser only rebinds when a surface is *created* (TextureSurface::Create ->
+  // SurfaceTextureCreated -> DispatchCreateWidget). On a SECOND detach (VR-video
+  // re-entry) the stale surface from the first detach is still set, so without this
+  // reset UpdateSurface is a no-op, the browser is never told to render into it
+  // again, and the dome samples a frozen frame while audio keeps playing.
+  m.surface = nullptr;
+  int32_t textureWidth = 0, textureHeight = 0;
+  GetSurfaceTextureSize(textureWidth, textureHeight);
+  m.UpdateSurface(textureWidth, textureHeight);
+  m.toggleState = m.IsReadyForComposition();
+  m.root->ToggleAll(m.toggleState);
+  return detached;
+}
+
+void
+Widget::AttachLayer(const VRLayerQuadPtr& aLayer) {
+  if (!m.quad || !aLayer) {
+    return;
+  }
+  m.quad->AttachLayer(aLayer);
+  // Re-establish the compositor-layer surface and re-dispatch it to the browser.
+  int32_t textureWidth = 0, textureHeight = 0;
+  GetSurfaceTextureSize(textureWidth, textureHeight);
+  m.UpdateSurface(textureWidth, textureHeight);
+  m.toggleState = m.IsReadyForComposition();
+  m.root->ToggleAll(m.toggleState);
+}
+
 vrb::TransformPtr
 Widget::GetTransformNode() const {
   return m.transform;

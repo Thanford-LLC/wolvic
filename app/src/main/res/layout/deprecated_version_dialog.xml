@@ -35,7 +35,7 @@
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:src="@drawable/ic_icon_exit"
-            android:tint="@color/midnight" />
+            android:tint="@color/gw_accent" />
 
         <FrameLayout
             android:id="@+id/titleContainer"
@@ -136,7 +136,7 @@
                 android:fontFamily="sans-serif"
                 android:scaleType="fitCenter"
                 android:text="@string/deprecated_version_dialog_store_button"
-                android:textColor="@drawable/dialog_button_text_color"
+                android:textColor="@drawable/dialog_highlighted_button_text_color"
                 android:textStyle="bold" />
 
         </LinearLayout>

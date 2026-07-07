@@ -4,13 +4,13 @@
     "environments": [
       {
         "value": "wolvic",
-        "title": "Wolvic",
+        "title": "Wolvic (CC0)",
         "thumbnail": "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/thumbnail.jpg",
         "payload": "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/space.zip"
       },
       {
         "value": "meadow",
-        "title": "Meadow",
+        "title": "Meadow (CC0)",
         "thumbnail": "https://mixedreality.mozilla.org/FirefoxReality/envs/meadow/thumbnail.jpg",
         "payload": "https://mixedreality.mozilla.org/FirefoxReality/envs/meadow/space.zip"
       }

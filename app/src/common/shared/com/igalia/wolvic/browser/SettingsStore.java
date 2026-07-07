@@ -157,8 +157,8 @@ public class SettingsStore {
     public final static WindowSizePreset WINDOW_SIZE_PRESET_DEFAULT = WindowSizePreset.PRESET_0;
 
     public final static @WindowSelectionMethod int WINDOW_SELECTION_METHOD_DEFAULT = WINDOW_SELECTION_METHOD_HOVER;
-    public final static int POINTER_COLOR_DEFAULT_DEFAULT = Color.parseColor("#FFFFFF");
-    public final static String ENV_DEFAULT = "cyberpunk";
+    public final static int POINTER_COLOR_DEFAULT_DEFAULT = Color.parseColor("#FDDE0A");
+    public final static String ENV_DEFAULT = "glyphew";
     public final static int MSAA_DEFAULT_LEVEL = 1;
     public final static boolean AUDIO_ENABLED = BuildConfig.FLAVOR_backend == "chromium";
     public final static boolean LATIN_AUTO_COMPLETE_ENABLED = false;
@@ -195,9 +195,11 @@ public class SettingsStore {
     public final static String SEARCH_ENGINE_DEFAULT = "";
     public final static @WidgetManagerDelegate.PointerMode int POINTER_MODE_DEFAULT = WidgetManagerDelegate.TRACKED_POINTER;
 
-    // Enable telemetry by default (opt-out).
+    // Glyphew: telemetry is opt-in (privacy policy §3a promises off-by-default;
+    // upstream Wolvic shipped opt-out). The OTel pipeline only logs locally either
+    // way (LoggingSpanExporter) — see WOLVIC-COMPLIANCE.md §8.1.
     public final static boolean CRASH_REPORTING_DEFAULT = false;
-    public final static boolean TELEMETRY_DEFAULT = true;
+    public final static boolean TELEMETRY_DEFAULT = false;
 
     private @ScrollDirection int mCachedScrollDirection = SCROLL_DIRECTION_INVALID;
 
@@ -645,7 +647,12 @@ public class SettingsStore {
     }
 
     public String getEnvironment() {
-        return mPrefs.getString(mContext.getString(R.string.settings_key_env), ENV_DEFAULT);
+        String env = mPrefs.getString(mContext.getString(R.string.settings_key_env), ENV_DEFAULT);
+        // Alias: legacy installs that stored "fingerdance" resolve to "glyphew".
+        if ("fingerdance".equals(env)) {
+            env = "glyphew";
+        }
+        return env;
     }
 
     public void setEnvironment(String aEnv) {

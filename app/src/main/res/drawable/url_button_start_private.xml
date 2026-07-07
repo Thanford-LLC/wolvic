@@ -16,7 +16,7 @@
     <item android:state_hovered="true" android:state_pressed="false">
         <shape android:shape="rectangle">
             <corners android:bottomLeftRadius="20dp" android:topLeftRadius="20dp" />
-            <solid android:color="@color/fog"/>
+            <solid android:color="@color/dusk"/>
             <stroke android:width="@dimen/blur_radius" android:color="@color/fog_blur" />
         </shape>
     </item>

@@ -4,6 +4,7 @@
     <uses-feature android:glEsVersion="0x00030000"/>
 
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
@@ -23,15 +24,17 @@
 
     <application
         android:name="com.igalia.wolvic.VRBrowserApplication"
-        android:allowBackup="true"
-        android:usesCleartextTraffic="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/FxR.Dark">
+        android:theme="@style/Glyphew.Dark">
         <activity
             android:name="com.igalia.wolvic.VRBrowserActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
             android:launchMode="singleInstance"
             android:exported="true"
             android:configChanges="density|keyboard|keyboardHidden|navigation|orientation|screenSize|uiMode|locale|layoutDirection"

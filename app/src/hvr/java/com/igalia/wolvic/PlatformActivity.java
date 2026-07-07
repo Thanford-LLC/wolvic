@@ -231,7 +231,7 @@ public abstract class PlatformActivity extends FragmentActivity implements Surfa
 
     private void initializeVR() {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        setTheme(R.style.FxR_Dark);
+        setTheme(R.style.Glyphew_Dark);
         SurfaceView mView = new SurfaceView(this);
         setContentView(mView);
 

@@ -62,6 +62,25 @@
 -keep class com.google.gson.reflect.TypeToken { *; }    # Keep this specific gson class
 -keep class * extends com.google.gson.reflect.TypeToken # and its descendants.
 
+# Fullscreen/media controls are driven by generated data binding classes plus
+# ray-targeted UI widget methods. R8 optimization broke the release-only control
+# surface by stripping widget members while leaving a partial fullscreen bar.
+-keep class com.igalia.wolvic.ui.widgets.NavigationBarWidget { *; }
+-keep class com.igalia.wolvic.ui.widgets.MediaControlsWidget { *; }
+-keep class com.igalia.wolvic.databinding.NavigationBar* { *; }
+-keep class com.igalia.wolvic.databinding.MediaControls* { *; }
+
+# --------------------------------------------------------------------
+# Glyphew — homepage JS bridge (window.gwHome)
+# --------------------------------------------------------------------
+# homepage.js calls these methods by name (gwHome.getCatalog(), pollResult(), ...).
+# @JavascriptInterface methods are NOT kept by the default Android config, so R8
+# would strip/rename them → the bridge silently breaks in release builds.
+-keep class com.thanford.glyphew.home.HomeBridge { *; }
+-keepclassmembers class com.thanford.glyphew.home.HomeBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
 # --------------------------------------------------------------------
 # Keep classes from HTC SDK
 # --------------------------------------------------------------------
@@ -101,6 +120,7 @@
 -dontpreverify
 -verbose
 -dontobfuscate
+-dontoptimize
 -optimizations !code/simplification/arithmetic,!code/allocation/variable
 -keepattributes *
 -printconfiguration "build/outputs/mapping/configuration.txt"

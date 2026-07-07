@@ -41,6 +41,7 @@ import com.igalia.wolvic.utils.DeviceType;
 import com.igalia.wolvic.utils.StringUtils;
 import com.igalia.wolvic.utils.SystemUtils;
 import com.igalia.wolvic.utils.UrlUtils;
+import com.thanford.glyphew.bookmarks.BookmarkTitlePolicy;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -87,10 +88,10 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
     private static final int BOOKMARK_ADDED_NOTIFICATION_ID = 2;
     private static final int WEB_APP_ADDED_NOTIFICATION_ID = 3;
 
-    // launch Wolvic in immersive mode automatically
-    private static final String PARENT_ELEMENT_XPATH_PARAMETER = "wolvic-launchimmersive-parentElementXPath";
-    private static final String TARGET_ELEMENT_XPATH_PARAMETER = "wolvic-launchimmersive-targetElementXPath";
-    private static final String IMMERSIVE_EXTENSION_ID = "wolvic-launchimmersive@igalia.com";
+    // launch Glyphew in immersive mode automatically
+    private static final String PARENT_ELEMENT_XPATH_PARAMETER = "glyphew-launchimmersive-parentElementXPath";
+    private static final String TARGET_ELEMENT_XPATH_PARAMETER = "glyphew-launchimmersive-targetElementXPath";
+    private static final String IMMERSIVE_EXTENSION_ID = "glyphew-launchimmersive@thanford.com";
     private static final String IMMERSIVE_EXTENSION_URL = "resource://android/assets/extensions/wolvic_launchimmersive/";
 
     class WindowState {
@@ -378,6 +379,8 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
 
         updateMaxWindowScales();
         mWidgetManager.addWidget(newWindow);
+        // Glyphew: open new windows at 3x scale for comfortable VR reading.
+        newWindow.resizeByMultiplier(newWindow.getCurrentAspect(), 3.0f);
         updateCurvedMode(true);
         updateViews();
         focusWindow(newWindow);
@@ -470,6 +473,10 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
             // Exit private mode if the only window is closed.
             exitPrivateMode();
         } else if (empty) {
+            for (Session session : remainingSessionsToDestroyOnLastWindowClose(
+                    true, false, SessionStore.get().getSessions(false))) {
+                SessionStore.get().destroySession(session);
+            }
             // Ensure that there is at least one window.
             WindowWidget window = addWindow();
             if (window != null) {
@@ -779,15 +786,11 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
     }
 
     void updateMaxWindowScales() {
-        float maxScale = 3;
-        if (mFullscreenWindow == null && getCurrentWindows().size() >= 3) {
-            maxScale = 1.5f;
-        } else if (mFullscreenWindow == null && getCurrentWindows().size() == 2) {
-            maxScale = 2.0f;
-        }
-
+        // Glyphew: keep max scale at 3x regardless of window count so windows never
+        // get force-shrunk when another window opens (user preference). New windows
+        // also open at 3x via resizeByMultiplier in addWindow().
         for (WindowWidget window: getCurrentWindows()) {
-            window.setMaxWindowScale(maxScale);
+            window.setMaxWindowScale(3.0f);
         }
     }
 
@@ -1438,7 +1441,14 @@ public class Windows implements TrayListener, TopBarWidget.Delegate, TitleBarWid
         if (!aFullScreen)
             return;
 
-        assert mFullscreenWindow != null;
+        // onContentFullScreen (which sets mFullscreenWindow) may arrive after
+        // onMediaFullScreen when fullscreen is triggered programmatically
+        // (e.g. by the YouTube VR webcompat injector calling player.requestFullscreen()).
+        // NavigationBarWidget.onMediaFullScreen already guards against this ordering;
+        // mirror that guard here so we don't crash.
+        if (mFullscreenWindow == null)
+            return;
+
         setFullScreenSize(mFullscreenWindow);
     }
 
@@ -1648,7 +1658,8 @@ public void selectTab(@NonNull Session aTab) {
             Executor executor = ((VRBrowserApplication)mContext.getApplicationContext()).getExecutors().mainThread();
             bookmarkStore.isBookmarked(url).thenAcceptAsync(bookmarked -> {
                 if (!bookmarked) {
-                    bookmarkStore.addBookmark(url, tab.getCurrentTitle());
+                    bookmarkStore.addBookmark(url, BookmarkTitlePolicy.titleForBookmark(
+                            url, tab.getCurrentTitle(), mContext.getString(R.string.app_name)));
                 }
             }, executor).exceptionally(throwable -> {
                 Log.d(LOGTAG, "Error checking bookmark: " + throwable.getLocalizedMessage());
@@ -1671,6 +1682,54 @@ public void selectTab(@NonNull Session aTab) {
         } else {
             closeTabs(Collections.singletonList(aTab), mPrivateMode, false);
         }
+    }
+
+    /**
+     * Pure index-cycling helper for tab navigation — extracted for testability.
+     * Returns {@code ((current + delta) % total + total) % total}, always in
+     * [0, total). On a single-tab list (total == 1) the result is always 0.
+     *
+     * @param current  index of the focused tab in the ordered session list
+     * @param total    total number of tabs
+     * @param delta    +1 for next, -1 for previous
+     */
+    @androidx.annotation.VisibleForTesting
+    public static int cycleTabIndex(int current, int total, int delta) {
+        if (total <= 1) return 0;
+        return ((current + delta) % total + total) % total;
+    }
+
+    @androidx.annotation.VisibleForTesting
+    static List<Session> remainingSessionsToDestroyOnLastWindowClose(
+            boolean windowsEmpty,
+            boolean privateMode,
+            @NonNull List<Session> sessions) {
+        if (!windowsEmpty || privateMode) {
+            return Collections.emptyList();
+        }
+        return sessions.stream()
+                .filter(session -> !session.isPrivateMode())
+                .collect(Collectors.toList());
+    }
+
+    /** Switches to the next tab in insertion order (wraps around). */
+    public void nextTab() {
+        cycleToTab(+1);
+    }
+
+    /** Switches to the previous tab in insertion order (wraps around). */
+    public void previousTab() {
+        cycleToTab(-1);
+    }
+
+    private void cycleToTab(int delta) {
+        List<Session> sessions = SessionStore.get().getSessions(mPrivateMode);
+        if (sessions.isEmpty()) return;
+        Session current = mFocusedWindow.getSession();
+        int idx = sessions.indexOf(current);
+        if (idx < 0) idx = 0;
+        int next = cycleTabIndex(idx, sessions.size(), delta);
+        onTabSelect(sessions.get(next));
     }
 
     private void closeTabs(List<Session> aTabs, boolean privateMode, boolean hidePanel) {

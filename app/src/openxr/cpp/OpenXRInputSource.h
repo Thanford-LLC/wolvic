@@ -8,6 +8,7 @@
 #include "HandMeshRenderer.h"
 #include "OpenXRGestureManager.h"
 #include "DeviceDelegate.h"
+#include "glyphew/cpp/InputComboRecognizer.h"
 #include <optional>
 #include <unordered_map>
 
@@ -74,6 +75,11 @@ private:
     OpenXRInputMapping* mActiveMapping { XR_NULL_HANDLE };
     bool selectActionStarted { false };
     bool squeezeActionStarted { false };
+    bool mGlyphewGripHeld { false };  // Glyphew: tracks grip for combo mode + laser suppression
+    bool mPrevThumbstickForHUD { false }; // Glyphew: edge detect thumbstick press for HUD toggle
+    bool mPrevFaceABtnClicked { false };  // Glyphew: edge detect A/X face-button for FROM_CAPTURE entry
+    bool mPathEmptyAtHUDPressStart { false }; // Glyphew: snapshot of recognizer idle-state at press-edge, read at release-edge
+    int64_t mThumbstickPressStartMsForHUD { 0 }; // Glyphew: press-start timestamp so long-press (>=LONG_PRESS_MS) does NOT also toggle HUD
     std::vector<float> axesContainer;
     crow::ElbowModelPtr elbow;
     XrHandTrackerEXT mHandTracker { XR_NULL_HANDLE };
@@ -89,6 +95,7 @@ private:
     vrb::Matrix mEyeGazeTransformOnPinchStart;
     XrTime mEyeTrackingPinchStartTime { 0 };
     float mClickThreshold { 1.0f };
+    glyphew::InputComboRecognizer mComboRecognizer;
 
     struct HandMeshMSFT {
         XrSpace space = XR_NULL_HANDLE;

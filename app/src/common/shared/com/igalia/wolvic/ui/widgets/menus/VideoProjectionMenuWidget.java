@@ -2,7 +2,6 @@ package com.igalia.wolvic.ui.widgets.menus;
 
 import android.content.Context;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.view.View;
 
 import androidx.annotation.IntDef;
@@ -22,7 +21,8 @@ public class VideoProjectionMenuWidget extends MenuWidget {
     @IntDef(value = { VIDEO_PROJECTION_NONE, VIDEO_PROJECTION_3D_SIDE_BY_SIDE, VIDEO_PROJECTION_360,
                       VIDEO_PROJECTION_360_STEREO, VIDEO_PROJECTION_180,
                       VIDEO_PROJECTION_180_STEREO_LEFT_RIGHT, VIDEO_PROJECTION_180_STEREO_TOP_BOTTOM,
-                      VIDEO_PROJECTION_3D_TOP_BOTTOM })
+                      VIDEO_PROJECTION_3D_TOP_BOTTOM,
+                      VIDEO_PROJECTION_CUBEMAP, VIDEO_PROJECTION_MESH })
     public @interface VideoProjectionFlags {}
 
     public static final int VIDEO_PROJECTION_NONE = -1;
@@ -33,6 +33,10 @@ public class VideoProjectionMenuWidget extends MenuWidget {
     public static final int VIDEO_PROJECTION_180_STEREO_LEFT_RIGHT = 4;
     public static final int VIDEO_PROJECTION_180_STEREO_TOP_BOTTOM = 5;
     public static final int VIDEO_PROJECTION_3D_TOP_BOTTOM = 6;
+    // Milestone 2: equi-angular cubemap (EAC, e.g. YouTube) and arbitrary mesh projection.
+    // Auto-detected from container metadata; not user-selectable in the projection menu.
+    public static final int VIDEO_PROJECTION_CUBEMAP = 7;
+    public static final int VIDEO_PROJECTION_MESH = 8;
 
     public interface Delegate {
         void onVideoProjectionClick(@VideoProjectionFlags int aProjection);
@@ -145,43 +149,8 @@ public class VideoProjectionMenuWidget extends MenuWidget {
     }
 
     public static @VideoProjectionFlags int getAutomaticProjection(String aURL, AtomicBoolean autoEnter) {
-        if (aURL == null) {
-            return VIDEO_PROJECTION_NONE;
-        }
-
-        Uri uri = Uri.parse(aURL);
-        if (uri == null || uri.isOpaque()) {
-            return VIDEO_PROJECTION_NONE;
-        }
-
-        String projection = uri.getQueryParameter("mozVideoProjection");
-        if (projection == null) {
-            projection = uri.getQueryParameter("mozvideoprojection");
-            if (projection == null) {
-                return VIDEO_PROJECTION_NONE;
-            }
-        }
-        projection = projection.toLowerCase();
-
-        autoEnter.set(projection.endsWith("_auto"));
-
-        if (projection.startsWith("360s")) {
-            return VIDEO_PROJECTION_360_STEREO;
-        } else if (projection.startsWith("360")) {
-            return VIDEO_PROJECTION_360;
-        } else if (projection.startsWith("180lr")) {
-            return VIDEO_PROJECTION_180_STEREO_LEFT_RIGHT;
-        } else if (projection.startsWith("180tb")) {
-            return VIDEO_PROJECTION_180_STEREO_TOP_BOTTOM;
-        } else if (projection.startsWith("180")) {
-            return VIDEO_PROJECTION_180;
-        } else if (projection.startsWith("3dtb")) {
-            return VIDEO_PROJECTION_3D_TOP_BOTTOM;
-        } else if (projection.startsWith("3d")) {
-            return VIDEO_PROJECTION_3D_SIDE_BY_SIDE;
-        }
-
-        return VIDEO_PROJECTION_NONE;
+        // Pure string parse (no android.net.Uri) so the logic is host-unit-testable.
+        return com.igalia.wolvic.browser.api.SphericalVideoProjection.parseMozProjection(aURL, autoEnter);
     }
 
     @Override

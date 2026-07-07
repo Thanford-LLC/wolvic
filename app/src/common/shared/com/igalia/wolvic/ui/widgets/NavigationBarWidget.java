@@ -124,11 +124,26 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
     private BrightnessMenuWidget mBrightnessWidget;
     private MediaControlsWidget mMediaControlsWidget;
     private Media mFullScreenMedia;
+    private final com.thanford.glyphew.test.VrTriggerSurfaceLock mVRTriggerSurfaceLock =
+            new com.thanford.glyphew.test.VrTriggerSurfaceLock(6_000L);
+    private Media mVRTriggerSurfaceLockedMedia;
+    private WMediaSession.Delegate mVRTriggerSurfaceReleaseListener;
     private @VideoProjectionMenuWidget.VideoProjectionFlags int mAutoSelectedProjection = VIDEO_PROJECTION_NONE;
+    // Projection currently applied to the live VR-video layer. Used to re-project (not just enter)
+    // when a corrected projection/stereo metadata arrives after we are already in VR video.
+    private @VideoProjectionMenuWidget.VideoProjectionFlags int mVRVideoProjectionApplied = VIDEO_PROJECTION_NONE;
     private HamburgerMenuWidget mHamburgerMenu;
     private QuickPermissionWidget mQuickPermissionWidget;
     private SendTabDialogWidget mSendTabDialog;
     private int mBlockedCount;
+    // True while a gwMseReady retry is already scheduled (prevents retry pile-up).
+    private boolean mGwMseRetryScheduled = false;
+    // Video id the shared Media's spherical metadata was last reported for. The Media object
+    // is reused across clips, so its projection stays latched on the previous video until the
+    // new clip's demuxer reports. We only trust container metadata when this matches the
+    // current video id; otherwise it's stale and ignored (see evaluateProjection…).
+    private String mMetaVideoId;
+    private String mGwMseReadyVideoId;
     private Executor mUIThreadExecutor;
     private ArrayList<NavigationListener> mNavigationListeners;
     private TrackingProtectionStore mTrackingDelegate;
@@ -292,7 +307,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
 
         mBinding.navigationBarNavigation.homeButton.setOnClickListener(v -> {
             v.requestFocusFromTouch();
-            getSession().loadUri(getSession().getHomeUri());
+            getSession().loadHomePage();
             if (mAudio != null) {
                 mAudio.playSound(AudioEngine.Sound.CLICK);
             }
@@ -670,33 +685,167 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             if (!mAttachedWindow.isFullScreen())
                 enterFullScreenMode();
 
-            AtomicBoolean autoEnter = new AtomicBoolean(false);
-            if (getSession().getFullScreenVideo() == null) {
-                mAutoSelectedProjection = VIDEO_PROJECTION_NONE;
-                autoEnter.set(false);
-            } else {
-                mAutoSelectedProjection = VideoProjectionMenuWidget.getAutomaticProjection(getSession().getCurrentUri(), autoEnter);
-            }
-
-            if (mAutoSelectedProjection != VIDEO_PROJECTION_NONE && autoEnter.get()) {
-                mViewModel.setAutoEnteredVRVideo(true);
-                postDelayed(() -> enterVRVideo(mAutoSelectedProjection), 300);
-            } else {
-                mViewModel.setAutoEnteredVRVideo(false);
-                if (mProjectionMenu != null) {
-                    mProjectionMenu.setSelectedProjection(mAutoSelectedProjection);
-                }
-            }
+            // Just entered fullscreen: detection already ran during decode (cached on Media),
+            // so this uses the known projection with no metadata wait — the small delay only
+            // lets the fullscreen video surface settle before reprojecting.
+            evaluateProjectionAndMaybeEnterVRVideo(FULLSCREEN_SETTLE_MS);
             mAttachedWindow.reCenterFrontWindow();
         } else {
+            boolean inVRVideo = isInVRVideo();
+            if (!com.thanford.glyphew.test.VrVideoFullscreenExitPolicy
+                    .shouldHandleMediaFullscreenFalse(inVRVideo)) {
+                com.thanford.glyphew.util.GwLog.d("onMediaFullScreen",
+                        "Ignoring media fullscreen=false while in VR video");
+                return;
+            }
+
             // This can be called by content's fullscreen event later but will be a noop.
             exitFullScreenMode();
 
-            if (isInVRVideo()) {
+            if (com.thanford.glyphew.test.VrVideoFullscreenExitPolicy
+                    .shouldExitVrVideoOnMediaFullscreenFalse(inVRVideo)) {
                 exitVRVideo();
             }
         }
    }
+
+    /**
+     * Spherical-video metadata can arrive seconds AFTER the user enters fullscreen
+     * (YouTube reports the 360 Projection late, after the ad/buffering). When it does,
+     * auto-enter VR-video without making the user exit and re-enter fullscreen.
+     */
+    @Override
+    public void onMediaProjectionChanged(@NonNull WMediaSession mediaSession) {
+        com.igalia.wolvic.browser.Media video = getSession().getFullScreenVideo();
+        if (video != null && video.consumeGlyphewMseReady()) {
+            mGwMseReadyVideoId = videoId(getSession().getCurrentUri());
+            com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                    "YouTube VR180 native MSE-ready signal latched for videoId=" + mGwMseReadyVideoId);
+            if (mAttachedWindow != null && mAttachedWindow.isFullScreen()) {
+                evaluateProjectionAndMaybeEnterVRVideo(0);
+            }
+            return;
+        }
+        // The demuxer just reported a projection for the current video, so the Media's
+        // metadata is now fresh for THIS clip. Stamp it so evaluateProjection trusts it
+        // (and stops treating it as a stale value latched from the previous clip).
+        mMetaVideoId = videoId(getSession().getCurrentUri());
+        if (mAttachedWindow != null && mAttachedWindow.isFullScreen()) {
+            // Metadata arrived while already fullscreen — the video surface is already
+            // settled, so evaluate immediately (no settle delay). If we are already in
+            // VR video this re-projects the live layer when a corrected projection/stereo
+            // arrives late (otherwise the first, often wrong, projection stays latched
+            // until the user manually exits and re-enters fullscreen).
+            evaluateProjectionAndMaybeEnterVRVideo(0);
+        }
+    }
+
+    /** Delay before reprojecting into VR-video right after a fullscreen transition, to let
+     *  the fullscreen video surface settle. Not a metadata wait — detection runs during decode. */
+    private static final int FULLSCREEN_SETTLE_MS = 300;
+
+    /**
+     * Resolve the fullscreen video's projection (metadata > URL hint > filename > aspect)
+     * and auto-enter VR-video if it's renderable. Shared by the fullscreen event and the
+     * (possibly later) projection-metadata event.
+     */
+    /**
+     * Stable per-video key used to tell whether the shared Media's spherical metadata
+     * belongs to the current clip: the YouTube {@code v=} id when present, otherwise the
+     * URL with query/fragment stripped. Query-only changes (e.g. an injected
+     * {@code gwMseReady}/{@code mozVideoProjection} param) keep the same identity.
+     */
+    private static String videoId(String uri) {
+        return com.thanford.glyphew.test.ProjectionDecision.videoId(uri);
+    }
+
+    private void evaluateProjectionAndMaybeEnterVRVideo(int enterDelayMs) {
+        com.igalia.wolvic.browser.Media video = getSession().getFullScreenVideo();
+        boolean autoEnter = false;
+        if (video == null) {
+            mAutoSelectedProjection = VIDEO_PROJECTION_NONE;
+            com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                    "fullScreenVideo=null -> NONE (uri=" + getSession().getCurrentUri() + ")");
+        } else {
+            if (video.consumeGlyphewMseReady()) {
+                mGwMseReadyVideoId = videoId(getSession().getCurrentUri());
+                com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                        "YouTube VR180 native MSE-ready signal consumed for videoId=" + mGwMseReadyVideoId);
+            }
+            AtomicBoolean urlAutoEnter = new AtomicBoolean(false);
+            int urlProjection = VideoProjectionMenuWidget.getAutomaticProjection(
+                    getSession().getCurrentUri(), urlAutoEnter);
+
+            // Pure decision — freshness guard, projection precedence (metadata > URL >
+            // filename > aspect), auto-enter, and the YouTube VR180 MSE gate — extracted to
+            // a host-testable seam. See com.thanford.glyphew.test.ProjectionDecision and
+            // ProjectionDecisionTest (regression-guards the cross-clip VR180->360 bleed).
+            com.thanford.glyphew.test.ProjectionDecision decision =
+                    com.thanford.glyphew.test.ProjectionDecision.decide(
+                            getSession().getCurrentUri(), mMetaVideoId,
+                            mGwMseReadyVideoId,
+                            video.getProjectionType(), video.getStereoMode(),
+                            urlProjection, urlAutoEnter.get(),
+                            video.getWidth(), video.getHeight());
+            mAutoSelectedProjection = decision.projection;
+            autoEnter = decision.autoEnter;
+
+            com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                    "meta(type=" + decision.effectiveMetaType + ",stereo=" + decision.effectiveMetaStereo + ")"
+                    + " url=" + urlProjection + " size=" + video.getWidth() + "x" + video.getHeight()
+                    + " -> chosen=" + mAutoSelectedProjection
+                    + " autoEnter=" + autoEnter
+                    + " (fromMeta=" + decision.fromMetadata + ",urlAuto=" + urlAutoEnter.get()
+                    + ",fromAspect=" + decision.fromAspect + ",metaFresh=" + decision.metaFresh
+                    + ",rawMeta=" + video.getProjectionType() + "/" + video.getStereoMode() + ")"
+                    + " uri=" + getSession().getCurrentUri());
+
+            // The YouTube VR180 fisheye gate (decided above) needs Android-side follow-up:
+            // log the transition and, while still gated, schedule one retry so auto-VR entry
+            // fires once GwMsePlayer signals readiness (~1-2 s later, via gwMseReady=1) without
+            // requiring a manual fullscreen tap. See VR-AUTODETECT.md §12.
+            if (decision.mseGated) {
+                com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                        "YouTube VR180 fisheye gated -> flat (MSE player not yet ready; gwMseReady not set)");
+                if (!mGwMseRetryScheduled) {
+                    mGwMseRetryScheduled = true;
+                    postDelayed(() -> {
+                        mGwMseRetryScheduled = false;
+                        evaluateProjectionAndMaybeEnterVRVideo(0);
+                    }, 2500);
+                }
+            } else if (decision.mseGateLifted) {
+                com.thanford.glyphew.util.GwLog.d("evaluateProjection",
+                        "YouTube VR180 gate lifted (gwMseReady=1); entering fisheye dome");
+            }
+        }
+
+        if (mAutoSelectedProjection != VIDEO_PROJECTION_NONE && autoEnter) {
+            if (isInVRVideo()) {
+                // Already in VR video: a corrected projection/stereo arrived late. Re-project
+                // the live layer in place (no exit/re-enter) when it actually changed.
+                if (mAutoSelectedProjection != mVRVideoProjectionApplied) {
+                    com.thanford.glyphew.util.GwLog.d("reprojectInVRVideo",
+                            "applied=" + mVRVideoProjectionApplied + " -> " + mAutoSelectedProjection);
+                    mVRVideoProjectionApplied = mAutoSelectedProjection;
+                    mProjectionMenu.setSelectedProjection(mAutoSelectedProjection);
+                    mWidgetManager.showVRVideo(mAttachedWindow.getHandle(), mAutoSelectedProjection);
+                }
+            } else {
+                mViewModel.setAutoEnteredVRVideo(true);
+                if (enterDelayMs > 0) {
+                    postDelayed(() -> enterVRVideo(mAutoSelectedProjection), enterDelayMs);
+                } else {
+                    enterVRVideo(mAutoSelectedProjection);
+                }
+            }
+        } else {
+            mViewModel.setAutoEnteredVRVideo(false);
+            if (mProjectionMenu != null) {
+                mProjectionMenu.setSelectedProjection(mAutoSelectedProjection);
+            }
+        }
+    }
 
     @Override
     public void onContentFullScreen(@NonNull WindowWidget aWindow, boolean aFullScreen) {
@@ -708,6 +857,18 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
 
     public boolean isInVRVideo() {
         return Objects.requireNonNull(mViewModel.getIsInVRVideo().getValue()).get();
+    }
+
+    public boolean consumeVrVideoOrFullscreenEscapeForCombo() {
+        if (isInVRVideo()) {
+            mVRVideoBackHandler.run();
+            return true;
+        }
+        if (mAttachedWindow != null && mAttachedWindow.isFullScreen()) {
+            mFullScreenBackHandler.run();
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -742,26 +903,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
 
         mTrayViewModel.setShouldBeVisible(false);
 
-        if (mProjectionMenu == null) {
-            mProjectionMenu = new VideoProjectionMenuWidget(getContext());
-            mProjectionMenu.setParentWidget(this);
-            mProjectionMenuPlacement = new WidgetPlacement(getContext());
-            mWidgetManager.addWidget(mProjectionMenu);
-            mProjectionMenu.setDelegate((projection)-> {
-                if (mViewModel.getIsInVRVideo().getValue().get()) {
-                    if (projection == VIDEO_PROJECTION_NONE) {
-                        exitVRVideo();
-                        mAttachedWindow.reCenterFrontWindow();
-                    } else {
-                        // Reproject while reproducing VRVideo
-                        mWidgetManager.showVRVideo(mAttachedWindow.getHandle(), projection);
-                    }
-                    closeFloatingMenus();
-                } else {
-                    enterVRVideo(projection);
-                }
-            });
-        }
+        ensureProjectionMenu();
         if (mBrightnessWidget == null) {
             mBrightnessWidget = new BrightnessMenuWidget(getContext());
             mBrightnessWidget.setParentWidget(this);
@@ -894,7 +1036,44 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         mWidgetManager.updateWidget(mAttachedWindow);
     }
 
+    /** Lazy init of the projection menu — shared by the fullscreen flow and the
+     *  debug force-entry test hook (enterVRVideo requires it). */
+    private void ensureProjectionMenu() {
+        if (mProjectionMenu != null) {
+            return;
+        }
+        mProjectionMenu = new VideoProjectionMenuWidget(getContext());
+        mProjectionMenu.setParentWidget(this);
+        mProjectionMenuPlacement = new WidgetPlacement(getContext());
+        mWidgetManager.addWidget(mProjectionMenu);
+        mProjectionMenu.setDelegate((projection)-> {
+            if (mViewModel.getIsInVRVideo().getValue().get()) {
+                if (projection == VIDEO_PROJECTION_NONE) {
+                    exitVRVideo();
+                    mAttachedWindow.reCenterFrontWindow();
+                } else {
+                    // Reproject while reproducing VRVideo
+                    mWidgetManager.showVRVideo(mAttachedWindow.getHandle(), projection);
+                }
+                closeFloatingMenus();
+            } else {
+                enterVRVideo(projection);
+            }
+        });
+    }
+
+    /** Glyphew test hook (vrtest builds only — never the product APK): force VR-video
+     *  entry without the DOM fullscreen gesture. Driven by com.thanford.glyphew.test.VrTestHook. */
+    public void forceEnterVRVideoForTest(@VideoProjectionMenuWidget.VideoProjectionFlags int aProjection) {
+        if (!BuildConfig.GW_TEST_HOOKS) return;
+        ensureProjectionMenu();
+        enterVRVideo(aProjection);
+    }
+
     private void enterVRVideo(@VideoProjectionMenuWidget.VideoProjectionFlags int aProjection) {
+        com.thanford.glyphew.util.GwLog.d("enterVRVideo",
+                "projection=" + aProjection
+                + " alreadyInVR=" + mViewModel.getIsInVRVideo().getValue().get());
         if (mViewModel.getIsInVRVideo().getValue().get() || aProjection == VIDEO_PROJECTION_NONE) {
             return;
         }
@@ -905,6 +1084,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         mWidgetManager.setCylinderDensityForce(0.0f);
 
         mViewModel.setIsInVRVideo(true);
+        mVRVideoProjectionApplied = aProjection;
         mWidgetManager.pushBackHandler(mVRVideoBackHandler);
         mProjectionMenu.setSelectedProjection(aProjection);
         // Backup the placement because the same widget is reused in FullScreen & MediaControl menus
@@ -931,8 +1111,16 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             mediaWidth = mAttachedWindow.getWindowWidth();
             mediaHeight = mAttachedWindow.getWindowHeight();
         }
+        android.util.Log.d("GW_VR", "[enterVRVideo] proj=" + aProjection
+                + " media=" + mediaWidth + "x" + mediaHeight
+                + " hasMedia=" + (mFullScreenMedia != null)
+                + " mediaW=" + (mFullScreenMedia != null ? mFullScreenMedia.getWidth() : "n/a")
+                + " mediaH=" + (mFullScreenMedia != null ? mFullScreenMedia.getHeight() : "n/a")
+                + " aspect=" + (mediaHeight > 0 ? String.format("%.3f", (float)mediaWidth / mediaHeight) : "inf"));
         final boolean resetBorder = aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_360 ||
-                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_360_STEREO;
+                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_360_STEREO ||
+                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_CUBEMAP ||
+                aProjection == VideoProjectionMenuWidget.VIDEO_PROJECTION_MESH;
         mAttachedWindow.enableVRVideoMode(mediaWidth, mediaHeight, resetBorder);
         // Handle video resize while in VR video playback
         if (mFullScreenMedia != null) {
@@ -960,6 +1148,11 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         mMediaControlsWidget.setMedia(mFullScreenMedia);
         mMediaControlsWidget.setParentWidget(mAttachedWindow.getHandle());
         mMediaControlsWidget.setProjectionSelectorEnabled(true);
+        // Glyphew: hide the overlay Back button in VR video — a trigger press meant to
+        // resume must not land on Back and exit VR. Exit is via the deliberate Back combo
+        // (consumeVrVideoOrFullscreenEscapeForCombo -> mVRVideoBackHandler).
+        mMediaControlsWidget.setBackButtonVisible(
+                com.thanford.glyphew.test.VrVideoControlsPolicy.shouldShowMediaBackButton(true));
         mAttachedWindow.reCenterFrontWindow();
         mWidgetManager.updateWidget(mMediaControlsWidget);
         mWidgetManager.showVRVideo(mAttachedWindow.getHandle(), aProjection);
@@ -973,6 +1166,7 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
             mFullScreenMedia.setResizeDelegate(null);
         }
         mViewModel.setIsInVRVideo(false);
+        mVRVideoProjectionApplied = VIDEO_PROJECTION_NONE;
         mWidgetManager.popBackHandler(mVRVideoBackHandler);
         mWidgetManager.hideVRVideo();
         boolean composited = mProjectionMenu.getPlacement().composited;
@@ -1005,6 +1199,16 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         mViewModel.setIsMicrophoneEnabled(true);
     }
 
+    /** Glyphew: focus the URL bar edit field so the user can type. */
+    public void focusUrlBar() {
+        mBinding.navigationBarNavigation.urlBar.focusUrlBar();
+    }
+
+    /** Glyphew: toggle bookmark state for the current page. */
+    public void bookmarkCurrentPage() {
+        mBinding.navigationBarNavigation.urlBar.bookmarkCurrentPage();
+    }
+
     private void closeFloatingMenus() {
         if (mProjectionMenu != null) {
             mProjectionMenu.hide(KEEP_WIDGET);
@@ -1020,6 +1224,10 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
     public void onLocationChange(@NonNull WSession session, @Nullable String url) {
         if (getSession() != null && getSession().getWSession() == session) {
             updateTrackingProtection();
+            String currentVideoId = videoId(url);
+            if (mGwMseReadyVideoId != null && !mGwMseReadyVideoId.equals(currentVideoId)) {
+                mGwMseReadyVideoId = null;
+            }
         }
 
         mBinding.navigationBarNavigation.reloadButton.setEnabled(
@@ -1246,11 +1454,87 @@ public class NavigationBarWidget extends UIWidget implements WSession.Navigation
         }
     }
 
+    private void attachVRTriggerSurfaceRelease(@NonNull Media media) {
+        detachVRTriggerSurfaceRelease();
+        mVRTriggerSurfaceLockedMedia = media;
+        mVRTriggerSurfaceReleaseListener = new WMediaSession.Delegate() {
+            @Override
+            public void onPlay(@NonNull WSession session, @NonNull WMediaSession mediaSession) {
+                releaseVRTriggerSurfaceLockIfConfirmed();
+            }
+
+            @Override
+            public void onPause(@NonNull WSession session, @NonNull WMediaSession mediaSession) {
+                releaseVRTriggerSurfaceLockIfConfirmed();
+            }
+        };
+        media.addMediaListener(mVRTriggerSurfaceReleaseListener);
+    }
+
+    private void releaseVRTriggerSurfaceLockIfConfirmed() {
+        Media lockedMedia = mVRTriggerSurfaceLockedMedia;
+        boolean stillPending = lockedMedia != null
+                && lockedMedia.hasPendingPlaybackToggle(System.currentTimeMillis());
+        if (!stillPending) {
+            detachVRTriggerSurfaceRelease();
+        }
+        mVRTriggerSurfaceLock.onMediaObserved(stillPending);
+    }
+
+    private void releaseVRTriggerSurfaceLock() {
+        detachVRTriggerSurfaceRelease();
+        mVRTriggerSurfaceLock.onMediaConfirmed();
+    }
+
+    private void detachVRTriggerSurfaceRelease() {
+        if (mVRTriggerSurfaceLockedMedia != null && mVRTriggerSurfaceReleaseListener != null) {
+            mVRTriggerSurfaceLockedMedia.removeMediaListener(mVRTriggerSurfaceReleaseListener);
+        }
+        mVRTriggerSurfaceLockedMedia = null;
+        mVRTriggerSurfaceReleaseListener = null;
+    }
+
     // WorldClickListener
     @Override
     public void onWorldClick() {
         if (mViewModel.getIsInVRVideo().getValue().get() && mMediaControlsWidget != null) {
-            mMediaControlsWidget.setVisible(!mMediaControlsWidget.isVisible());
+            final long nowMs = System.currentTimeMillis();
+            if (!mVRTriggerSurfaceLock.tryAcquire(nowMs)) {
+                com.thanford.glyphew.util.GwLog.d("onWorldClick",
+                        "VR trigger: ignored by surface lock (awaiting media confirmation)");
+                return;
+            }
+
+            // Trigger = direct pause/resume (one step, matches flat-mode tap behavior).
+            // MediaControlsWidget toggle follows so the user can seek/volume if needed.
+            //
+            // For VR180/MSE playback, the gw-fisheye <video> replaces YouTube's native video.
+            // mFullScreenMedia tracks YouTube's HTML5 video (in HTML fullscreen), NOT the fisheye.
+            // getActiveVideo() returns whichever video most recently became active — which is the
+            // gw-fisheye after _inject() calls v.play(). Prefer active video; fall back to fullscreen.
+            final Media activeVideo = getSession() != null ? getSession().getActiveVideo() : null;
+            final Media mediaToControl = (activeVideo != null) ? activeVideo : mFullScreenMedia;
+            if (mediaToControl != null) {
+                // Optimistic toggle with sync lock: flip the intended play/pause state
+                // and issue it now; further presses are ignored until chromium confirms
+                // (onPlay/onPause). Stops rapid presses during the 8K fisheye decode-resume
+                // lag from desyncing the toggle (tile 2.2 "press several times to resume").
+                final boolean desiredPlayingAfterToggle = !mediaToControl.isPlaying();
+                boolean accepted = mediaToControl.requestTogglePlayback(nowMs);
+                if (accepted) {
+                    attachVRTriggerSurfaceRelease(mediaToControl);
+                    mMediaControlsWidget.setVisible(com.thanford.glyphew.test.VrVideoControlsPolicy
+                            .shouldShowControlsAfterTriggerToggle(desiredPlayingAfterToggle));
+                }
+                com.thanford.glyphew.util.GwLog.d("onWorldClick",
+                        "VR trigger: " + (accepted ? "toggled" : "ignored (awaiting chromium sync)")
+                        + " usedActive=" + (activeVideo != null)
+                        + " mediaToControl=" + mediaToControl);
+            } else {
+                releaseVRTriggerSurfaceLock();
+                com.thanford.glyphew.util.GwLog.d("onWorldClick",
+                        "VR trigger: no media to control (active=null, fullscreen=null)");
+            }
             if (!isFrontFacingVRProjection(mProjectionMenu.getSelectedProjection())) {
                 if (mMediaControlsWidget.isVisible()) {
                     // Reorient the MediaControl UI when the users clicks to show it.

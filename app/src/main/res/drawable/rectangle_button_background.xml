@@ -3,7 +3,7 @@
     <item android:state_enabled="false">
         <shape android:shape="rectangle">
             <corners android:radius="5dp" />
-            <solid android:color="@color/iron" />
+            <solid android:color="@color/gw_surface_raised" />
         </shape>
     </item>
     <item android:state_pressed="true">
@@ -15,13 +15,13 @@
     <item android:state_hovered="true" android:state_pressed="false">
         <shape android:shape="rectangle">
             <corners android:radius="5dp" />
-            <solid android:color="@color/fog" />
+            <solid android:color="@color/azure" />
         </shape>
     </item>
     <item android:state_enabled="true">
         <shape android:shape="rectangle">
             <corners android:radius="5dp" />
-            <solid android:color="@color/iron" />
+            <solid android:color="@color/gw_surface_raised" />
         </shape>
     </item>
 </selector>

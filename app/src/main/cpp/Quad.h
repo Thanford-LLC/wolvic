@@ -59,6 +59,11 @@ public:
   vrb::NodePtr GetRoot() const;
   vrb::TransformPtr GetTransformNode() const;
   VRLayerQuadPtr GetLayer() const;
+  // Glyphew: detach the compositor layer so the widget falls back to a sampleable GL
+  // TextureSurface (needed for fisheye VR180, which must read the video as a GL texture).
+  // Returns the detached layer so it can be re-attached later. AttachLayer reverses it.
+  VRLayerQuadPtr DetachLayer();
+  void AttachLayer(const VRLayerQuadPtr& aLayer);
   bool TestIntersection(const vrb::Vector& aStartPoint, const vrb::Vector& aDirection, vrb::Vector& aResult, vrb::Vector& aNormal, bool aClamp, bool& aIsInside, float& aDistance) const;
   void ConvertToQuadCoordinates(const vrb::Vector& point, float& aX, float& aY, bool aClamp) const;
 protected:

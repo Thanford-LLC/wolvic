@@ -52,6 +52,8 @@ const char* const kResetWindowsPosition = "resetWindowsPosition";
 const char* const kResetWindowsPositionSignature = "()V";
 const char* const kGetActiveEnvironment = "getActiveEnvironment";
 const char* const kGetActiveEnvironmentSignature = "()Ljava/lang/String;";
+const char* const kGetSkyboxSeasonalYaw = "getSkyboxSeasonalYaw";
+const char* const kGetSkyboxSeasonalYawSignature = "()F";
 const char* const kGetPointerColor = "getPointerColor";
 const char* const kGetPointerColorSignature = "()I";
 const char* const kSetDeviceType = "setDeviceType";
@@ -80,6 +82,22 @@ const char* const kChangeWindowDistance = "changeWindowDistance";
 const char* const kChangeWindowDistanceSignature = "(F)V";
 const char* const kOnMaxCompositionLayersAvailableName = "onMaxCompositionLayersAvailable";
 const char* const kOnMaxCompositionLayersAvailableSignature = "(I)V";
+const char* const kHandleComboEventName = "handleComboEvent";
+const char* const kHandleComboEventSignature = "([II)V";
+const char* const kHandleComboProgressName = "handleComboProgress";
+const char* const kHandleComboProgressSignature = "([II)V";
+const char* const kHandleGripStateChangedName = "handleGripStateChanged";
+const char* const kHandleGripStateChangedSignature = "(ZI)V";
+const char* const kHandleComboPreviewName = "handleComboPreview";
+const char* const kHandleComboPreviewSignature = "(I)V";
+const char* const kHandleComboPreviewProgressName = "handleComboPreviewProgress";
+const char* const kHandleComboPreviewProgressSignature = "(IF)V";
+const char* const kHandleComboThumbstickPressName = "handleComboThumbstickPress";
+const char* const kHandleComboThumbstickPressSignature = "()V";
+const char* const kHandleLongPressThumbstickName = "handleLongPressThumbstick";
+const char* const kHandleLongPressThumbstickSignature = "()V";
+const char* const kHandleComboAXPressedName = "handleComboAXPressed";
+const char* const kHandleComboAXPressedSignature = "(I)V";
 
 JNIEnv* sEnv = nullptr;
 jclass sBrowserClass = nullptr;
@@ -105,6 +123,7 @@ jmethodID sIsOverrideEnvPathEnabled = nullptr;
 jmethodID sCheckTogglePassthrough = nullptr;
 jmethodID sResetWindowsPosition = nullptr;
 jmethodID sGetActiveEnvironment = nullptr;
+jmethodID sGetSkyboxSeasonalYaw = nullptr;
 jmethodID sGetPointerColor = nullptr;
 jmethodID sSetDeviceType = nullptr;
 jmethodID sHaltActivity = nullptr;
@@ -119,6 +138,14 @@ jmethodID sSetHandTrackingSupported = nullptr;
 jmethodID sOnControllersAvailable = nullptr;
 jmethodID sChangeWindowDistance = nullptr;
 jmethodID sOnMaxCompositionLayersAvailable = nullptr;
+jmethodID sHandleComboEvent = nullptr;
+jmethodID sHandleComboProgress = nullptr;
+jmethodID sHandleGripStateChanged = nullptr;
+jmethodID sHandleComboPreview = nullptr;
+jmethodID sHandleComboPreviewProgress = nullptr;
+jmethodID sHandleComboThumbstickPress = nullptr;
+jmethodID sHandleLongPressThumbstick = nullptr;
+jmethodID sHandleComboAXPressed = nullptr;
 
 } // namespace
 
@@ -160,6 +187,7 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sCheckTogglePassthrough = FindJNIMethodID(sEnv, sBrowserClass, kCheckTogglePassthrough, kCheckTogglePassthroughSignature);
   sResetWindowsPosition = FindJNIMethodID(sEnv, sBrowserClass, kResetWindowsPosition, kResetWindowsPositionSignature);
   sGetActiveEnvironment = FindJNIMethodID(sEnv, sBrowserClass, kGetActiveEnvironment, kGetActiveEnvironmentSignature);
+  sGetSkyboxSeasonalYaw = FindJNIMethodID(sEnv, sBrowserClass, kGetSkyboxSeasonalYaw, kGetSkyboxSeasonalYawSignature);
   sGetPointerColor = FindJNIMethodID(sEnv, sBrowserClass, kGetPointerColor, kGetPointerColorSignature);
   sSetDeviceType = FindJNIMethodID(sEnv, sBrowserClass, kSetDeviceType, kSetDeviceTypeSignature);
   sHaltActivity = FindJNIMethodID(sEnv, sBrowserClass, kHaltActivity, kHaltActivitySignature);
@@ -174,6 +202,14 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sOnControllersAvailable = FindJNIMethodID(sEnv, sBrowserClass, kOnControllersAvailable, kOnControllersAvailableSignature);
   sChangeWindowDistance = FindJNIMethodID(sEnv, sBrowserClass, kChangeWindowDistance, kChangeWindowDistanceSignature);
   sOnMaxCompositionLayersAvailable = FindJNIMethodID(sEnv, sBrowserClass, kOnMaxCompositionLayersAvailableName, kOnMaxCompositionLayersAvailableSignature);
+  sHandleComboEvent    = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboEventName,    kHandleComboEventSignature);
+  sHandleComboProgress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboProgressName, kHandleComboProgressSignature);
+  sHandleGripStateChanged = FindJNIMethodID(sEnv, sBrowserClass, kHandleGripStateChangedName, kHandleGripStateChangedSignature);
+  sHandleComboPreview  = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewName,  kHandleComboPreviewSignature);
+  sHandleComboPreviewProgress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboPreviewProgressName, kHandleComboPreviewProgressSignature);
+  sHandleComboThumbstickPress = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboThumbstickPressName, kHandleComboThumbstickPressSignature);
+  sHandleLongPressThumbstick = FindJNIMethodID(sEnv, sBrowserClass, kHandleLongPressThumbstickName, kHandleLongPressThumbstickSignature);
+  sHandleComboAXPressed = FindJNIMethodID(sEnv, sBrowserClass, kHandleComboAXPressedName, kHandleComboAXPressedSignature);
 }
 
 JNIEnv * VRBrowser::Env()
@@ -215,6 +251,7 @@ VRBrowser::ShutdownJava() {
   sCheckTogglePassthrough = nullptr;
   sResetWindowsPosition = nullptr;
   sGetActiveEnvironment = nullptr;
+  sGetSkyboxSeasonalYaw = nullptr;
   sGetPointerColor = nullptr;
   sSetDeviceType = nullptr;
   sHaltActivity = nullptr;
@@ -224,6 +261,14 @@ VRBrowser::ShutdownJava() {
   sAppendAppNotesToCrashReport = nullptr;
   sChangeWindowDistance = nullptr;
   sOnMaxCompositionLayersAvailable = nullptr;
+  sHandleComboEvent       = nullptr;
+  sHandleComboProgress    = nullptr;
+  sHandleGripStateChanged = nullptr;
+  sHandleComboPreview     = nullptr;
+  sHandleComboPreviewProgress = nullptr;
+  sHandleComboThumbstickPress = nullptr;
+  sHandleLongPressThumbstick = nullptr;
+  sHandleComboAXPressed = nullptr;
 }
 
 void
@@ -409,6 +454,14 @@ VRBrowser::GetActiveEnvironment() {
   return str;
 }
 
+float
+VRBrowser::GetSkyboxSeasonalYaw() {
+  if (!ValidateMethodID(sEnv, sActivity, sGetSkyboxSeasonalYaw, __FUNCTION__)) { return 0.0f; }
+  jfloat yaw = sEnv->CallFloatMethod(sActivity, sGetSkyboxSeasonalYaw);
+  CheckJNIException(sEnv, __FUNCTION__);
+  return (float) yaw;
+}
+
 int32_t
 VRBrowser::GetPointerColor() {
   if (!ValidateMethodID(sEnv, sActivity, sGetPointerColor, __FUNCTION__)) { return 16777215; }
@@ -512,6 +565,76 @@ void
 VRBrowser::OnMaxCompositionLayersAvailable(jint aNumLayers) {
     if (!ValidateMethodID(sEnv, sActivity, sOnMaxCompositionLayersAvailable, __FUNCTION__)) { return; }
     sEnv->CallVoidMethod(sActivity, sOnMaxCompositionLayersAvailable, aNumLayers);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboProgress(const int* path, int length) {
+    VRB_LOG("Glyphew: HandleComboProgress length=%d", length);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboProgress, __FUNCTION__)) { return; }
+    jintArray jpath = sEnv->NewIntArray(length);
+    if (!jpath) { return; }
+    sEnv->SetIntArrayRegion(jpath, 0, length, reinterpret_cast<const jint*>(path));
+    sEnv->CallVoidMethod(sActivity, sHandleComboProgress, jpath, (jint)length);
+    sEnv->DeleteLocalRef(jpath);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleGripStateChanged(bool held, int hand) {
+    VRB_LOG("Glyphew: HandleGripStateChanged held=%d hand=%d", (int)held, hand);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleGripStateChanged, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleGripStateChanged, (jboolean)held, (jint)hand);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboPreview(int previewNode) {
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboPreview, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboPreview, (jint)previewNode);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboPreviewProgress(int zoneId, float progress) {
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboPreviewProgress, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboPreviewProgress, (jint)zoneId, (jfloat)progress);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboThumbstickPress() {
+    VRB_LOG("Glyphew: HandleComboThumbstickPress");
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboThumbstickPress, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboThumbstickPress);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleLongPressThumbstick() {
+    VRB_LOG("Glyphew: HandleLongPressThumbstick");
+    if (!ValidateMethodID(sEnv, sActivity, sHandleLongPressThumbstick, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleLongPressThumbstick);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboAXPressed(int hand) {
+    VRB_LOG("Glyphew: HandleComboAXPressed hand=%d", hand);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboAXPressed, __FUNCTION__)) { return; }
+    sEnv->CallVoidMethod(sActivity, sHandleComboAXPressed, (jint)hand);
+    CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::HandleComboEvent(const int* path, int length) {
+    VRB_LOG("Glyphew: HandleComboEvent length=%d", length);
+    if (!ValidateMethodID(sEnv, sActivity, sHandleComboEvent, __FUNCTION__)) { return; }
+    jintArray jpath = sEnv->NewIntArray(length);
+    if (!jpath) { return; }
+    sEnv->SetIntArrayRegion(jpath, 0, length, reinterpret_cast<const jint*>(path));
+    sEnv->CallVoidMethod(sActivity, sHandleComboEvent, jpath, (jint)length);
+    sEnv->DeleteLocalRef(jpath);
     CheckJNIException(sEnv, __FUNCTION__);
 }
 

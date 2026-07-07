@@ -41,7 +41,7 @@ public class SessionImpl implements WSession {
     private UrlUtilsVisitor mUrlUtilsVisitor;
 
     // The difference between "Mobile" and "VR" matches GeckoViewSettings.jsm
-    private static final String WOLVIC_USER_AGENT_MOBILE = GeckoSession.getDefaultUserAgent() + " Wolvic/" + BuildConfig.VERSION_NAME;
+    private static final String WOLVIC_USER_AGENT_MOBILE = GeckoSession.getDefaultUserAgent() + " Glyphew/" + BuildConfig.VERSION_NAME;
     private static final String WOLVIC_USER_AGENT_VR = WOLVIC_USER_AGENT_MOBILE.replace("Mobile", "Mobile VR");
     private static final String WOLVIC_USER_AGENT_DESKTOP = "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0";
 
@@ -424,5 +424,25 @@ public class SessionImpl implements WSession {
             };
         }
         return mUrlUtilsVisitor;
+    }
+
+    // ── Glyphew JS bridge (Gecko — TODO, non-gating) ──────────────────
+
+    @Override
+    public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {
+        // TODO: Implement via GeckoSession WebExtension messaging or WebExtension API.
+        // Gecko backend is parity-tracked but non-gating for v1.0.
+        throw new UnsupportedOperationException("addJavascriptInterface not yet implemented for Gecko backend");
+    }
+
+    @Override
+    public void removeJavascriptInterface(@NonNull String name) {
+        throw new UnsupportedOperationException("removeJavascriptInterface not yet implemented for Gecko backend");
+    }
+
+    @Override
+    public void evaluateJavaScript(@NonNull String script,
+                                   @Nullable android.webkit.ValueCallback<String> callback) {
+        throw new UnsupportedOperationException("evaluateJavaScript not yet implemented for Gecko backend");
     }
 }

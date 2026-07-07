@@ -18,7 +18,7 @@
             android:layout_marginStart="-34dp"
             android:layout_alignParentStart="true"
             android:src="@drawable/ic_icon_back"
-            android:tint="@color/midnight"
+            android:tint="@color/gw_accent"
             android:visibility="gone" />
 
         <FrameLayout
@@ -142,7 +142,7 @@
                 android:background="@drawable/dialog_highlighted_button_background"
                 android:fontFamily="sans-serif"
                 android:scaleType="fitCenter"
-                android:textColor="@drawable/dialog_button_text_color"
+                android:textColor="@drawable/dialog_highlighted_button_text_color"
                 android:textStyle="bold"
                 tools:text="Accept" />
         </RelativeLayout>

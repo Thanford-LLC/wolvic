@@ -49,6 +49,7 @@ import com.igalia.wolvic.utils.StringUtils;
 import com.igalia.wolvic.utils.SystemUtils;
 import com.igalia.wolvic.utils.UrlUtils;
 import com.igalia.wolvic.utils.ViewUtils;
+import com.thanford.glyphew.bookmarks.BookmarkTitlePolicy;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -316,6 +317,16 @@ public class NavigationURLBar extends FrameLayout {
         mDelegate = delegate;
     }
 
+    /** Glyphew: focus the URL edit field so the user can type a URL or search query. */
+    public void focusUrlBar() {
+        mBinding.urlEditText.requestFocusFromTouch();
+    }
+
+    /** Glyphew: toggle bookmark state for the current page, same as tapping the star button. */
+    public void bookmarkCurrentPage() {
+        handleBookmarkClick();
+    }
+
     private void handleBookmarkClick() {
         if (mAudio != null) {
             mAudio.playSound(AudioEngine.Sound.CLICK);
@@ -328,7 +339,8 @@ public class NavigationURLBar extends FrameLayout {
         BookmarksStore bookmarkStore = SessionStore.get().getBookmarkStore();
         bookmarkStore.isBookmarked(url).thenAcceptAsync(bookmarked -> {
             if (!bookmarked) {
-                bookmarkStore.addBookmark(url, mSession.getCurrentTitle());
+                bookmarkStore.addBookmark(url, BookmarkTitlePolicy.titleForBookmark(
+                        url, mSession.getCurrentTitle(), getContext().getString(R.string.app_name)));
                 mViewModel.setIsBookmarked(true);
 
             } else {
@@ -560,7 +572,8 @@ public class NavigationURLBar extends FrameLayout {
                     if (action.equals(WSession.SelectionActionDelegate.ACTION_CUT) && selectionValid) {
                         String selectedText = mBinding.urlEditText.getText().toString().substring(startSelection, endSelection);
                         clipboard.setPrimaryClip(ClipData.newPlainText("text", selectedText));
-                        mBinding.urlEditText.setText(StringUtils.removeRange(mBinding.urlEditText.getText().toString(), startSelection, endSelection));
+                        String text = mBinding.urlEditText.getText().toString();
+                        mBinding.urlEditText.setText(text != null ? StringUtils.removeRange(text, startSelection, endSelection) : "");
                         mBinding.urlEditText.setSelection(startSelection);
 
                     } else if (action.equals(WSession.SelectionActionDelegate.ACTION_COPY) && selectionValid) {
@@ -570,7 +583,8 @@ public class NavigationURLBar extends FrameLayout {
                     } else if (action.equals(WSession.SelectionActionDelegate.ACTION_PASTE) && clipboard.hasPrimaryClip()) {
                         ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
                         if (selectionValid) {
-                            mBinding.urlEditText.setText(StringUtils.removeRange(mBinding.urlEditText.getText().toString(), startSelection, endSelection));
+                            String text = mBinding.urlEditText.getText().toString();
+                            mBinding.urlEditText.setText(text != null ? StringUtils.removeRange(text, startSelection, endSelection) : "");
                             mBinding.urlEditText.setSelection(startSelection);
                         }
                         if (item != null && item.getText() != null) {

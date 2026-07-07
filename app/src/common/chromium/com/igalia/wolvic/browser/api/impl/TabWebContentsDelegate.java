@@ -128,6 +128,17 @@ public class TabWebContentsDelegate extends WolvicWebContentsDelegate {
         WSession.NavigationDelegate delegate = mSession.getNavigationDelegate();
         assert delegate != null;
 
+        // Popup gate: Chromium has already created the WebContents by the time this
+        // fires, and the posted onNewSession below never consults a return value —
+        // so a veto here must destroy the orphan WebContents itself, or the blocked
+        // popup would survive as a live, unbound page.
+        if (!delegate.onNewWindowRequest(mSession, webContents.getVisibleUrl().getSpec())) {
+            if (!webContents.isDestroyed()) {
+                webContents.destroy();
+            }
+            return;
+        }
+
         // We must return before executing this, otherwise we might end up messing around the native
         // objects that chromium uses to back up some of the Java objects we use. For example the
         // WebContentsDelegate created by Chromium might be freed by the onNewSession() call when it

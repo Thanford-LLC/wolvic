@@ -57,6 +57,8 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
     private ReadyCallback mReadyCallback = new ReadyCallback();
     private UrlUtilsVisitor mUrlUtilsVisitor;
     private WSession.GetSessionFinderCallback mGetSessionFinderCallback;
+    // Interfaces queued before the Tab/WebContents is ready — applied in onReady().
+    private final Map<String, Object> mQueuedInterfaces = new java.util.LinkedHashMap<>();
 
     private void createSessionFinderIfNeeded() {
         if (mSessionFinder != null)
@@ -74,6 +76,14 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
                 createSessionFinderIfNeeded();
                 mGetSessionFinderCallback.onFinderAvailable(mSessionFinder);
                 mGetSessionFinderCallback = null;
+            }
+            // Register any queued JS interfaces before loading the initial URL so the
+            // bridge is available when the page scripts run.
+            if (!mQueuedInterfaces.isEmpty()) {
+                for (Map.Entry<String, Object> e : mQueuedInterfaces.entrySet()) {
+                    doAddJavascriptInterface(e.getValue(), e.getKey());
+                }
+                mQueuedInterfaces.clear();
             }
             if (mInitialUri != null) {
                 assert mWebContents == null;
@@ -526,5 +536,61 @@ public class SessionImpl implements WSession, DownloadManagerBridge.Delegate {
             };
         }
         return mUrlUtilsVisitor;
+    }
+
+    // ── Glyphew JS bridge (MPL diff) ──────────────────────────────────
+
+    /** mWebContents is null after onReady(); always prefer mTab.getActiveWebContents(). */
+    private WebContents resolveWebContents() {
+        if (mWebContents != null) return mWebContents;
+        return mTab != null ? mTab.getActiveWebContents() : null;
+    }
+
+    @Override
+    public void addJavascriptInterface(@NonNull Object obj, @NonNull String name) {
+        WebContents wc = resolveWebContents();
+        if (wc == null) {
+            android.util.Log.d("SessionImpl", "addJavascriptInterface: queuing " + name + " (wc not ready)");
+            mQueuedInterfaces.put(name, obj);
+            return;
+        }
+        doAddJavascriptInterface(obj, name);
+    }
+
+    private void doAddJavascriptInterface(@NonNull Object obj, @NonNull String name) {
+        WebContents wc = resolveWebContents();
+        if (wc == null) {
+            android.util.Log.w("SessionImpl", "doAddJavascriptInterface: wc null, " + name + " lost");
+            return;
+        }
+        android.util.Log.d("SessionImpl", "doAddJavascriptInterface: registering " + name);
+        try {
+            org.chromium.content_public.browser.JavascriptInjector injector =
+                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(wc, false);
+            injector.addPossiblyUnsafeInterface(obj, name, android.webkit.JavascriptInterface.class);
+        } catch (Exception e) {
+            android.util.Log.e("SessionImpl", "doAddJavascriptInterface failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void removeJavascriptInterface(@NonNull String name) {
+        WebContents wc = resolveWebContents();
+        if (wc == null) return;
+        try {
+            org.chromium.content_public.browser.JavascriptInjector injector =
+                org.chromium.content_public.browser.JavascriptInjector.fromWebContents(wc, false);
+            injector.removeInterface(name);
+        } catch (Exception e) {
+            android.util.Log.e("SessionImpl", "removeJavascriptInterface failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void evaluateJavaScript(@NonNull String script,
+                                   @Nullable android.webkit.ValueCallback<String> callback) {
+        WebContents wc = resolveWebContents();
+        if (wc == null) return;
+        wc.evaluateJavaScript(script, callback != null ? callback::onReceiveValue : null);
     }
 }

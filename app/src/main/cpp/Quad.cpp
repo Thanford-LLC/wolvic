@@ -437,6 +437,45 @@ Quad::GetLayer() const {
   return m.layer;
 }
 
+VRLayerQuadPtr
+Quad::DetachLayer() {
+  VRLayerQuadPtr old = m.layer;
+  if (!old) {
+    return nullptr;
+  }
+  // Remove the layer node from the scene graph and clear m.layer so that
+  // Widget::UpdateSurface() takes the no-layer branch (creates a TextureSurface).
+  if (m.layerNode) {
+    m.transform->RemoveNode(*m.layerNode);
+    m.layerNode = nullptr;
+  }
+  m.layer = nullptr;
+  // The no-layer path renders the surface through a geometry quad.
+  if (!m.geometry) {
+    vrb::CreationContextPtr create = m.context.lock();
+    m.geometry = Quad::CreateGeometry(create, m.worldMin, m.worldMax);
+    m.transform->AddNode(m.geometry);
+  }
+  return old;
+}
+
+void
+Quad::AttachLayer(const VRLayerQuadPtr& aLayer) {
+  if (!aLayer) {
+    return;
+  }
+  // Switch back to compositor-layer rendering: drop the geometry, restore the layer node.
+  if (m.geometry) {
+    m.transform->RemoveNode(*m.geometry);
+    m.geometry = nullptr;
+  }
+  m.layer = aLayer;
+  vrb::CreationContextPtr create = m.context.lock();
+  m.layer->SetWorldSize(GetWorldWidth(), GetWorldHeight());
+  m.layerNode = VRLayerNode::Create(create, m.layer);
+  m.transform->AddNode(m.layerNode);
+}
+
 static const float kEpsilon = 0.00000001f;
 
 bool

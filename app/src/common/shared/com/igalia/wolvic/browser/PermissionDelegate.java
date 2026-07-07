@@ -94,6 +94,17 @@ public class PermissionDelegate implements WSession.PermissionDelegate, WidgetMa
     }
 
     public void handlePermission(final String aUri, final PermissionWidget.PermissionType aType, final Callback aCallback) {
+        handlePermission(aUri, aType, aCallback, false);
+    }
+
+    /**
+     * @param aAutoRejectWhenUnknown when true and no stored site-exception exists,
+     *     silently reject instead of showing the prompt. Used to suppress noisy
+     *     permission requests (Web Notifications) from non-reputable origins —
+     *     a stored user exception still wins.
+     */
+    public void handlePermission(final String aUri, final PermissionWidget.PermissionType aType,
+                                 final Callback aCallback, final boolean aAutoRejectWhenUnknown) {
         if (mPermissionWidget == null) {
             mPermissionWidget = new PermissionWidget(mContext);
             mWidgetManager.addWidget(mPermissionWidget);
@@ -112,6 +123,12 @@ public class PermissionDelegate implements WSession.PermissionDelegate, WidgetMa
                     aCallback.reject();
                 return;
             }
+        }
+
+        if (aAutoRejectWhenUnknown) {
+            Log.d(LOGTAG, "Suppressing " + aType + " prompt from non-reputable origin: " + aUri);
+            aCallback.reject();
+            return;
         }
 
         mPermissionWidget.showWebsitePermissionsPrompt(aUri, aType, aCallback);
@@ -264,6 +281,12 @@ public class PermissionDelegate implements WSession.PermissionDelegate, WidgetMa
             return WResult.fromValue(ContentPermission.VALUE_DENY);
         }
 
+        // Suppress Web Notification prompts from non-reputable origins (third-party
+        // ad/comment widgets spam these). A stored user exception still wins, and
+        // famous companies / .gov origins still get to ask.
+        final boolean autoReject = (type == PermissionWidget.PermissionType.Notification)
+                && !com.thanford.glyphew.browser.PopupPolicy.isReputableOrigin(perm.uri);
+
         final WResult<Integer> result = WResult.create();
         handlePermission(perm.uri, type, new Callback() {
 
@@ -296,7 +319,7 @@ public class PermissionDelegate implements WSession.PermissionDelegate, WidgetMa
                 result.complete(ContentPermission.VALUE_DENY);
                 addPermissionExceptionIfNeeded(false);
             }
-        });
+        }, autoReject);
         return result;
     }
 

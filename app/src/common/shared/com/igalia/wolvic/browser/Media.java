@@ -20,6 +20,16 @@ public class Media implements WMediaSession.Delegate {
     private double mPlaybackRate = 1.0f;
     private double mDuration = -1.0f;
     private boolean mPlaying = false;
+    // Optimistic-toggle sync lock: the intended play/pause state (flipped on a
+    // trigger press) and whether we are still waiting for chromium to confirm it
+    // via onPlay/onPause. While pending, further presses are ignored so rapid
+    // presses during the 8K decode-resume lag can't desync the toggle.
+    private boolean mDesiredPlaying = false;
+    private boolean mTogglePending = false;
+    private long mTogglePendingSince = 0L;
+    // Safety net: if chromium never confirms (command dropped) within this window,
+    // release the lock so the trigger can never wedge.
+    private static final long TOGGLE_SYNC_TIMEOUT_MS = 3000L;
     private boolean mEnded = false;
     private double mVolume = 1.0f;
     private boolean mIsMuted = false;
@@ -27,6 +37,11 @@ public class Media implements WMediaSession.Delegate {
     private ResizeDelegate mResizeDelegate;
     private VideoAvailabilityListener mAvailabilityDelegate;
     private long mFeatures = 0;
+    // Spherical-video projection parsed from container metadata (st3d/sv3d), fed by the
+    // native mediaProjectionChanged signal. Defaults to flat/mono until the demuxer reports.
+    private int mProjectionType = com.igalia.wolvic.browser.api.SphericalVideoProjection.TYPE_RECTANGULAR;
+    private int mStereoMode = com.igalia.wolvic.browser.api.SphericalVideoProjection.STEREO_MONO;
+    private boolean mGlyphewMseReady = false;
 
     public Media() {
         mMediaListeners = new CopyOnWriteArrayList<>();
@@ -124,6 +139,37 @@ public class Media implements WMediaSession.Delegate {
         }
     }
 
+    /**
+     * Trigger-press entry point for VR video play/pause. Flips the intended
+     * state and issues the command immediately (optimistic), then locks out
+     * further presses until chromium confirms via {@link #onPlay}/{@link #onPause}.
+     *
+     * @param nowMs current time (ms); used for the sync-lock timeout
+     * @return true if the press was accepted (state toggled), false if ignored
+     *         because a previous toggle has not yet been confirmed
+     */
+    public boolean requestTogglePlayback(long nowMs) {
+        if (mTogglePending && (nowMs - mTogglePendingSince) < TOGGLE_SYNC_TIMEOUT_MS) {
+            return false;
+        }
+        // Derive direction from the confirmed actual state. The lock guarantees the
+        // previous toggle was confirmed (or timed out) before we get here, so mPlaying
+        // is fresh — and it also reflects any external play/pause in the meantime.
+        mDesiredPlaying = !mPlaying;
+        mTogglePending = true;
+        mTogglePendingSince = nowMs;
+        if (mDesiredPlaying) {
+            play();
+        } else {
+            pause();
+        }
+        return true;
+    }
+
+    public boolean hasPendingPlaybackToggle(long nowMs) {
+        return mTogglePending && (nowMs - mTogglePendingSince) < TOGGLE_SYNC_TIMEOUT_MS;
+    }
+
     public void setVolume(double aVolume) {
         // TODO: mMediaSession doesn't seem to have a way to set volume. Should we change system volume instead?
     }
@@ -145,6 +191,46 @@ public class Media implements WMediaSession.Delegate {
 
     public long getHeight() {
         return mElement != null ? mElement.height : 0;
+    }
+
+    /** Spherical projection (SphericalVideoProjection.TYPE_*) from container metadata. */
+    public int getProjectionType() {
+        return mProjectionType;
+    }
+
+    /** Stereo layout (SphericalVideoProjection.STEREO_*) from container metadata. */
+    public int getStereoMode() {
+        return mStereoMode;
+    }
+
+    public boolean consumeGlyphewMseReady() {
+        if (!mGlyphewMseReady) return false;
+        mGlyphewMseReady = false;
+        return true;
+    }
+
+    public void markGlyphewMseReady() {
+        mGlyphewMseReady = true;
+        final WMediaSession ms = mMediaSession;
+        if (ms != null) {
+            mMediaListeners.forEach(listener ->
+                    listener.onProjectionChanged(ms, mProjectionType, mStereoMode));
+        }
+    }
+
+    /** Set by the native mediaProjectionChanged signal when the demuxer parses st3d/sv3d. */
+    public void setProjection(int projectionType, int stereoMode) {
+        mProjectionType = projectionType;
+        mStereoMode = stereoMode;
+        // Notify listeners so the UI can auto-enter VR-video if this renderable
+        // projection arrives after the user already entered fullscreen (the metadata
+        // can lag playback by many seconds on YouTube). mMediaSession may be null
+        // very early; the listener path also re-reads on the fullscreen event.
+        final WMediaSession ms = mMediaSession;
+        if (ms != null) {
+            mMediaListeners.forEach(listener ->
+                    listener.onProjectionChanged(ms, projectionType, stereoMode));
+        }
     }
 
     public void skipAd() {
@@ -195,12 +281,18 @@ public class Media implements WMediaSession.Delegate {
     @Override
     public void onPlay(@NonNull WSession session, @NonNull WMediaSession mediaSession) {
         mPlaying = true;
+        if (mTogglePending && mDesiredPlaying) {
+            mTogglePending = false; // chromium confirmed the requested play state
+        }
         mMediaListeners.forEach(listener -> listener.onPlay(session, mediaSession));
     }
 
     @Override
     public void onPause(@NonNull WSession session, @NonNull WMediaSession mediaSession) {
         mPlaying = false;
+        if (mTogglePending && !mDesiredPlaying) {
+            mTogglePending = false; // chromium confirmed the requested pause state
+        }
         mMediaListeners.forEach(listener -> listener.onPause(session, mediaSession));
     }
 

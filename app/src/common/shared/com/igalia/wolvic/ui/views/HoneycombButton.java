@@ -93,6 +93,7 @@ public class HoneycombButton extends LinearLayout {
         if (mIcon != null) {
             mIcon.setImageDrawable(mButtonIcon);
             mIcon.setClickable(false);
+            mIcon.setColorFilter(new PorterDuffColorFilter(getResources().getColor(R.color.azure, aContext.getTheme()), PorterDuff.Mode.MULTIPLY));
         }
 
         mText = findViewById(R.id.settings_button_text);
@@ -102,12 +103,14 @@ public class HoneycombButton extends LinearLayout {
                 mText.getLayoutParams().width = (int) mButtonTextSize;
             }
             mText.setClickable(false);
+            mText.setTextColor(aContext.getColor(R.color.azure));
         }
 
         mSecondaryText = findViewById(R.id.settings_secondary_text);
         if (mSecondaryText != null) {
             mSecondaryText.setText(mSecondaryButtonText);
             mSecondaryText.setClickable(false);
+            mSecondaryText.setTextColor(aContext.getColor(R.color.azure));
         }
 
         mEventDelegate = new VectorClippedEventDelegate(R.drawable.settings_honeycomb_background, this);
@@ -135,10 +138,10 @@ public class HoneycombButton extends LinearLayout {
             case MotionEvent.ACTION_HOVER_EXIT:
                 if (mIcon != null && mText != null) {
                     if (mButtonIconHover) {
-                        mIcon.setColorFilter(new PorterDuffColorFilter(getResources().getColor(R.color.fog, getContext().getTheme()), PorterDuff.Mode.MULTIPLY));
+                        mIcon.setColorFilter(new PorterDuffColorFilter(getResources().getColor(R.color.azure, getContext().getTheme()), PorterDuff.Mode.MULTIPLY));
                     }
-                    mText.setTextColor(getContext().getColor(R.color.fog));
-                    mSecondaryText.setTextColor(getContext().getColor(R.color.fog));
+                    mText.setTextColor(getContext().getColor(R.color.azure));
+                    mSecondaryText.setTextColor(getContext().getColor(R.color.azure));
                 }
                 break;
         }
@@ -150,10 +153,10 @@ public class HoneycombButton extends LinearLayout {
             setHovered(false);
             if (mIcon != null && mText != null) {
                 if (mButtonIconHover) {
-                    mIcon.setColorFilter(new PorterDuffColorFilter(getResources().getColor(R.color.fog, getContext().getTheme()), PorterDuff.Mode.MULTIPLY));
+                    mIcon.setColorFilter(new PorterDuffColorFilter(getResources().getColor(R.color.azure, getContext().getTheme()), PorterDuff.Mode.MULTIPLY));
                 }
-                mText.setTextColor(getContext().getColor(R.color.fog));
-                mSecondaryText.setTextColor(getContext().getColor(R.color.fog));
+                mText.setTextColor(getContext().getColor(R.color.azure));
+                mSecondaryText.setTextColor(getContext().getColor(R.color.azure));
             }
             return false;
         }

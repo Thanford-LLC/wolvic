@@ -187,6 +187,8 @@ public:
 
   void SetTextureHandle(uint32_t aTextureHandle);
   void SetLoaded(bool aReady);
+  float GetSeasonalYaw() const;
+  void SetSeasonalYaw(float aYaw);
 protected:
   struct State;
   VRLayerCube(State& aState);

@@ -37,6 +37,9 @@ public:
     VIDEO_PROJECTION_180_STEREO_LEFT_RIGHT = 4,
     VIDEO_PROJECTION_180_STEREO_TOP_BOTTOM = 5,
     VIDEO_PROJECTION_3D_TOP_BOTTOM = 6,
+    // Milestone 2: equi-angular cubemap (EAC) and arbitrary mesh projection.
+    VIDEO_PROJECTION_CUBEMAP = 7,
+    VIDEO_PROJECTION_MESH = 8,
   };
   static VRVideoPtr Create(vrb::CreationContextPtr aContext,
                            const WidgetPtr& aWindow,
@@ -46,6 +49,10 @@ public:
   vrb::NodePtr GetRoot() const;
   void Exit();
   void SetReorientTransform(const vrb::Matrix& transform);
+  // Milestone 2b: per-frame EAC blit for VIDEO_PROJECTION_CUBEMAP with a native cube layer.
+  // No-op for all other projections. Call once per frame between StartFrame and EndFrame.
+  void DrawEACBlit();
+  void DrawFisheyeScreenSpace(const vrb::Camera& aCamera, device::Eye aEye);
 protected:
   struct State;
   VRVideo(State& aState, vrb::CreationContextPtr& aContext);

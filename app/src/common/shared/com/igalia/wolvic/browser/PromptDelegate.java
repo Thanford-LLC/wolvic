@@ -358,9 +358,13 @@ public class PromptDelegate implements
         } else {
             Session session = mAttachedWindow.getSession();
             if (session != null) {
-                final String uri = UrlUtils.getHost(session.getCurrentUri());
-                SitePermission site = mAllowedPopUpSites.stream().filter((item) -> UrlUtils.getHost(item.url).equals(uri)).findFirst().orElse(null);
-                if (site != null) {
+                // Same decision logic as the Chromium gate (Session.onNewWindowRequest):
+                // user exceptions + same registrable domain + .gov + reputable providers.
+                java.util.List<String> allowedUrls = mAllowedPopUpSites.stream()
+                        .map(item -> item.url).collect(java.util.stream.Collectors.toList());
+                boolean allowed = com.thanford.glyphew.browser.PopupPolicy.shouldAllowPopup(
+                        true, session.getCurrentUri(), popupPrompt.targetUri(), allowedUrls);
+                if (allowed) {
                     result.complete(popupPrompt.confirm(WAllowOrDeny.ALLOW));
                     session.setPopUpState(SessionState.POPUP_ALLOWED);
                 } else {

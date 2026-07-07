@@ -22,6 +22,7 @@
 #include "vrb/VertexArray.h"
 
 #include <array>
+#include <cmath>
 #include <list>
 #include <sys/stat.h>
 
@@ -174,17 +175,23 @@ struct Skybox::State {
     texture->Bind();
     layer->SetLoaded(true);
   }
+
+  float seasonalYaw = 0.f;
 };
 
 void
-Skybox::Load(const vrb::ModelLoaderAndroidPtr& aLoader, const std::string& aBasePath, const std::string& aExtension) {
-  if (m.basePath == aBasePath) {
+Skybox::Load(const vrb::ModelLoaderAndroidPtr& aLoader, const std::string& aBasePath, const std::string& aExtension, float aSeasonalYaw) {
+  bool pathChanged = m.basePath != aBasePath;
+  bool yawChanged  = m.seasonalYaw != aSeasonalYaw;
+  if (!pathChanged && !yawChanged) {
     return;
   }
   m.loader = aLoader;
   m.basePath = aBasePath;
   m.extension = aExtension;
+  m.seasonalYaw = aSeasonalYaw;
   if (m.layer) {
+    m.layer->SetSeasonalYaw(aSeasonalYaw);
     m.LoadLayer();
   } else {
     m.LoadGeometry();

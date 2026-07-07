@@ -191,6 +191,16 @@ public class RuntimeImpl implements WRuntime {
         CommandLine.init(new String[] {});
         if (BuildConfig.DEBUG)
             CommandLine.getInstance().appendSwitchWithValue("enable-logging", "stderr");
+        // Glyphew test harness (vrtest builds only — never the product APK): allow
+        // unmuted autoplay without a user gesture so automated VR-format tests can
+        // start playback over adb. Additionally gated on a shell-settable property
+        // (`adb shell setprop debug.glyphew.autoplay 1`, set/cleared by the harness;
+        // reboot resets it) — an always-on version of this switch broke the YouTube
+        // GwMsePlayer handshake (instant autoplay kept inj=0 -> white page).
+        if (BuildConfig.GW_TEST_HOOKS
+                && com.thanford.glyphew.test.VrTestHook.isAutoplayPropertySet()) {
+            CommandLine.getInstance().appendSwitchWithValue("autoplay-policy", "no-user-gesture-required");
+        }
         if (BuildConfig.FLAVOR_abi == "x64")
             CommandLine.getInstance().appendSwitchWithValue("disable-features", "Vulkan");
 

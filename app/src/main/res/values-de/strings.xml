@@ -2177,13 +2177,14 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="upload_button">Hochladen</string>
     <string name="keyboardview_keycode_shift">Umschalttaste</string>
     <string name="developer_options_clear_user_data_description">Alle Benutzerdaten</string>
-    <string name="privacy_dialog_message">Ihre Privatsphäre ist uns wichtig. Um den Browser nutzen zu können, akzeptieren Sie bitte unsere Nutzungsbedingungen und Datenschutzrichtlinien. Vielen Dank für die Nutzung von Wolvic!</string>
+    <!-- TODO: re-translate after Glyphew ToS finalized -->
+    <string name="privacy_dialog_message">Ihre Privatsphäre ist uns wichtig. Um den Browser nutzen zu können, akzeptieren Sie bitte unsere Nutzungsbedingungen und Datenschutzrichtlinien. Vielen Dank für die Nutzung von Glyphew!</string>
     <string name="rCN_first_launch_confirmation_disagree">Ablehnen und Beenden</string>
     <string name="keyboardview_keycode_alt">Alt</string>
     <string name="security_options_use_system_root_ca">Nutze vom System vertraute Root-Zertifikate</string>
     <string name="terms_service_title">Nutzungsbedingungen</string>
     <string name="web_apps_empty">Deine Web Apps Liste ist leer</string>
-    <string name="terms_service_subtitle_2">Wolvic web-basierte Informationsdienste</string>
+    <string name="terms_service_subtitle_2">Glyphew web-basierte Informationsdienste</string>
     <string name="deprecated_version_dialog_store_button">Installiere…</string>
     <string name="web_apps_dialog_install">Installieren</string>
     <string name="download_addon_install_cancel">Abbrechen</string>
@@ -2206,17 +2207,17 @@ the Select` button. When clicked it closes all the previously selected tabs -->
     <string name="voice_service_metkai">MeetKai</string>
     <string name="rCN_first_launch_confirmation_agree">Zustimmen und Fortfahren</string>
     <string name="keyboardview_keycode_delete">Entfernen</string>
-    <string name="privacy_dialog_disagree">Wolvic schließen</string>
+    <string name="privacy_dialog_disagree">Glyphew schließen</string>
     <string name="voice_service_huawei_asr">Huawei automatische Spracherkennung</string>
     <string name="clear_user_data_dialog_title">Lösche %1$s Nutzerdaten</string>
-    <string name="deprecated_version_dialog_body">Diese \"App Lab\" version von Wolvic wird bald entfernt.
+    <string name="deprecated_version_dialog_body">Diese \"App Lab\" version von Glyphew wird bald entfernt.
 \n
-\nBitte installieren Sie die neueste Version von Wolvic aus dem Meta Store.
+\nBitte installieren Sie die neueste Version von Glyphew aus dem Meta Store.
 \n
 \nWICHTIG: Lesezeichen und Tabs werden nur durch Sync übertragen.</string>
     <string name="web_apps_title">Web Apps</string>
     <string name="clear_user_data_dialog_text">%1$s wird zurückgesezt. Alle Daten, inklusive gespeicherter Anmeldungen, Historie und Lesezeichen, werden permantent gelöscht sein, sofern diese nicht synchronisiert sind. %1$s wird automatisch nach Abschluss des Zurücksetzens geschlossen. Möchten Sie fortfahren\?</string>
-    <string name="security_options_permission_fine_location_warning">Wolvic kann nur deinen ungefähren Standort ermitteln. Dies kann in den Systemeinstellungen geändert werden.</string>
+    <string name="security_options_permission_fine_location_warning">Glyphew kann nur deinen ungefähren Standort ermitteln. Dies kann in den Systemeinstellungen geändert werden.</string>
     <string name="privacy_policy_subtitle_3">Anwendbares Recht und Originalsprache</string>
     <string name="upload_list_empty">Keine Dateien zum Hochladen verfügbar</string>
     <string name="rCN_first_launch_disagree">Ablehnen</string>

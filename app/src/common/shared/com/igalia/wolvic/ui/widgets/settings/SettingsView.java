@@ -32,6 +32,7 @@ public abstract class SettingsView extends FrameLayout {
         FXA,
         ENVIRONMENT,
         CONTROLLER,
+        COMBOS,
         TRACKING_EXCEPTION,
         LOGINS_AND_PASSWORDS,
         SAVED_LOGINS,
@@ -39,7 +40,10 @@ public abstract class SettingsView extends FrameLayout {
         LOGIN_EDIT,
         SEARCH_ENGINE,
         TERMS_OF_SERVICE,
-        PRIVACY_POLICY
+        PRIVACY_POLICY,
+        THIRD_PARTY_CREDITS,
+        ABOUT,
+        OPEN_SOURCE_LICENSES
     }
 
     protected Delegate mDelegate;

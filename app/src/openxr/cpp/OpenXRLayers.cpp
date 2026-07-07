@@ -1,5 +1,6 @@
 #include "OpenXRLayers.h"
 #include "vrb/RenderContext.h"
+#include <cmath>
 
 namespace crow {
 
@@ -164,7 +165,9 @@ OpenXRLayerCube::Update(XrSpace aSpace, const XrPosef &aReorientPose, XrSwapchai
     xrLayers[i].eyeVisibility = GetEyeVisibility(i);
     xrLayers[i].swapchain = swapchain->SwapChain();
     xrLayers[i].imageArrayIndex = 0;
-    xrLayers[i].orientation = XrQuaternionf {0.0f, 0.0f, 0.0f, 1.0f};
+    const float yaw = layer->GetSeasonalYaw();
+    const float hy = yaw * 0.5f;
+    xrLayers[i].orientation = XrQuaternionf {0.0f, std::sin(hy), 0.0f, std::cos(hy)};
   }
 }
 

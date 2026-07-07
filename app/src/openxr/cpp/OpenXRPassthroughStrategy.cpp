@@ -29,7 +29,7 @@ OpenXRPassthroughStrategyFBExtension::initializePassthrough(XrSession session) {
 
     XrPassthroughCreateInfoFB passthroughCreateInfo = {
             .type = XR_TYPE_PASSTHROUGH_CREATE_INFO_FB,
-            .flags = XR_PASSTHROUGH_IS_RUNNING_AT_CREATION_BIT_FB,
+            .flags = 0,
     };
     CHECK_XRCMD(OpenXRExtensions::sXrCreatePassthroughFB(session, &passthroughCreateInfo, &passthroughHandle));
 }

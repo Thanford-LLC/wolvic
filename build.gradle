@@ -5,6 +5,8 @@ buildscript {
         classpath libs.agp
         classpath libs.kotlin.plugin
         classpath libs.huawei.agconnect.agcp
+        // Glyphew: dependency license manifest for store-compliance audits (WOLVIC-COMPLIANCE.md §8)
+        classpath 'com.github.jk1:gradle-license-report:2.9'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -12,6 +14,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
         maven { url 'https://developer.huawei.com/repo/' }
     }
 }

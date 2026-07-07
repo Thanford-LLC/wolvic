@@ -5,6 +5,7 @@
 #include "DeviceUtils.h"
 #include "SystemUtils.h"
 #include "DeviceDelegate.h"
+#include "VRBrowser.h"
 
 #define HAND_JOINT_FOR_AIM XR_HAND_JOINT_MIDDLE_PROXIMAL_EXT
 
@@ -36,9 +37,39 @@ OpenXRInputSource::OpenXRInputSource(XrInstance instance, XrSession session, Ope
     , mSystemProperties(properties)
     , mHandeness(handeness)
     , mIndex(index)
+    , mComboRecognizer(
+        // Combo complete → dispatch browser action.
+        [](const glyphew::ComboEvent& event) {
+            crow::VRBrowser::HandleComboEvent(event.path.data(), event.length);
+        },
+        // Node activated → update HUD with confirmed path.
+        [](const glyphew::ComboEvent& progress) {
+            crow::VRBrowser::HandleComboProgress(progress.path.data(), progress.length);
+        },
+        // Preview wedge → highlight current zone on HUD.
+        [](int previewNode) {
+            crow::VRBrowser::HandleComboPreview(previewNode);
+        }
+    )
 {
   elbow = ElbowModel::Create();
   mClickThreshold = kControllerClickThreshold;
+  // Phase 3b: continuous preview-progress signal feeds the HUD's stick-reactive
+  // fill animation. Registered via setter (not ctor) to keep the recognizer's
+  // original 3-argument constructor stable.
+  mComboRecognizer.SetPreviewProgressCallback([](int zoneId, float progress) {
+      crow::VRBrowser::HandleComboPreviewProgress(zoneId, progress);
+  });
+  // Phase 6: long-press thumbstick (grip-OFF, >= LONG_PRESS_MS) opens Combos
+  // Settings. Registered on BOTH hand recognizers per
+  // feedback_combos_hand_agnostic.md — users don't want to remember which
+  // hand is "the Settings hand" (overrides sealed-plan D-A20 "left-only").
+  // Double-fire from simultaneous ticks is deduped on the Java side by a
+  // short debounce window in VRBrowserActivity.openCombosSettings().
+  // The engine gates the accumulator to grip-OFF internally.
+  mComboRecognizer.SetLongPressCallback([]() {
+      crow::VRBrowser::HandleLongPressThumbstick();
+  });
 }
 
 OpenXRInputSource::~OpenXRInputSource()
@@ -154,6 +185,12 @@ XrResult OpenXRInputSource::Initialize()
                 VRB_LOG("OpenXR: using %s to compute hands aim", XR_EXT_HAND_INTERACTION_EXTENSION_NAME);
             } else if (OpenXRExtensions::IsExtensionSupported(XR_MSFT_HAND_INTERACTION_EXTENSION_NAME)) {
                 VRB_LOG("OpenXR: using %s to compute hands aim", XR_MSFT_HAND_INTERACTION_EXTENSION_NAME);
+            }
+            // ponytail: still create the FB aim manager so GetHandTrackingInfo populates
+            // XrHandTrackingAimStateFB — we need XR_HAND_TRACKING_AIM_SYSTEM_GESTURE_BIT_FB
+            // to suppress BUTTON_APP during the Quest Home Menu gesture (Meta Store review req).
+            if (mSupportsFBHandTrackingAim) {
+                mGestureManager = std::make_unique<OpenXRGestureManagerFBHandTrackingAim>();
             }
         }
     }
@@ -663,7 +700,8 @@ void OpenXRInputSource::EmulateControllerFromHand(device::RenderMode renderMode,
     bool systemGestureDetected = mGestureManager->systemGestureDetected(handJointForAim, head);
 
     // We should handle the gesture whenever the system does not handle it.
-    bool isHandActionEnabled = systemGestureDetected && (!systemTakesOverWhenHandsFacingHead || mHandeness == Left);
+    // VRC.Quest.Input.8: on Quest systemTakesOverWhenHandsFacingHead=true so suppress for ALL hands.
+    bool isHandActionEnabled = systemGestureDetected && !systemTakesOverWhenHandsFacingHead;
     delegate.SetAimEnabled(mIndex, hasAim && pointerMode == DeviceDelegate::PointerMode::TRACKED_POINTER);
     delegate.SetHandActionEnabled(mIndex, isHandActionEnabled);
     delegate.SetMode(mIndex, ControllerMode::Hand);
@@ -675,14 +713,19 @@ void OpenXRInputSource::EmulateControllerFromHand(device::RenderMode renderMode,
     double pinchFactor = 0.0f;
     mGestureManager->getTriggerPinchStatusAndFactor(mHandJoints, indexPinching, pinchFactor);
 
-    delegate.SetSelectFactor(mIndex, pinchFactor);
+    // ponytail: VRC.Quest.Input.8 — zero out select factor during system gesture
+    delegate.SetSelectFactor(mIndex, systemGestureDetected ? 0.0f : pinchFactor);
     bool triggerButtonPressed = indexPinching && !systemGestureDetected && hasAim;
     delegate.SetButtonState(mIndex, ControllerDelegate::BUTTON_TRIGGER,
                             device::kImmersiveButtonTrigger, triggerButtonPressed,
-                            pinchFactor > 0, pinchFactor);
+                            !systemGestureDetected && pinchFactor > 0,
+                            systemGestureDetected ? 0.0f : pinchFactor);
+    if (systemGestureDetected) {
+        delegate.SetButtonState(mIndex, ControllerDelegate::BUTTON_APP, -1, false, false, 0.0f);
+    }
     if (isHandActionEnabled) {
         delegate.SetButtonState(mIndex, ControllerDelegate::BUTTON_APP, -1, indexPinching, indexPinching, 1.0);
-    } else if (hasAim) {
+    } else if (hasAim && !systemGestureDetected) {
         if (renderMode == device::RenderMode::Immersive && indexPinching != selectActionStarted) {
             selectActionStarted = indexPinching;
             if (selectActionStarted) {
@@ -746,10 +789,15 @@ void OpenXRInputSource::EmulateControllerFromHand(device::RenderMode renderMode,
 
 void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpace, const vrb::Matrix &head, const vrb::Vector& offsets, device::RenderMode renderMode, DeviceDelegate::PointerMode pointerMode, bool usingEyeTracking, bool handTrackingEnabled, const vrb::Matrix& eyeTrackingTransform, ControllerDelegate& delegate)
 {
+    static int fdUpdateCount = 0;
+    if (fdUpdateCount++ % 500 == 0) {
+        VRB_LOG("Glyphew: Update() called #%d mapping=%p hand=%d handTrack=%d", fdUpdateCount, (void*)mActiveMapping, (int)mHandeness, (int)handTrackingEnabled);
+    }
     if (mActiveMapping &&
         ((mHandeness == OpenXRHandFlags::Left && !mActiveMapping->leftControllerModel) ||
          (mHandeness == OpenXRHandFlags::Right && !mActiveMapping->rightControllerModel))) {
       delegate.SetEnabled(mIndex, false);
+      VRB_LOG("Glyphew: Update early return - no controller model");
       return;
     }
 
@@ -787,6 +835,7 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     bool isControllerUnavailable = (aimLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) == 0;
     auto gotHandTrackingInfo = false;
     auto handFacesHead = false;
+    auto systemGestureActive = false;
 #if defined(PICOXR)
     // Pico does continuously track the controllers even when left alone. That's why we return
     // always true so that we always check hand tracking just in case (unless it's disabled).
@@ -811,6 +860,8 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
                 return;
             }
             handFacesHead = OpenXRGestureManager::handFacesHead(jointTransforms[HAND_JOINT_FOR_AIM], head);
+            if (mGestureManager)
+                systemGestureActive = mGestureManager->systemGestureDetected(jointTransforms[HAND_JOINT_FOR_AIM], head);
             delegate.SetHandJointLocations(mIndex, std::move(jointTransforms), std::move(jointRadii));
         } else if (isControllerUnavailable) {
             delegate.SetEnabled(mIndex, false);
@@ -834,7 +885,8 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
 
     // Don't enable aim for eye tracking as we don't want to paint the beam. Note that we'd still
     // have an aim, meaning that we can point, focus, click... UI elements.
-    delegate.SetAimEnabled(mIndex, hasAim && usingTrackedPointer);
+    // Glyphew: hide laser pointer when grip is held (combo mode active).
+    delegate.SetAimEnabled(mIndex, hasAim && usingTrackedPointer && !mGlyphewGripHeld);
 
     // Disable the controller if there is no aim unless:
     // a) we're using hand interaction profile and we have hand tracking info. In that case the user
@@ -857,9 +909,19 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     // Hand interaction profiles do not really require the hand joints data, but if we
     // set ControllerMode::Hand then Wolvic code assumes that it does.
     delegate.SetMode(mIndex, mUsingHandInteractionProfile && gotHandTrackingInfo ? ControllerMode::Hand : ControllerMode::Device);
-    delegate.SetEnabled(mIndex, true);
+    // Glyphew: while grip is held the controller is in combo mode —
+    // disable pointer targeting, trigger clicks, and hover on the page so
+    // the joystick drives the HUD instead. Axis/button processing below
+    // still runs so the combo recognizer keeps receiving thumbstick input.
+    delegate.SetEnabled(mIndex, !mGlyphewGripHeld);
 
+    // ponytail: VRC.Quest.Input.8 — on Quest the hand-facing-head pose is the system gesture;
+    // showing the hand-action button in that pose is a visible app reaction Meta testers flag.
+#if defined(OCULUSVR)
+    bool isHandActionEnabled = false;
+#else
     bool isHandActionEnabled = !hasAim && mUsingHandInteractionProfile && handFacesHead;
+#endif
     delegate.SetHandActionEnabled(mIndex, isHandActionEnabled);
 
     device::CapabilityFlags flags = device::Orientation;
@@ -937,12 +999,16 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
     int buttonCount { 0 };
     bool trackpadClicked { false };
     bool trackpadTouched { false };
+    bool squeezeClicked { false };
+    bool thumbstickBtnClicked { false };
+    bool faceABtnClicked { false };
 
     // https://www.w3.org/TR/webxr-gamepads-module-1/
     std::unordered_set<OpenXRButtonType> placeholders = {
         OpenXRButtonType::Squeeze, OpenXRButtonType::Trackpad, OpenXRButtonType::Thumbstick
     };
 
+    static int fdLogCounter = 0;
     for (auto& button: mActiveMapping->buttons) {
         if ((button.hand & mHandeness) == 0) {
             continue;
@@ -953,12 +1019,46 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
             continue;
         }
 
+        // Glyphew: log squeeze value every 100 frames for debugging
+        if (button.type == OpenXRButtonType::Squeeze && (fdLogCounter++ % 100 == 0)) {
+            VRB_LOG("Glyphew: Squeeze val=%.3f clicked=%d mGripHeld=%d hand=%d", state->value, (int)state->clicked, (int)mGlyphewGripHeld, mIndex);
+        }
+
         placeholders.erase(button.type);
         buttonCount++;
+
+        // Capture grip/thumbstick/face states for Glyphew combo recognizer.
+        if (button.type == OpenXRButtonType::Squeeze)    squeezeClicked      = state->clicked;
+        if (button.type == OpenXRButtonType::Thumbstick) thumbstickBtnClicked = state->clicked;
+        if (button.type == OpenXRButtonType::ButtonA || button.type == OpenXRButtonType::ButtonX)
+            faceABtnClicked = state->clicked;
+
         auto browserButton = GetBrowserButton(button);
         auto immersiveButton = GetImmersiveButton(button);
 
-        if (isHandActionEnabled && button.type == OpenXRButtonType::Trigger) {
+        // VRC.Quest.Input.8: suppress trigger while system gesture is active OR while the
+        // hand is in the system-gesture pose (palm toward head). On Quest the FB bit can lag
+        // one frame behind the geometric handFacesHead detection; guarding on either eliminates
+        // that race. handFacesHead is already unavailable as a valid aim (hasAim forced false),
+        // so suppressing trigger there costs nothing and kills the BUTTON_APP escape hatch too.
+#if defined(OCULUSVR)
+        const bool suppressTriggerForSystemGesture = button.type == OpenXRButtonType::Trigger &&
+                                                     (systemGestureActive || handFacesHead);
+#else
+        const bool suppressTriggerForSystemGesture = button.type == OpenXRButtonType::Trigger &&
+                                                     systemGestureActive;
+#endif
+        if (suppressTriggerForSystemGesture) {
+            delegate.SetButtonState(mIndex, browserButton, immersiveButton.has_value() ? immersiveButton.value() : -1,
+                                    false, false, 0.0f);
+            delegate.SetButtonState(mIndex, ControllerDelegate::BUTTON_APP, -1, false, false, 0.0f);
+            delegate.SetSelectFactor(mIndex, 0.0f);
+            if (renderMode == device::RenderMode::Immersive && selectActionStarted) {
+                selectActionStarted = false;
+                delegate.SetSelectActionStop(mIndex);
+            }
+            continue;
+        } else if (isHandActionEnabled && button.type == OpenXRButtonType::Trigger) {
             delegate.SetButtonState(mIndex, ControllerDelegate::BUTTON_APP, -1, state->value >= mClickThreshold,
                                     state->value > 0, 1.0);
         } else {
@@ -985,7 +1085,17 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
           }
         }
 
-        // Squeeze action
+        // Glyphew: grip shows/hides HUD and suppresses laser in ALL render modes, both hands.
+        if (button.type == OpenXRButtonType::Squeeze && state->clicked != mGlyphewGripHeld) {
+          mGlyphewGripHeld = state->clicked;
+          VRB_LOG("Glyphew: Grip %s (hand=%d)", mGlyphewGripHeld ? "PRESSED" : "RELEASED", mIndex);
+          // Hand ordinal matches com.igalia.wolvic.VRBrowserActivity.ComboHand:
+          // 0 = LEFT, 1 = RIGHT.
+          const int hand = (mHandeness == OpenXRHandFlags::Left) ? 0 : 1;
+          crow::VRBrowser::HandleGripStateChanged(mGlyphewGripHeld, hand);
+        }
+
+        // Squeeze action (WebXR immersive only)
         if (renderMode == device::RenderMode::Immersive && button.type == OpenXRButtonType::Squeeze && state->clicked != squeezeActionStarted) {
           squeezeActionStarted = state->clicked;
           if (squeezeActionStarted) {
@@ -1004,6 +1114,14 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
 
     buttonCount += placeholders.size();
     delegate.SetButtonCount(mIndex, buttonCount);
+
+    // Glyphew: A/X face-button just-pressed while grip held + path active → FROM_CAPTURE.
+    // Java dispatcher decides whether to open the bind flow (checks mCombosEnabled, etc.).
+    if (faceABtnClicked && !mPrevFaceABtnClicked && squeezeClicked && !mComboRecognizer.IsPathEmpty()) {
+        const int hand = (mHandeness == OpenXRHandFlags::Left) ? 0 : 1;
+        crow::VRBrowser::HandleComboAXPressed(hand);
+    }
+    mPrevFaceABtnClicked = faceABtnClicked;
 
     // Axes
     // https://www.w3.org/TR/webxr-gamepads-module-1/#xr-standard-gamepad-mapping
@@ -1032,7 +1150,44 @@ void OpenXRInputSource::Update(const XrFrameState& frameState, XrSpace localSpac
       } else if (axis.type == OpenXRAxisType::Thumbstick) {
         axesContainer[device::kImmersiveAxisThumbstickX] = state->x;
         axesContainer[device::kImmersiveAxisThumbstickY] = -state->y;
-        delegate.SetScrolledDelta(mIndex, -state->x, state->y);
+        // Glyphew: both hands are combo hands. Grip activates combo mode.
+        const int64_t timestampMs = static_cast<int64_t>(
+            frameState.predictedDisplayTime / 1'000'000LL);
+        // Capture "was the recognizer idle?" BEFORE Process runs. Process may
+        // cancel the path on thumbstick-just-pressed (CLAUDE.md §5.4:
+        // joystick click mid-path = silent cancel). The HUD-toggle JNI
+        // below should fire only for the idle case, so we snapshot the
+        // pre-Process path state.
+        const bool pathWasEmpty = mComboRecognizer.IsPathEmpty();
+        bool consumed = mComboRecognizer.Process(
+            state->x, -state->y, thumbstickBtnClicked, squeezeClicked, timestampMs);
+        // Glyphew: thumbstick click in idle (no ongoing combo) toggles HUD,
+        // regardless of grip state. Fire on RELEASE-edge with press-duration <
+        // LONG_PRESS_MS gate — the LONG_PRESS_MS gate prevents a Settings-open
+        // long-press from also firing a HUD toggle. pathWasEmpty gate prevents
+        // a mid-combo thumbstick click (silent-cancel case) from toggling HUD.
+        const bool heldNow  = thumbstickBtnClicked;
+        const bool wasHeld  = mPrevThumbstickForHUD;
+        if (heldNow && !wasHeld) {
+          mThumbstickPressStartMsForHUD = timestampMs;
+          mPathEmptyAtHUDPressStart = pathWasEmpty;
+        }
+        if (!heldNow && wasHeld && mPathEmptyAtHUDPressStart) {
+          const int64_t pressDurMs = timestampMs - mThumbstickPressStartMsForHUD;
+          if (pressDurMs < glyphew::LONG_PRESS_MS) {
+            crow::VRBrowser::HandleComboThumbstickPress();
+          }
+        }
+        mPrevThumbstickForHUD = heldNow;
+        static int fdAxisLog = 0;
+        if (squeezeClicked && (fdAxisLog++ % 50 == 0)) {
+            VRB_LOG("Glyphew: Axis x=%.3f y=%.3f grip=%d consumed=%d hand=%d", state->x, state->y, (int)squeezeClicked, (int)consumed, mIndex);
+        }
+        // Glyphew: suppress page scroll delta whenever grip is held —
+        // the joystick belongs to the combo recognizer, not the page.
+        if (!consumed && !squeezeClicked) {
+          delegate.SetScrolledDelta(mIndex, -state->x, state->y);
+        }
       } else {
         axesContainer.push_back(state->x);
         axesContainer.push_back(-state->y);

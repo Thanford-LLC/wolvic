@@ -21,7 +21,7 @@ class Skybox {
 public:
   static std::string ValidateCustomSkyboxAndFindFileExtension(const std::string& aBasePath);
   static SkyboxPtr Create(vrb::CreationContextPtr aContext, const VRLayerCubePtr& aLayer = nullptr);
-  void Load(const vrb::ModelLoaderAndroidPtr& aLoader, const std::string& aBasePath, const std::string& aExtension);
+  void Load(const vrb::ModelLoaderAndroidPtr& aLoader, const std::string& aBasePath, const std::string& aExtension, float aSeasonalYaw = 0.f);
   VRLayerCubePtr GetLayer() const;
   void SetLayer(const VRLayerCubePtr& aLayer);
   void SetVisible(bool aVisible);

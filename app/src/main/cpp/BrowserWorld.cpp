@@ -4,6 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BrowserWorld.h"
+#include "ComboWindowEngine.h"
+#include "EyeBufferDump.h"
 #include "Controller.h"
 #include "ControllerContainer.h"
 #include "FadeAnimation.h"
@@ -79,6 +81,16 @@
 using namespace vrb;
 
 namespace {
+
+// Android color ints are ARGB (0xAARRGGBB). vrb::Color(int32_t) reads them as
+// RGBA, misplacing alpha→red. Use this helper at every JNI → vrb::Color site.
+static vrb::Color ArgbToVrbColor(int32_t argb) {
+  return vrb::Color(
+      ((argb >> 16) & 0xFF) / 255.0f,
+      ((argb >> 8)  & 0xFF) / 255.0f,
+      ( argb        & 0xFF) / 255.0f,
+      ((argb >> 24) & 0xFF) / 255.0f);
+}
 
 const int GestureSwipeLeft = 0;
 const int GestureSwipeRight = 1;
@@ -199,6 +211,10 @@ struct BrowserWorld::State {
   WidgetPtr resizingWidget;
   SplashAnimationPtr splashAnimation;
   VRVideoPtr vrVideo;
+  // Glyphew: window compositor layer detached during fisheye VR180 (so the video becomes a
+  // sampleable GL texture). Held here to re-attach on HideVRVideo. Null when not detached.
+  VRLayerQuadPtr vrVideoDetachedLayer;
+  int32_t vrVideoDetachedWindowHandle = -1;
   PerformanceMonitorPtr monitor;
   WidgetMoverPtr movingWidget;
   WidgetResizerPtr widgetResizer;
@@ -544,7 +560,7 @@ BrowserWorld::State::UpdateControllers(bool& aRelayoutWidgets) {
         if (controller.selectFactor >= device->GetSelectThreshold(controller.index))
           controller.pointer->SetPointerColor(kPointerColorSelected);
         else
-          controller.pointer->SetPointerColor(VRBrowser::GetPointerColor());
+          controller.pointer->SetPointerColor(ArgbToVrbColor(VRBrowser::GetPointerColor()));
       }
     }
 
@@ -1010,7 +1026,7 @@ BrowserWorld::InitializeJava(JNIEnv* aEnv, jobject& aActivity, jobject& aAssetMa
 
   m.device->OnControllersCreated([this](){
     m.controllers->InitializeBeam();
-    m.controllers->SetPointerColor(vrb::Color(VRBrowser::GetPointerColor()));
+    m.controllers->SetPointerColor(ArgbToVrbColor(VRBrowser::GetPointerColor()));
     m.rootController->AddNode(m.controllers->GetRoot());
   });
 
@@ -1240,12 +1256,12 @@ BrowserWorld::StartFrame() {
           return;
       m.device->CreateLayerPassthrough();
   };
+  createPassthroughLayerIfNeeded();
 
   if (m.splashAnimation) {
     TickSplashAnimation();
   } else if (m.externalVR->IsPresenting()) {
     m.CheckBackButton();
-    createPassthroughLayerIfNeeded();
     TickImmersive();
   } else {
     bool relayoutWidgets = false;
@@ -1388,7 +1404,7 @@ BrowserWorld::UpdatePointerColor() {
   VRB_LOG("Setting pointer color to: %d:", color);
 
   if (m.controllers) {
-    m.controllers->SetPointerColor(vrb::Color(color));
+    m.controllers->SetPointerColor(ArgbToVrbColor(color));
   }
 }
 
@@ -1473,7 +1489,16 @@ BrowserWorld::UpdateWidget(int32_t aHandle, const WidgetPlacementPtr& aPlacement
 
   widget->SetPlacement(aPlacement);
   m.UpdateWidgetCylinder(widget, m.cylinderDensity);
+  if (aHandle == 5) {
+    VRB_LOG("Glyphew: UpdateWidget handle=5 visible=%d composited=%d clearAlpha=%.2f toggleState=%d hasLayer=%d hasSurface=%d",
+            (int)aPlacement->visible, (int)aPlacement->composited,
+            aPlacement->GetClearColor().Alpha(), (int)widget->IsVisible(),
+            (int)(widget->GetLayer() != nullptr), (int)(widget->GetSurfaceTexture() != nullptr));
+  }
   widget->ToggleWidget(aPlacement->visible);
+  if (aHandle == 5) {
+    VRB_LOG("Glyphew: After toggle handle=5 toggleState=%d", (int)widget->IsVisible());
+  }
   widget->SetSurfaceTextureSize(aPlacement->GetTextureWidth(), aPlacement->GetTextureHeight());
 
   float worldWidth = 0.0f, worldHeight = 0.0f;
@@ -1694,6 +1719,11 @@ BrowserWorld::LayoutWidget(int32_t aHandle) {
     translation = transform.GetTranslation();
   }
   widget->SetTransform(parent ? parent->GetTransform().PostMultiply(transform) : transform);
+  if (aHandle == 5) {
+    auto t = transform.GetTranslation();
+    VRB_LOG("Glyphew: LayoutWidget handle=5 tx=%.3f ty=%.3f tz=%.3f worldW=%.3f worldH=%.3f parent=%d",
+            t.x(), t.y(), t.z(), worldWidth, worldHeight, parent ? 1 : 0);
+  }
 
   if (!widget->GetCylinder()) {
     widget->LayoutQuadWithCylinderParent(parent);
@@ -1737,6 +1767,26 @@ BrowserWorld::ShowVRVideo(const int aWindowHandle, const int aVideoProjection) {
     m.vrVideo->Exit();
   }
   auto projection = static_cast<VRVideo::VRVideoProjection>(aVideoProjection);
+  VRB_DEBUG("GW_VR ShowVRVideo windowHandle=%d projection=%d", aWindowHandle, aVideoProjection);
+
+  // Glyphew: fisheye VR180 must sample the video as a GL texture, which only exists in the
+  // no-layer (TextureSurface) path. Detach the window's compositor layer first; VRVideo then
+  // sees no window layer and uses the mesh projection. Restored in HideVRVideo.
+  bool detachForMeshPath =
+      projection == VRVideo::VRVideoProjection::VIDEO_PROJECTION_180_STEREO_LEFT_RIGHT;
+#if !defined(NDEBUG)
+  // Glyphew test hook: compositor layers bypass the eye buffer, so the
+  // eye-dump harness forces the mesh path for every projection.
+  detachForMeshPath = detachForMeshPath || glyphew::EyeBufferDump::ForceNoLayer();
+#endif
+  if (detachForMeshPath) {
+    if (VRLayerQuadPtr detached = widget->DetachLayer()) {
+      m.vrVideoDetachedLayer = detached;
+      m.vrVideoDetachedWindowHandle = aWindowHandle;
+      VRB_DEBUG("GW_VR ShowVRVideo: detached window layer for fisheye VR180 (handle=%d)", aWindowHandle);
+    }
+  }
+
   m.vrVideo = VRVideo::Create(m.create, widget, projection, m.device);
   if (m.skybox && !isFrontFacingVRProjection(projection)) {
     m.skybox->SetVisible(false);
@@ -1752,6 +1802,16 @@ BrowserWorld::HideVRVideo() {
     m.vrVideo->Exit();
   }
   m.vrVideo = nullptr;
+  // Glyphew: restore the window's compositor layer detached for fisheye VR180.
+  if (m.vrVideoDetachedLayer) {
+    WidgetPtr widget = m.GetWidget(m.vrVideoDetachedWindowHandle);
+    if (widget) {
+      widget->AttachLayer(m.vrVideoDetachedLayer);
+      VRB_DEBUG("GW_VR HideVRVideo: re-attached window layer (handle=%d)", m.vrVideoDetachedWindowHandle);
+    }
+    m.vrVideoDetachedLayer = nullptr;
+    m.vrVideoDetachedWindowHandle = -1;
+  }
   if (m.skybox) {
     m.skybox->SetVisible(true);
   }
@@ -1857,7 +1917,15 @@ BrowserWorld::TickWorld() {
     m.rootEnvironment->SetTransform(m.device->GetReorientTransform());
   }
   if (m.vrVideo) {
-    m.vrVideo->SetReorientTransform(m.device->GetReorientTransform());
+    vrb::Matrix vrVideoTransform = m.device->GetReorientTransform();
+    // Fisheye VR180 is a world-space mesh (not a head-relative compositor layer), so it must
+    // be centred on the head — otherwise the viewer sits off the dome centre and the scene
+    // looks off-axis and magnified. The detached-layer handle marks the mesh fisheye path.
+    if (m.vrVideoDetachedLayer) {
+      vrVideoTransform = vrb::Matrix::Translation(headPosition).PostMultiply(vrVideoTransform);
+    }
+    m.vrVideo->SetReorientTransform(vrVideoTransform);
+    m.vrVideo->DrawEACBlit();
   }
 
   m.drawHandler = [=](device::Eye aEye) {
@@ -1899,9 +1967,13 @@ BrowserWorld::DrawWorld(device::Eye aEye) {
   // Draw equirect video
   if (m.vrVideo) {
     m.vrVideo->SelectEye(aEye);
-    m.drawList->Reset();
-    m.vrVideo->GetRoot()->Cull(*m.cullVisitor, *m.drawList);
-    m.drawList->Draw(*camera);
+    if (m.vrVideoDetachedLayer) {
+      m.vrVideo->DrawFisheyeScreenSpace(*camera, aEye);
+    } else {
+      m.drawList->Reset();
+      m.vrVideo->GetRoot()->Cull(*m.cullVisitor, *m.drawList);
+      m.drawList->Draw(*camera);
+    }
   }
 
   // Draw hand mesh if active
@@ -1923,6 +1995,12 @@ BrowserWorld::DrawWorld(device::Eye aEye) {
   m.rootTransparent->Cull(*m.cullVisitor, *m.drawList);
   m.drawList->Draw(*camera);
   VRB_GL_CHECK(glDepthMask(GL_TRUE));
+
+#if !defined(NDEBUG)
+  // Glyphew test hook: one-shot left-eye readback for automated render tests.
+  glyphew::EyeBufferDump::MaybeDumpBoundEye(aEye == device::Eye::Left,
+      camera->GetView().Data(), camera->GetPerspective().Data());
+#endif
 }
 
 void
@@ -2100,20 +2178,23 @@ BrowserWorld::CreateSkyBox(const std::string& aBasePath, const std::string& aExt
     glFormat = extension == ".ktx" ? GL_COMPRESSED_RGB8_ETC2 : GL_RGBA8;
 
   const int32_t size = 1024;
+  // Glyphew: seasonal yaw — UV rotation baked into geometry at load time for smooth daily rotation.
+  const float seasonYaw = VRBrowser::GetSkyboxSeasonalYaw();
+
   if (m.skybox) {
-    m.skybox->SetVisible(true);
     if (m.skybox->GetLayer() && (m.skybox->GetLayer()->GetWidth() != size || m.skybox->GetLayer()->GetFormat() != glFormat)) {
       VRLayerCubePtr oldLayer = m.skybox->GetLayer();
       VRLayerCubePtr newLayer = m.device->CreateLayerCube(size, size, glFormat);
       m.skybox->SetLayer(newLayer);
       m.device->DeleteLayer(oldLayer);
     }
-    m.skybox->Load(m.loader, aBasePath, extension);
+    m.skybox->SetVisible(true);
+    m.skybox->Load(m.loader, aBasePath, extension, seasonYaw);
   } else {
     VRLayerCubePtr layer = m.device->CreateLayerCube(size, size, glFormat);
     m.skybox = Skybox::Create(m.create, layer);
     m.rootOpaqueParent->AddNode(m.skybox->GetRoot());
-    m.skybox->Load(m.loader, aBasePath, extension);
+    m.skybox->Load(m.loader, aBasePath, extension, seasonYaw);
   }
 }
 
@@ -2208,6 +2289,11 @@ JNI_METHOD(void, togglePassthroughNative)
   crow::BrowserWorld::Instance().TogglePassthrough();
 }
 
+JNI_METHOD(void, setComboFourDirModeNative)
+(JNIEnv*, jobject, jboolean enabled) {
+  glyphew::ComboWindowEngine::SetFourDirMode(enabled);
+}
+
 JNI_METHOD(void, setLockEnabledNative)
 (JNIEnv*, jobject, jint lockMode) {
     crow::BrowserWorld::Instance().SetLockMode(static_cast<crow::BrowserWorld::LockMode>(lockMode));
@@ -2250,6 +2336,19 @@ JNI_METHOD(void, showVRVideoNative)
 JNI_METHOD(void, hideVRVideoNative)
 (JNIEnv*, jobject) {
   crow::BrowserWorld::Instance().HideVRVideo();
+}
+
+JNI_METHOD(void, requestEyeDumpNative)
+(JNIEnv* aEnv, jobject, jstring aPath) {
+  const char* nativeString = aEnv->GetStringUTFChars(aPath, nullptr);
+  std::string path = nativeString;
+  aEnv->ReleaseStringUTFChars(aPath, nativeString);
+  glyphew::EyeBufferDump::Request(path);
+}
+
+JNI_METHOD(void, setForceNoLayerVRVideoNative)
+(JNIEnv*, jobject, jboolean aForce) {
+  glyphew::EyeBufferDump::SetForceNoLayer(aForce);
 }
 
 JNI_METHOD(void, setControllersVisibleNative)

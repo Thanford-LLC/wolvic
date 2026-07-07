@@ -104,6 +104,13 @@ public interface WidgetManagerDelegate {
     void setWorldBrightness(Object aKey, float aBrightness);
     void popWorldBrightness(Object aKey);
     void triggerHapticFeedback(int deviceID);
+    /** Fire haptics bypassing the global haptics-enabled gate. Used for combo feedback
+     *  which has its own per-feature toggle (PREF_COMBO_HAPTICS).
+     *  @param durationMs pulse duration in milliseconds
+     *  @param intensity  amplitude in [0,1] */
+    default void triggerHapticFeedbackUnconditional(int deviceID, float durationMs, float intensity) {
+        triggerHapticFeedback(deviceID); // fallback for non-VRBrowserActivity impls
+    }
     void setControllersVisible(boolean visible);
     void keyboardDismissed();
     void updateEnvironment();

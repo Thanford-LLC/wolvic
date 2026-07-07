@@ -463,12 +463,14 @@ struct VRLayerCube::State: public VRLayer::State {
   bool loaded;
   uint32_t textureHandle;
   GLuint  glFormat;
+  float seasonalYaw;
   State():
       width(0),
       height(0),
       loaded(false),
       textureHandle(0),
-      glFormat(GL_RGBA8)
+      glFormat(GL_RGBA8),
+      seasonalYaw(0.f)
   {}
 };
 
@@ -514,6 +516,16 @@ VRLayerCube::GetFormat() const {
 void
 VRLayerCube::SetLoaded(bool aLoaded) {
   m.loaded = aLoaded;
+}
+
+float
+VRLayerCube::GetSeasonalYaw() const {
+  return m.seasonalYaw;
+}
+
+void
+VRLayerCube::SetSeasonalYaw(float aYaw) {
+  m.seasonalYaw = aYaw;
 }
 
 VRLayerCube::VRLayerCube(State& aState): VRLayer(aState, LayerType::CUBEMAP), m(aState) {

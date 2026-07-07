@@ -17,7 +17,7 @@ virtual void initializePassthrough(XrSession) {}
 virtual bool usesCompositorLayer() const { return false; }
 virtual HandleEventResult handleEvent(const XrEventDataBaseHeader&) { return HandleEventResult::NoError; };
 virtual ~OpenXRPassthroughStrategy() = default;
-virtual bool isReady() const { return mIsInErrorState; };
+virtual bool isReady() const { return !mIsInErrorState; };
 virtual OpenXRLayerPassthroughPtr createLayerIfSupported() const;
 protected:
 bool mIsInErrorState { false };

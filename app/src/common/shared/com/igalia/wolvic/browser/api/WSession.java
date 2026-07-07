@@ -492,6 +492,23 @@ public interface WSession {
         public interface OnNewSessionCallback {
             void onNewSession(WSession session);
         }
+
+        /**
+         * A web page requested a new window (window.open / target=_blank). Called
+         * BEFORE {@link #onNewSession} so implementations can veto the popup outright.
+         * Backends must not call {@link #onNewSession} when this returns false, and
+         * must release any already-created native resources for the rejected window.
+         *
+         * @param session The WSession that initiated the request.
+         * @param uri The target URI of the popup; may be null/empty (about:blank popups).
+         * @return true to allow the new window, false to block it.
+         */
+        @UiThread
+        default boolean onNewWindowRequest(@NonNull final WSession session,
+                                           @Nullable final String uri) {
+            return true;
+        }
+
         /**
          * A request has been made to open a new session. The URI is provided only for informational
          * purposes. Do not call ISession.load here. Additionally, the returned ISession must be
@@ -2989,4 +3006,29 @@ public interface WSession {
     @AnyThread
     @Nullable
     WSession.SelectionActionDelegate getSelectionActionDelegate();
+
+    // ── Glyphew JS bridge (MPL diff) ──────────────────────────────────
+
+    /**
+     * Expose a Java object to JavaScript via the named global property.
+     * Methods annotated with {@code @JavascriptInterface} are callable from JS.
+     * Must be called before the page's scripts execute (before loadUri).
+     */
+    @UiThread
+    void addJavascriptInterface(@NonNull Object obj, @NonNull String name);
+
+    /**
+     * Remove a previously-added JavaScript interface binding.
+     * Safe to call even if the name was never registered.
+     */
+    @UiThread
+    void removeJavascriptInterface(@NonNull String name);
+
+    /**
+     * Evaluate a JavaScript snippet in the current page context.
+     * The callback (if non-null) is delivered on the UI thread with the string
+     * result of the last expression, or {@code null} on error.
+     */
+    @UiThread
+    void evaluateJavaScript(@NonNull String script, @Nullable android.webkit.ValueCallback<String> callback);
 }

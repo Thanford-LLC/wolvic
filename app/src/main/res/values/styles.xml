@@ -77,6 +77,7 @@
 
     <style name="accentedNavigationBarButtonTheme" parent="navigationBarButtonTheme">
         <item name="android:background">@drawable/main_button_accented</item>
+        <item name="tintColorList">@drawable/main_button_icon_color_on_accent</item>
     </style>
 
     <style name="fullScreenButtonTheme" parent="uiButtonTheme">
@@ -386,7 +387,7 @@
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">center</item>
-        <item name="android:textColor">@color/fog</item>
+        <item name="android:textColor">@color/gw_accent</item>
         <item name="android:textSize">@dimen/settings_header_text_size</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>
@@ -478,7 +479,7 @@
         <item name="android:breakStrategy">high_quality</item>
     </style>
 
-    <style name="FxR.Dark" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Glyphew.Dark" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>

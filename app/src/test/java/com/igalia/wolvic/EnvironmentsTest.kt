@@ -62,7 +62,7 @@ class EnvironmentsTest {
         val env = EnvironmentUtils.getExternalEnvironmentById(context, "wolvic", "1")
         assertNotNull(env)
         assertEquals(env?.value, "wolvic")
-        assertEquals(env?.title, "Wolvic")
+        assertEquals(env?.title, "Wolvic (CC0)")
         assertEquals(env?.thumbnail, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/thumbnail.jpg")
         assertEquals(env?.payload, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/space.zip")
     }
@@ -73,7 +73,7 @@ class EnvironmentsTest {
         val env = EnvironmentUtils.getExternalEnvironmentById(context, "wolvic", "2")
         assertNotNull(env)
         assertEquals(env?.value, "wolvic")
-        assertEquals(env?.title, "Wolvic")
+        assertEquals(env?.title, "Wolvic (CC0)")
         assertEquals(env?.thumbnail, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/thumbnail.jpg")
         assertEquals(env?.payload, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/space.zip")
     }
@@ -88,10 +88,13 @@ class EnvironmentsTest {
     @Test
     fun `Environment by payload url`() {
         settingStore.setRemoteProperties(TestFileUtils.readTextFile(javaClass.classLoader!!,"environments/targetVersionEnvs.json"))
-        val env = EnvironmentUtils.getExternalEnvironmentByPayload(context, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/space.zip", "11")
+        // Lookup uses the device-transformed payload URL: on oculusvr builds
+        // getEnvironmentPayload() rewrites "space.zip" -> "space_misc_srgb.zip"
+        // (uncompressed cubemap textures for Quest v69+).
+        val env = EnvironmentUtils.getExternalEnvironmentByPayload(context, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/space_misc_srgb.zip", "11")
         assertNotNull(env)
         assertEquals(env?.value, "wolvic")
-        assertEquals(env?.title, "Wolvic")
+        assertEquals(env?.title, "Wolvic (CC0)")
         assertEquals(env?.thumbnail, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/thumbnail.jpg")
         assertEquals(env?.payload, "https://mixedreality.mozilla.org/FirefoxReality/envs/wolvic/space.zip")
     }
@@ -99,8 +102,7 @@ class EnvironmentsTest {
     @Test
     fun `Environment is builtin`() {
         assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "void"))
-        assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "wolvic"))
-        assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "cyberpunk"))
+        assertTrue(EnvironmentUtils.isBuiltinEnvironment(context, "glyphew"))
     }
 
     @Test

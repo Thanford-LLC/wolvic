@@ -53,11 +53,15 @@ import com.igalia.wolvic.telemetry.TelemetryService;
 import com.igalia.wolvic.ui.adapters.WebApp;
 import com.igalia.wolvic.utils.BitmapCache;
 import com.igalia.wolvic.utils.InternalPages;
+import com.thanford.glyphew.home.HomePrefs;
 import com.igalia.wolvic.utils.SystemUtils;
 import com.igalia.wolvic.utils.UrlUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -98,6 +102,9 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     private transient SharedPreferences mPrefs;
     private transient WRuntime mRuntime;
     private transient byte[] mPrivatePage;
+    private transient boolean mOnHomePage;
+    private transient String mHomePageDataUri;
+    private transient com.thanford.glyphew.home.HomeBridge mHomeBridge;
     private transient boolean mFirstContentfulPaint;
     private transient long mKeepAlive;
     private transient Media mMedia;
@@ -499,6 +506,11 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         if (mState.mSessionState != null && ((mState.mUri == null) || mState.mUri.startsWith("data:text"))) {
             return true;
         }
+        // about://home is a symbolic sentinel handled by loadHomePage(); passing it to the
+        // engine would let Chromium canonicalize it to chrome://home/ and error.
+        if (UrlUtils.isHomeUrl(aState.mUri)) {
+            return true;
+        }
 
         if (aState.mUri != null && aState.mUri.length() != 0 && !aState.mUri.equals(mContext.getString(R.string.about_blank))) {
             return false;
@@ -738,6 +750,10 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
 
     public String getHomeUri() {
         String homepage = SettingsStore.getInstance(mContext).getHomepage();
+        // Symbolic about://home is handled internally by loadHomePage(), not by the engine.
+        if (UrlUtils.isHomeUrl(homepage)) {
+            return homepage;
+        }
         WSession wSession = getWSession();
         if (wSession != null) {
             homepage = UrlUtils.urlForText(mContext, homepage, wSession.getUrlUtilsVisitor());
@@ -883,6 +899,11 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         if (aUri == null) {
             aUri = getHomeUri();
         }
+        if (UrlUtils.isHomeUrl(aUri)) {
+            loadHomePage();
+            return;
+        }
+        mOnHomePage = false;
         if (mState.mSession != null) {
             Log.d(LOGTAG, "Loading URI: " + aUri);
             if (mExternalRequestDelegate == null || !mExternalRequestDelegate.onHandleExternalRequest(aUri)) {
@@ -892,7 +913,134 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
     }
 
     public void loadHomePage() {
-        loadUri(getHomeUri());
+        mOnHomePage = true;
+        // Both Chromium and Gecko load the homepage as a data: URI with all assets inlined.
+        // This is the only reliable way to inject the combo mode variable, since:
+        //   - Chromium: resource:// relative paths don't resolve from data: URI
+        //   - Gecko: evaluateJavaScript and addJavascriptInterface are unsupported;
+        //            resource:// query strings are not reliably reflected in location.search
+        try {
+            String html = readAssetAsString("glyphew/homepage.html");
+            final String vars = readAssetAsString("glyphew/_design-vars.css");
+            final String css  = readAssetAsString("glyphew/homepage.css");
+            final String js   = readAssetAsString("glyphew/homepage.js");
+            html = html.replace(
+                "<link rel=\"stylesheet\" href=\"_design-vars.css\">",
+                "<style>\n" + vars + "\n</style>");
+            html = html.replace(
+                "<link rel=\"stylesheet\" href=\"homepage.css\">",
+                "<style>\n" + css + "\n</style>");
+            // Inject favicon as a base64 data-URL so it resolves from a data: URI page.
+            // Relative hrefs have no base URL in data: context and silently fail (no icon on bookmark).
+            try {
+                byte[] faviconBytes = readAssetAsBytes("glyphew/favicon.svg");
+                String faviconB64 = android.util.Base64.encodeToString(faviconBytes, android.util.Base64.NO_WRAP);
+                html = html.replace(
+                    "<!-- __GW_FAVICON__ -->",
+                    "<link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml;base64," + faviconB64 + "\"/>");
+            } catch (java.io.IOException e) {
+                // favicon.svg missing — bookmark will show generic globe; not fatal
+                html = html.replace("<!-- __GW_FAVICON__ -->", "");
+                Log.w(LOGTAG, "loadHomePage: favicon.svg not found, bookmark icon will be generic");
+            }
+            // Inline all bundled icons as base64 data-URLs so they resolve from a data: URI page.
+            // Relative paths (icons/youtube.png) have no base URL in data: context and always fail.
+            // ~100 KB total across 64 PNGs → ~136 KB base64 — negligible page-size cost.
+            String iconScript = buildIconMapScript();
+            html = html.replace("<!-- __GW_ICONS__ -->", iconScript);
+            // Inject combo mode and last position before the main script so init() reads them
+            // immediately. Position is read from SharedPreferences in Java to avoid the async-IPC
+            // race where setLastPosition() may not have committed before loadHomePage() runs.
+            com.thanford.glyphew.home.HomePrefs gp =
+                new com.thanford.glyphew.home.HomePrefs(mContext);
+            boolean is8Dir = !gp.is4DirMode();
+            int lastRow = gp.getLastRowIndex();
+            int lastCol = gp.getLastColIndex();
+            Log.i(LOGTAG, "loadHomePage: injecting lastRow=" + lastRow + " lastCol=" + lastCol + " is8Dir=" + is8Dir);
+            html = html.replace(
+                "<!-- __GW_MODE__ -->",
+                "<script>window.__gwIs8Dir=" + is8Dir +
+                ";window.__gwLastRow=" + lastRow +
+                ";window.__gwLastCol=" + lastCol + ";</script>");
+            html = html.replace(
+                "<script src=\"homepage.js\"></script>",
+                "<script>\n" + js + "\n</script>");
+            final byte[] data = html.getBytes(StandardCharsets.UTF_8);
+            final String encoded = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+            mHomePageDataUri = "data:text/html;base64," + encoded;
+            if (mState.mSession != null) {
+                // Register the HomeBridge only on Chromium — Gecko throws on addJavascriptInterface.
+                if (BuildConfig.FLAVOR_backend.equalsIgnoreCase("chromium")) {
+                    if (mHomeBridge == null) {
+                        mHomeBridge = new com.thanford.glyphew.home.HomeBridge(
+                            mContext, this,
+                            new com.thanford.glyphew.home.HomePrefs(mContext),
+                            SessionStore.get().getBrowserIcons());
+                    }
+                    mState.mSession.addJavascriptInterface(mHomeBridge, "gwHome");
+                }
+                mState.mSession.loadUri(mHomePageDataUri, WSession.LOAD_FLAGS_NONE);
+            }
+        } catch (java.io.IOException e) {
+            Log.e(LOGTAG, "loadHomePage: asset read failed", e);
+        }
+    }
+
+    /** Read an Android asset as a UTF-8 string using a proper read loop (fixes is.available() bug). */
+    private String readAssetAsString(String assetPath) throws java.io.IOException {
+        return new String(readAssetAsBytes(assetPath), StandardCharsets.UTF_8);
+    }
+
+    private byte[] readAssetAsBytes(String assetPath) throws java.io.IOException {
+        InputStream is = mContext.getAssets().open(assetPath);
+        try {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            byte[] chunk = new byte[4096];
+            int n;
+            while ((n = is.read(chunk)) != -1) buf.write(chunk, 0, n);
+            return buf.toByteArray();
+        } finally {
+            is.close();
+        }
+    }
+
+    /**
+     * Reads every PNG in glyphew/icons/ and returns a {@code <script>} block that sets
+     * {@code window.__gwIcons} to a filename→data-URL map. Used by loadHomePage() so the
+     * homepage can display icons without relative-URL resolution (which fails on data: URIs).
+     * Returns an empty string on any failure so the page still loads without icons.
+     */
+    private String buildIconMapScript() {
+        try {
+            String[] files = mContext.getAssets().list("glyphew/icons");
+            if (files == null || files.length == 0) return "";
+            StringBuilder sb = new StringBuilder("<script>window.__gwIcons={");
+            for (String f : files) {
+                if (!f.endsWith(".png")) continue;
+                InputStream is = mContext.getAssets().open("glyphew/icons/" + f);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] chunk = new byte[4096];
+                int n;
+                while ((n = is.read(chunk)) != -1) baos.write(chunk, 0, n);
+                is.close();
+                String b64 = android.util.Base64.encodeToString(baos.toByteArray(), android.util.Base64.NO_WRAP);
+                sb.append("'").append(f).append("':'data:image/png;base64,").append(b64).append("',");
+            }
+            sb.append("};</script>");
+            return sb.toString();
+        } catch (java.io.IOException e) {
+            Log.w(LOGTAG, "buildIconMapScript: failed", e);
+            return "";
+        }
+    }
+
+    /** Returns the BookmarksStore for the HomeBridge to query. */
+    public com.igalia.wolvic.browser.BookmarksStore getBookmarksStore() {
+        return SessionStore.get().getBookmarkStore();
+    }
+
+    public boolean isOnHomePage() {
+        return mOnHomePage;
     }
 
     public void loadPrivateBrowsingPage() {
@@ -1091,7 +1239,21 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         mState.mIsWebExtensionSession = aUri.startsWith(UrlUtils.WEB_EXTENSION_URL);
 
         mState.mPreviousUri = mState.mUri;
-        mState.mUri = aUri;
+        // When on home page, store the symbolic URL instead of the raw data: URL.
+        // Chromium may also surface chrome://home as the reported URL; normalize both.
+        // Also normalize any later re-fire that matches the cached home data: URL, since
+        // mOnHomePage may have already flipped false by then.
+        boolean isHomeDataMatch = mHomePageDataUri != null && mHomePageDataUri.equals(aUri);
+        boolean isNowHome = (mOnHomePage && (UrlUtils.isDataUri(aUri) || UrlUtils.isHomeUrl(aUri))) || isHomeDataMatch;
+        if (isNowHome) {
+            mState.mUri = UrlUtils.ABOUT_HOME;
+            aUri = UrlUtils.ABOUT_HOME;
+        } else {
+            mState.mUri = aUri;
+            if (mOnHomePage) {
+                mOnHomePage = false;
+            }
+        }
 
         boolean forceMobileViewport = FORCE_MOBILE_VIEWPORT.stream().anyMatch(aUri::contains);
         if (forceMobileViewport) {
@@ -1184,8 +1346,20 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
             return WResult.allow();
         }
 
-        // If this request is externally handled we just deny
+        // If this request is externally handled we just deny.
+        // Scripted navigations to non-web schemes (ad affiliate deep links like
+        // aliexpress://…) are dropped silently instead — dispatching them on Quest
+        // almost always ends in an ActivityNotFound error dialog (modal ad spam).
+        // A real click (hasUserGesture) or a typed/loadUri navigation still dispatches.
         if (mExternalRequestDelegate != null) {
+            com.thanford.glyphew.browser.ExternalNavPolicy.Decision decision =
+                    com.thanford.glyphew.browser.ExternalNavPolicy.decide(
+                            isEngineSupportedScheme(uri),
+                            aRequest.hasUserGesture, aRequest.isDirectNavigation);
+            if (decision == com.thanford.glyphew.browser.ExternalNavPolicy.Decision.DENY_SILENT) {
+                Log.d(LOGTAG, "Dropping scripted external-scheme navigation (no user gesture): " + uri);
+                return WResult.deny();
+            }
             if (mExternalRequestDelegate.onHandleExternalRequest(uri)) {
                 return WResult.deny();
             }
@@ -1218,6 +1392,34 @@ public class Session implements WContentBlocking.Delegate, WSession.NavigationDe
         }
 
         return result;
+    }
+
+    /** True when the URI's scheme is loadable by the web engine (or unparseable —
+     *  those stay in the normal pipeline, matching the external handler's own
+     *  parse-failure behavior). */
+    private boolean isEngineSupportedScheme(@Nullable String aUri) {
+        if (aUri == null || mState.mSession == null) return true;
+        try {
+            URI uri = UrlUtils.parseUri(aUri);
+            if (uri.getScheme() == null) return true;
+            return UrlUtils.isEngineSupportedScheme(uri, mState.mSession.getUrlUtilsVisitor());
+        } catch (URISyntaxException e) {
+            return true;
+        }
+    }
+
+    @Override
+    public boolean onNewWindowRequest(@NonNull WSession aSession, @Nullable String aUri) {
+        if (!SettingsStore.getInstance(mContext).isPopUpsBlockingEnabled()) {
+            return true;
+        }
+        com.thanford.glyphew.browser.PopupExceptions.init(mContext);
+        boolean allowed = com.thanford.glyphew.browser.PopupPolicy.shouldAllowPopup(
+                true, getCurrentUri(), aUri,
+                com.thanford.glyphew.browser.PopupExceptions.allowedPopupUrls());
+        Log.d(LOGTAG, "onNewWindowRequest: " + (allowed ? "ALLOW " : "BLOCK ") + aUri);
+        setPopUpState(allowed ? SessionState.POPUP_ALLOWED : SessionState.POPUP_BLOCKED);
+        return allowed;
     }
 
     @Override

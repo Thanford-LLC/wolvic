@@ -629,13 +629,16 @@
     <string name="window_size_preset">%1$d×%2$d</string>
 
     <!-- This string is used to label the homepage radio button that sets the homepage to be Wolvic homepage. -->
-    <string name="developer_options_homepage_wolvic">wolvic.com</string>
+    <string name="developer_options_homepage_wolvic">Glyphew home</string>
 
     <!-- This string is used to label the homepage radio button that sets the homepage to be the New Tab page. -->
     <string name="developer_options_homepage_new_tab">New Tab</string>
 
     <!-- This string is used to label the homepage radio button that allows users to set the homepage they want. -->
     <string name="developer_options_homepage_other">Other</string>
+
+    <!-- Settings footer: Glyphew / Wolvic / MPL 2.0 attribution block. Canonical text per WOLVIC-COMPLIANCE.md §5.2 — do not paraphrase. -->
+    <string name="glyphew_attribution">Glyphew is built on Wolvic, used under the Mozilla Public License 2.0. Wolvic is a trademark of Igalia.\n\nView source of modified MPL files: https://github.com/Thanford-LLC/wolvic/tree/glyphew\nOpen Source Licenses: see Settings › About › Open Source Licenses.\nMPL 2.0 License Text: https://www.mozilla.org/MPL/2.0/</string>
 
     <!-- This string is used to label a set of radio buttons that allow the user to change the
          User-Agent (UA) string of the browser. -->
@@ -764,6 +767,7 @@
     <!-- This string labels the radio button that sets the pointer color to purple. -->
     <string name="developer_options_pointer_purple">Purple</string>
 
+    <string name="developer_options_pointer_brand">Brand</string>
     <!-- This string labels the radio button that sets the pointer color to white. -->
     <string name="developer_options_pointer_white">White</string>
 
@@ -790,7 +794,7 @@
 
     <!-- This string is used in the FxA account manager panel as a header for the sync options for syncing
          history, bookmarks, passwords, etc. -->
-    <string name="fxa_account_options_sync_description">Choose what to synchronize on your devices using Firefox</string>
+    <string name="fxa_account_options_sync_description">Choose what to synchronize across your devices</string>
 
     <!-- This string is used to in the FxA account manage panel as a description for the Bookmarks sync switch. -->
     <string name="fxa_account_options_bookmarks_sync">Bookmarks</string>
@@ -903,7 +907,7 @@
 
     <!-- This string describes the situation when the coarse location permission has been granted,
          but the fine location permission has not. -->
-    <string name="security_options_permission_fine_location_warning">Wolvic can only get your approximate location. This can be changed in the system settings.</string>
+    <string name="security_options_permission_fine_location_warning">Glyphew can only get your approximate location. This can be changed in the system settings.</string>
 
     <!-- This string labels the button that displays or enables the application to post system-wide
          notifications. -->
@@ -1039,7 +1043,7 @@
 
     <!-- This string explains why Mozilla would like the user to allow the crash data to be uploaded.
          '%1$s' will be replaced at runtime with the app's domain name. -->
-    <string name="crash_dialog_message"><![CDATA[Please help Mozilla improve %1$s by sending your crash data. <a href="more">Learn More</a>]]></string>
+    <string name="crash_dialog_message"><![CDATA[Please help us improve %1$s by sending your crash data. <a href="more">Learn More</a>]]></string>
 
     <!-- This string labels a checkbox in the crash dialog box. When checked, the user will no longer
          be prompted for permission to upload crash data after an application crash. -->
@@ -2157,11 +2161,12 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="whats_new_button_start_browsing">Start Browsing</string>
 
     <string name="deprecated_version_dialog_title">Support ending soon</string>
-    <string name="deprecated_version_dialog_body">This \"App Lab\" version of Wolvic will be removed by the end of October 2023.
-        \n\nPlease install the latest version of Wolvic from the Meta Quest Store.
-        \n\nIMPORTANT: unless you use Sync, the new Wolvic app will not have your bookmarks and tabs.</string>
+    <string name="deprecated_version_dialog_body">This version of Glyphew is no longer supported.
+        \n\nPlease install the latest version from the Meta Horizon Store.
+        \n\nIMPORTANT: unless you use Sync, the new app will not have your bookmarks and tabs.</string>
     <string name="deprecated_version_dialog_info_button">Learn more…</string>
-    <string name="deprecated_version_dialog_info_url" translatable="false">https://wolvic.com/support/firefox-sync/</string>
+    <!-- TODO: set before store submission -->
+    <string name="deprecated_version_dialog_info_url" translatable="false">https://thanford.com/support.html</string>
     <string name="deprecated_version_dialog_store_button">Install…</string>
 
     <!-- This string is displayed in the title of the slow script dialog. -->
@@ -2187,7 +2192,7 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <string name="popup_dialog_button_on">On</string>
 
     <!-- This string is displayed in the off button of the quick Popup blocking dialog when it's in disabled state. It's accessed from the Popup icon in the URL bar. -->
-    <string name="popup_dialog_button_off">Off</string>https://wolvic.com/support/firefox-sync/
+    <string name="popup_dialog_button_off">Off</string>
 
     <!-- This string is displayed in the title of the quick WebXR blocking dialog, accessed from the VR icon in the URL bar.
      '%1$s' will be replaced at runtime with the status of the setting.
@@ -2370,6 +2375,27 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- This string is shown in the title of the error dialog displayed if there is any error during an environment setup. -->
     <string name="environment_error_title">Environment error</string>
 
+    <!-- Title of the Third-Party Credits settings screen, which lists creators and licenses for bundled/downloaded VR environments. -->
+    <string name="third_party_credits_title">Third-Party Credits</string>
+
+    <!-- Header shown above the list of credited third-party environments on the Third-Party Credits screen. -->
+    <string name="third_party_credits_header">Glyphew uses the following third-party environments, licensed under Creative Commons licenses:</string>
+
+    <!-- Prefix shown before a source URL hyperlink on the Third-Party Credits screen, e.g. "Source: https://polyhaven.com/...". -->
+    <string name="third_party_credits_source_prefix">Source: </string>
+
+    <!-- Link text to the full CC-BY 4.0 license on the Third-Party Credits screen. -->
+    <string name="third_party_credits_license_link">Read the full CC-BY 4.0 license text: https://creativecommons.org/licenses/by/4.0/legalcode</string>
+
+    <!-- Notice displayed on the Third-Party Credits screen indicating that the works have been modified. CC-BY 4.0 §3.a.1.b requires a modification indication. -->
+    <string name="third_party_credits_modification_notice">These works have been cropped, compressed, and reformatted as KTX cubemaps for VR display.</string>
+
+    <!-- Disclaimer of warranties shown on the Third-Party Credits screen. CC-BY 4.0 §3.a.1.iv requires the licensor's disclaimer to be retained. -->
+    <string name="third_party_credits_disclaimer">Unless otherwise separately undertaken by the Licensor, to the extent possible, the Licensor offers the Licensed Material as-is and as-available, and makes no representations or warranties of any kind concerning the Licensed Material, whether express, implied, statutory, or other. This includes, without limitation, warranties of title, merchantability, fitness for a particular purpose, non-infringement, absence of latent or other defects, accuracy, or the presence or absence of errors, whether or not known or discoverable.</string>
+
+    <!-- Message shown on the Third-Party Credits screen when no third-party environments are available (remote list empty or unreachable). -->
+    <string name="third_party_credits_empty_state">No third-party content loaded.</string>
+
     <!-- This string is shown in the title of the auto-fill save dialog. This dialog is displayed when the user send a login form and the system
     prompts the user to save that login to auto-fill the future. -->
     <string name="autofill_dialog_save_title">Save this login?</string>
@@ -2454,9 +2480,9 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- These strings are used in the first-run flow on the phone UI in mainland China. -->
     <string name="rCN_first_launch_title">User Agreement &amp; Privacy Policy Notification</string>
     <string name="rCN_first_launch_body">
-        Welcome to “Wolvic”!
+        Welcome to “Glyphew”!
         \n
-        \nRegistering and using “Wolvic” requires you to agree to the User Agreement and Privacy Policy, or else we cannot provide services to you. Please carefully read the documents and click on “Agree” to continue. If you click “Disagree”, you will not be able to continue using “Wolvic”.
+        \nRegistering and using “Glyphew” requires you to agree to the User Agreement and Privacy Policy, or else we cannot provide services to you. Please carefully read the documents and click on “Agree” to continue. If you click “Disagree”, you will not be able to continue using “Glyphew”.
         \n
         \nYou can read the complete User Agreement and Privacy Policy.</string>
     <string name="rCN_first_launch_clickable_terms_text">User Agreement</string>
@@ -2477,90 +2503,41 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
 
     <!-- These strings are displayed in the privacy dialog on first launch. -->
     <string name="privacy_dialog_title">Privacy</string>
-    <string name="privacy_dialog_message">Your privacy is important to us. In order to run the browser, please accept our terms of service and privacy policy. Thanks for using Wolvic! </string>
+    <string name="privacy_dialog_message">Your privacy is important to us. In order to run the browser, please accept our terms of service and privacy policy. Thanks for using Glyphew! </string>
     <string name="privacy_dialog_agree">Agree</string>
-    <string name="privacy_dialog_disagree">Close Wolvic</string>
+    <string name="privacy_dialog_disagree">Close Glyphew</string>
 
+    <!-- REVIEW WITH ATTORNEY BEFORE META STORE SUBMISSION -->
     <!-- These strings are the content of the Terms of Service. -->
     <string name="terms_service_title">Terms of Service</string>
-    <string name="terms_service_section_1">
-    Wolvic is free and open source software, built by a community of thousands from all over the world. There are a few things you should know:
-    \n\n\t\u2022 Wolvic is made available to you under the terms of the Mozilla Public License. This means you may use, copy, and distribute Wolvic to others. You are also welcome to modify the source code of Wolvic as you want to meet your needs. The Mozilla Public License also gives you the right to distribute your modified versions.
-    \n\n\t\u2022 You are not granted any trademark rights or licenses to the trademarks of Igalia or any party, including without limitation the Wolvic name or logo.
-    \n\n\t\u2022 Some features in Wolvic, such as the Crash Reporter, give you the option to provide feedback to Igalia. By choosing to submit feedback, you give Igalia permission to use the feedback to improve its products, to publish anonymized feedback on its websites, and to distribute the anonymized feedback.
-    \n\n\t\u2022 How we use your personal information and feedback submitted to Igalia through Wolvic is described in the Wolvic Privacy Policy.
-    \n\n\t\u2022 Some Wolvic features make use of web-based information services; however, we cannot guarantee they are 100% accurate or error-free. More details, including information on how to disable the features that use these services, can be found in the service terms (below).
-    </string>
-    <string name="terms_service_subtitle_2">Wolvic Web-Based Information Services</string>
-    <string name="terms_service_section_2">
-    Wolvic uses web-based information services (“Services”) to provide some of the features provided for your use with this binary version of Wolvic under the terms described below.
-    \n\n\t\u2022 Igalia and its contributors, licensors, and partners work to provide the most accurate and up-to-date Services. However, we cannot guarantee that this information is comprehensive and error-free. For example, the Safe Browsing Service may not identify some risky sites and may identify some safe sites in error, and in the Location Aware Service all locations returned by our service providers are estimates only and neither we nor our service providers guarantee the accuracy of the locations provided.
-    \n\n\t\u2022 Igalia may discontinue or change the Services at its discretion.
-    \n\n\t\u2022 You are welcome to use these Services with the accompanying version of Wolvic, and Igalia grants you its rights to do so. Igalia and its licensors reserve all other rights in the Services. These terms are not intended to limit any rights granted under open source licenses applicable to Wolvic and to corresponding source code versions of Wolvic.
-    \n\n\t\u2022 The Services are provided “as-is.” Igalia, its contributors, licensors, and distributors, disclaim all warranties, whether express or implied, including without limitation, warranties that the Services are merchantable and fit for your particular purposes. You bear the entire risk as to selecting the Services for your purposes and as to the quality and performance of the Services.
-    \n\n\t\u2022 Except as required by law, Igalia, its contributors, licensors, and distributors will not be liable for any indirect, special, incidental, consequential, punitive, or exemplary damages arising out of or in any way relating to the use of Wolvic and the Services. The collective liability under these terms will not exceed $500 (five hundred dollars). Some jurisdictions do not allow the exclusion or limitation of certain damages, so this exclusion and limitation may not apply to you.
-    \n\n\t\u2022 Igalia may update these terms as necessary from time to time. These terms may not be modified or canceled without Igalia’s written agreement.
-    \n\n\t\u2022 These terms are governed by the laws of Spain, excluding its conflict of law provisions. If any portion of these terms is held to be invalid or unenforceable, the remaining portions will remain in full force and effect. In the event of a conflict between a translated version of these terms and the Spanish language version, the Spanish language version shall control.
-    \n\n\t\u2022 If you do not want to use one or more of the Services or the terms above are unacceptable, you may disable the feature or Service(s). Instructions on how to disable a particular feature or Service may be found below. Other features and Services can be disabled in the application preferences.
-    \n\n\t\t\u25e6 Safe browsing is enabled by default. Disabling the Safe Browsing feature is not recommended as it may result in you going to unsafe sites. If you wish to disable the feature completely, follow these steps:
-    \n\n\t\t\t\u2043 In the URL bar, type about:config
-    \n\n\t\t\t\u2043 Type browser.safebrowsing.malware.enabled
-    \n\n\t\t\t\u2043 Double click on the browser.safebrowsing.malware.enabled preference
-    \n\n\t\t\t\u2043 Type browser.safebrowsing.phishing.enabled
-    \n\n\t\t\t\u2043 Double click on the browser.safebrowsing.phishing.enabled preference
-    \n\n\t\t\t\u2043 Safe browsing is now disabled
-    \n\n\t\t\u25e6 Location Aware Browsing: is always opt-in. No location information is ever sent without your permission. If you wish to disable the feature completely, follow these steps:
-    \n\n\t\t\t\u2043 In the URL bar, type about:config
-    \n\n\t\t\t\u2043 Type geo.enabled
-    \n\n\t\t\t\u2043 Double click on the geo.enabled preference
-    \n\n\t\t\t\u2043 Location-Aware Browsing is now disabled
-    \n\n\t\t\u25e6 Enhanced Tracking Protection in Wolvic automatically protects your privacy while you browse. It blocks trackers that follow you around online to collect information about your browsing habits and interests without breaking site functionality. It also includes protections against harmful scripts, such as malware that drains your battery. There are three modes of tracking protection: Standard, Strict and Off. If you wish to switch it off, follow these steps:
-    \n\n\t\t\t\u2043 Go to “Privacy &amp; Security” settings.
-    \n\n\t\t\t\u2043 Select “Off” radio button.
-    \n\n\t\t\t\u2043 Enhanced Tracking Protection is now disabled.
-    </string>
+    <string name="terms_service_section_1">By using Glyphew, you agree to these Terms of Service. Glyphew is operated by Thanford LLC. The App is distributed through the Meta Horizon Store; Meta Platform Terms also apply.
+        \n\nGlyphew is built on Wolvic (developed by Igalia, S.L.) under the Mozilla Public License 2.0. MPL 2.0-licensed source code and Thanford\'s modifications to Wolvic files are available as required by MPL 2.0. Nothing in these Terms limits rights granted to you under MPL 2.0.
+        \n\nLicense: Thanford grants you a personal, non-exclusive, non-transferable, non-sublicensable license to use the App on your Meta Quest device for personal, non-commercial use.
+        \n\nUser Conduct: You agree to use the App only for lawful purposes. You may not attempt to reverse-engineer proprietary portions of the App (except as permitted by applicable open source licenses), gain unauthorized access to any networks through the App, or use the App to transmit unlawful or harmful content.
+        \n\nNo account required: Glyphew does not require a Thanford account. No registration data is collected by Thanford.</string>
+    <string name="terms_service_subtitle_2">Disclaimers, Liability, and Governing Law</string>
+    <string name="terms_service_section_2">Disclaimer of Warranties: THE APP IS PROVIDED “AS IS” AND “AS AVAILABLE” WITHOUT WARRANTY OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+        \n\nLimitation of Liability: TO THE FULLEST EXTENT PERMITTED BY LAW, THANFORD\'S TOTAL LIABILITY TO YOU SHALL NOT EXCEED THE AMOUNT YOU PAID FOR THE APP (USD $6.99). THANFORD IS NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES.
+        \n\nChanges to Terms: Thanford may update these Terms from time to time. Continued use of the App after notice of an update constitutes your acceptance. If you do not agree, stop using the App.
+        \n\nGoverning Law: These Terms are governed by the laws of the State of California, USA.
+        \n\nContact: thanfordhq@gmail.com</string>
 
+    <!-- REVIEW WITH ATTORNEY BEFORE META STORE SUBMISSION -->
     <!-- These strings are the content of the Privacy Policy. -->
-    <string name="privacy_policy_title">General privacy policy</string>
-    <string name="privacy_policy_subtitle_1">General information</string>
-    <string name="privacy_policy_section_1">
-        This application has been developed by Igalia, SL (hereinafter IGALIA), with registered office at Bugallal Marchesi, 22 – 1º, 15008, A Coruña, Galicia (Spain), whose contact details are:
-        \n\n\t\u2022 Phone number +34 981 913991;
-        \n\t\u2022 Email: info@igalia.com
-        \n\nThe content and elements that make up the application have been implemented and/or developed by IGALIA under open source licenses, being protected, without limitations, by the intellectual and industrial property laws of the Kingdom of Spain and by the international Treaties and Agreements that may result of application.</string>
-    <string name="privacy_policy_subtitle_2">Data protection</string>
-    <string name="privacy_policy_section_2">
-        IGALIA is committed to complying with the legal provisions regarding the protection of personal data: Regulation (EU) 2016/679 of the European Parliament and of the Council of 27th April 2016 on the protection of natural persons with regard to the processing of personal data and on the free movement of such data and repealing Directive 95/46/EC (General Data Protection Regulation) and in the Organic Law 3/2018, of December 5, on Data Protection and Guarantee of Digital Rights (LOPDGDD).
-        \nIGALIA does not collect personal data in such a way that the user can be identified. Therefore, you can use the application, consult and browse the virtual reality environment without revealing your identity or providing personal data to IGALIA, either directly or indirectly; therefore, IGALIA will not be liable for any the data that is entered in WOLVIC.
-        \nThe only data and information that IGALIA will obtain for the use of this application, which at no time will be individually linked to the user, are the following:
-        \n\n\t\u2022 Analytical, purely statistical, and non-identifying data.
-        \n\t\u2022 In order to capture and translate the voice into text, the user’s sound data is sent to the servers owned by the third party company responsible for each platform, through an API for this purpose: for example, in Oculus, from Facebook, a service that sends it to Oculus Voice SDK. At no time is the aforementioned data processed, accessed, or incorporated into the servers owned by IGALIA. The data transmitted will be the exclusive responsibility of the third party companies that own each platform (hereinafter, the Third Parties), which may be located outside the European Union and subject to a legal regime that is less protective of user privacy. We recommend that you carefully read the privacy policy and terms of use of each of these external platforms before accepting and using their services. IGALIA will not be directly or indirectly responsible for the processing of personal data by said Third Parties.
-        \n\t\u2022 Geographic location information maybe be obtained from the browser, instead of the one used by the system. However, in order to do so, you must set the location permissions of your device through a specific notice in this regard and IGALIA will in no way link the aforementioned information to you as an identified or identifiable person, although the Third Parties mentioned in the previous point could do so, if applicable. We recommend you to pay attention to their legal terms.
-        \n\t\u2022 IGALIA will not access or store, in any way, the addresses or URLs visited by you.
-        \n\t\u2022 Integration with Cloud services (such as Mozilla Accounts or Google Accounts) to synchronize data such as your browsing history or your user bookmarks may be possible. In this case, IGALIA will not access or process any information in any way, nor will it pass through IGALIA’s servers.
-        \n\nWe remind you again that the Third Party platforms that you access or use with this application could collect this or other identifying data about you, either filling them in voluntarily or involuntarily and/or consciously or unconsciously, possibly outside the scope of European data protection legislation. Therefore, we recommend that you inform yourself and pay special attention to the legal terms of said Third Parties, such as, for example, the following:
-        \n\n\t\u2022 Google: https://policies.google.com/privacy
-        \n\t\u2022 Facebook: https://www.facebook.com/about/privacy/update
-        \n\t\u2022 MeetKai: https://meetkai.com/privacy
-        \n\nLikewise, IGALIA informs you that while using the voice recognition option of the browser, Meetkai will keep totally anonymized voice transcriptions of your voice with the purposes of improving the service provided by them. Your voice will not be kept or will be any way to connect the transcriptions with your identity. More information about MeetKai privacy policy in the following link: https://meetkai.com/es/privacy. Igalia neither has any interest in linking transcriptions with any user nor in affecting their privacy; consequently, Igalia requests that no personal or confidential information of any kind is included in their sound voice addresses.
-        \nIn any case, IGALIA guarantees to the interested parties the exercise of the rights of access, rectification, deletion, opposition, limitation of treatment, and portability, regarding their personal data.
-        \nFor such purposes, IGALIA has established an internal protocol/procedure to carry them out.
-        \nInterested parties can exercise their rights are as follows: by sending a request to IGALIA’s physical address: Calle Bugallal Marchesi, 22, 1o, 15008, A Coruña, Reference: “Data Protection”; or, to the following email address: info@igalia.com.
-        \nIn both cases, the interested party must attach a copy of their national ID, passport, or identification document to prove their identity.
-        \nThe Data Protection Officer or the department entrusted with the management of the rights will record the exercises of rights in the form, available for this purpose, in which the following data will be recorded:
-        \n\n\t\u2022 Application number: a number will be assigned to each of the received applications.
-        \n\t\u2022 Headquarters: if the person in charge has several headquarters, the headquarters where the request was received will be stated.
-        \n\t\u2022 Channel to file claims: the channel through which the request was received will be indicated: physical mail address, mail, etc.
-        \n\t\u2022 Filing date: the date when the request has been filed will be indicated.
-        \n\t\u2022 Exercised rights: the type of right the person exercised.
-        \n\t\u2022 Response day: the day on which the response was sent to the interested party.
-        \n\nThe supporting documentation (receipt of request/response, communications, etc.) will be archived for the purpose of proving its correct management.
-        \nLikewise, you are reminded that you have the right to file a claim with the Spanish Data Protection Agency.
-    </string>
-    <string name="privacy_policy_subtitle_3">Applicable law and original language</string>
-    <string name="privacy_policy_section_3">
-        This Privacy Policy is subject to Spanish law. The Privacy Policy language of this application is Spanish. For this reason, any possible divergence between the original version in Spanish and its translation into another language will be considered as predominant in the Spanish version that can be found here: https://wolvic.com/es/legal/privacy/ .
-    </string>
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="privacy_policy_subtitle_1">Data We Collect</string>
+    <string name="privacy_policy_section_1">Glyphew is operated by Thanford LLC. Contact: thanfordhq@gmail.com. Privacy URL: https://thanford.com/privacy.html
+        \n\nTelemetry is OFF by default. When telemetry is disabled, Thanford collects NO data from you — no browsing history, no URLs, no personal information, nothing.
+        \n\nIf you voluntarily enable telemetry in Settings, Thanford may collect limited diagnostic data only: crash reports, app version, device model (e.g. “Quest 3”), and aggregate session duration. We do NOT collect browsing history, URLs, search queries, passwords, payment data, your name, email, location, voice, or any personal identifiers.
+        \n\nYou may enable or disable telemetry at any time in Settings › Privacy. Disabling takes effect immediately.</string>
+    <string name="privacy_policy_subtitle_2">Third-Party Services and Your Rights</string>
+    <string name="privacy_policy_section_2">Third-party processors: (1) Meta Platform — app distribution and payment, governed by Meta\’s privacy policy. (2) Google Chromium — browser engine; Thanford does not instrument Chromium\’s network activity beyond running the browser. See https://policies.google.com/privacy. Network requests the App makes: the homepage catalog and update manifest are fetched from thanford.com (no identifiers, SHA-256-verified); small remote-configuration files are refreshed at startup; homepage favicons are fetched via https://www.google.com/s2/favicons (the bookmarked site\’s domain is sent to Google).
+        \n\nCrash report data is retained for a maximum of 90 days, then automatically deleted.
+        \n\nYour rights: You may opt out of telemetry at any time via Settings › Privacy. To request deletion of crash report data, email thanfordhq@gmail.com with subject “Data Deletion Request.”
+        \n\nCCPA (California): We do not sell personal information. Contact thanfordhq@gmail.com to exercise CCPA rights.
+        \n\nGDPR/UK GDPR: Where applicable, legal basis for telemetry processing is your explicit consent. You have rights of access, rectification, erasure, restriction, portability, and objection. Contact thanfordhq@gmail.com.</string>
+    <string name="privacy_policy_subtitle_3">Governing Law and Contact</string>
+    <string name="privacy_policy_section_3">This Privacy Policy is governed by the laws of the State of California, USA. For questions or requests, contact Thanford LLC at thanfordhq@gmail.com. The current Privacy Policy is always available at https://thanford.com/privacy.html</string>
 
     <!-- Display names for the supported voice recognition services -->
     <string name="voice_service_metkai">MeetKai</string>
@@ -2596,9 +2573,9 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
     <!-- Vision Glass: title of an alert dialog in the Phone UI -->
     <string name="phone_ui_alert_dialog_title">Error</string>
     <!-- Vision Glass: error message when it was not possible to switch to 3D mode -->
-    <string name="phone_ui_set3dmode_alert_dialog_description">Failed to switch to 3D mode. Try unplugging the glasses and plugging them back and restart Wolvic.</string>
+    <string name="phone_ui_set3dmode_alert_dialog_description">Failed to switch to 3D mode. Try unplugging the glasses and plugging them back and restart Glyphew.</string>
     <!-- Vision Glass: error message when it was not possible to get USO permissions -->
-    <string name="phone_ui_usb_alert_dialog_description">Failed to get USB permissions. Try unplugging the glasses and plugging them back and restart Wolvic.</string>
+    <string name="phone_ui_usb_alert_dialog_description">Failed to get USB permissions. Try unplugging the glasses and plugging them back and restart Glyphew.</string>
     <!-- Vision Glass: instruct the user to connect the device to the phone -->
     <string name="vision_glass_disconnected_message">Please connect Vision Glass</string>
     <!-- Vision Glass: instruct the user to unplug the device and try again -->
@@ -2617,5 +2594,71 @@ the Select` button. When clicked it bookmarks all the previously selected tabs -
 
     <!-- Shown in the controller options view when disabling the hand tracking switch -->
     <string name="disable_hand_tracking_dialog_body">Hand tracking is disabled temporarily. It will be automatically re-enabled on next launch. This option is not persistent on purpose to avoid issues when controllers are unavailable.</string>
+
+    <!-- Glyphew meta-tips shown on the combo HUD's idle rotation strip. -->
+    <string name="gw_meta_tip_release">Release joystick to fire</string>
+    <string name="gw_meta_tip_cancel">Click joystick to cancel</string>
+    <string name="gw_meta_tip_origin">Push joystick to start</string>
+    <string name="gw_meta_tip_long_press_settings">Long press joystick for setting.</string>
+    <!-- Dead-end stub CTA shown in the bottom strip when the committed path
+         has no legal nexts and is not itself a binding. Phase 3c replaces
+         this with the handedness-reactive "Press A/X to create a new combo"
+         variant; the stub keeps the cancel affordance visible until then. -->
+    <string name="gw_meta_tip_dead_end_stub">Click joystick to cancel</string>
+    <!-- Phase 3c R4: handedness-reactive dead-end CTA. %1$s = "A" (right hand)
+         or "X" (left hand). English-only for v1.0. -->
+    <string name="gw_meta_tip_create_combo">Press %1$s to create combo</string>
+
+    <!-- Phase 3c R1 (post-review): preview-fire label shown in the bottom strip
+         while the user is actively leaning toward a legal bound combo.
+         %1$s = action-icon placeholder (replaced by ImageSpan at runtime).
+         %2$s = localized action name (see gw_action_name_* below). -->
+    <string name="fd_tip_release_to_fire">Release joystick: %1$s</string>
+
+    <!-- Glyphew action names shown on the HUD tip strip when the user is
+         leaning toward a legal combo. English-only for v1.0 (translatable as a
+         v1.0.1 patch; 22 strings × ~23 locales ≈ 506 translations). -->
+    <string name="gw_action_name_scroll_up">Scroll up</string>
+    <string name="gw_action_name_scroll_down">Scroll down</string>
+    <string name="gw_action_name_scroll_left">Scroll left</string>
+    <string name="gw_action_name_scroll_right">Scroll right</string>
+    <string name="gw_action_name_scroll_top">Scroll to top</string>
+    <string name="gw_action_name_scroll_bottom">Scroll to bottom</string>
+    <string name="gw_action_name_back">Back</string>
+    <string name="gw_action_name_forward">Forward</string>
+    <string name="gw_action_name_refresh">Reload</string>
+    <string name="gw_action_name_find_in_page">Find in page</string>
+    <string name="gw_action_name_stop">Stop loading</string>
+    <string name="gw_action_name_new_window">New window</string>
+    <string name="gw_action_name_close_window">Close window</string>
+    <string name="gw_action_name_duplicate">Duplicate window</string>
+    <string name="gw_action_name_next_window">Next window</string>
+    <string name="gw_action_name_prev_window">Previous window</string>
+    <string name="gw_action_name_url_bar">URL bar</string>
+    <string name="gw_action_name_open_bookmarks">Bookmarks</string>
+    <string name="gw_action_name_add_bookmark">Add bookmark</string>
+    <string name="gw_action_name_history">History</string>
+    <string name="gw_action_name_reader_mode">Reader mode</string>
+    <string name="gw_action_name_private_window">Private window</string>
+    <string name="gw_action_name_toggle_hud">Toggle HUD</string>
+    <string name="gw_action_name_toggle_mode">Toggle mode</string>
+    <string name="gw_action_name_toggle_curved_window">Curved window</string>
+    <string name="gw_action_name_goto_bookmark">Go to bookmark</string>
+    <string name="gw_action_name_toggle_ghost_routes">Ghost routes</string>
+    <string name="gw_action_name_exit_app">Exit app</string>
+    <string name="gw_action_name_new_tab">New tab</string>
+    <string name="gw_action_name_close_tab">Close tab</string>
+    <string name="gw_action_name_prev_tab">Previous tab</string>
+    <string name="gw_action_name_next_tab">Next tab</string>
+    <string name="gw_hud_off_joystick_hint">Click joystick to turn on HUD</string>
+
+    <!-- Phase 8b: Combo Bookmarks -->
+    <string name="gw_combo_bookmarks_folder_name">Combo Bookmarks</string>
+    <string name="gw_toast_combo_bookmark_saved">Combo Bookmark saved</string>
+    <string name="gw_toast_combo_bookmark_deleted">Combo Bookmark deleted</string>
+    <string name="gw_combos_combo_bookmarks_header">Combo Bookmarks</string>
+    <string name="gw_combos_combo_bookmarks_body">• Hold grip + draw a path on any website\n• Press A/X to save it as a Combo Bookmark\n• Manage: Library → Bookmarks → Combo Bookmarks</string>
+    <string name="gw_combo_bookmark_confirm_title">Save as Combo Bookmark?</string>
+    <string name="gw_combo_bookmark_confirm_save">Save</string>
 
 </resources>

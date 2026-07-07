@@ -237,7 +237,7 @@ struct DeviceDelegateOpenXR::State {
     createInfo.next = (XrBaseInStructure*)&java;
     createInfo.enabledExtensionCount = (uint32_t)extensions.size();
     createInfo.enabledExtensionNames = extensions.data();
-    strcpy(createInfo.applicationInfo.applicationName, "Wolvic");
+    strcpy(createInfo.applicationInfo.applicationName, "Glyphew");
     createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 
     CHECK_XRCMD(xrCreateInstance(&createInfo, &instance));
@@ -1270,6 +1270,22 @@ DeviceDelegateOpenXR::IsPassthroughEnabled() const {
              mImmersiveXrSessionType == DeviceDelegate::ImmersiveXRSessionType::AR);
 };
 
+// Glyphew: a valid passthrough blend (ALPHA_BLEND/ADDITIVE) composites fine and shows app
+// content over passthrough; an INVALID/uninitialized blend is NOT composited, and the Quest
+// compositor falls back to bare passthrough with nothing shown (the doff/don "full
+// passthrough, nothing displayed" bug). Never submit anything but a valid mode — clamp to
+// OPAQUE. The user's intentional passthrough uses ALPHA_BLEND, which is valid and untouched.
+static XrEnvironmentBlendMode SafeEnvironmentBlendMode(XrEnvironmentBlendMode aBlend) {
+  switch (aBlend) {
+    case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:
+    case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:
+    case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND:
+      return aBlend;
+    default:
+      return XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+  }
+}
+
 void
 DeviceDelegateOpenXR::EndFrame(const FrameEndMode aEndMode) {
   if (!m.vrReady) {
@@ -1297,7 +1313,7 @@ DeviceDelegateOpenXR::EndFrame(const FrameEndMode aEndMode) {
   };
 
   // This limit is valid at least for Pico and Meta.
-  auto submitEndFrame = [&layers, displayTime, session = m.session, blendMode = pickEnvironmentBlendMode(m.renderMode), distance = m.furthestHitDistance]() {
+  auto submitEndFrame = [&layers, displayTime, session = m.session, blendMode = SafeEnvironmentBlendMode(pickEnvironmentBlendMode(m.renderMode)), distance = m.furthestHitDistance]() {
       XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
       frameEndInfo.displayTime = displayTime;
       frameEndInfo.environmentBlendMode = blendMode;
